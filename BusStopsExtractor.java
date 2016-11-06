@@ -67,6 +67,10 @@ public class BusStopsExtractor {
 	}
 
 	public static void main(String[] args) throws IOException {
+		/*
+		 * Performing checks that command line arguments are correct, extracting
+		 * values from the arguments.
+		 */
 		if (args.length < 2) {
 			System.err.println("You need to specify input and output files!");
 			return;
@@ -84,9 +88,14 @@ public class BusStopsExtractor {
 		BufferedReader originalMapInput = new BufferedReader(new FileReader(args[0]));
 		BufferedWriter busStopsOutput = new BufferedWriter(new FileWriter(args[1]));
 
+		/*
+		 * The main loop which reads input (osm file) and produces output (csv
+		 * file).
+		 */
 		WriteLine(busStopsOutput, "Latitude, Longitude, Name, Note");
 		String line = originalMapInput.readLine();
 		while (line != null) {
+			/* If line is a node, we will extract its info */
 			if (line.contains("<node") && !line.contains("/>")) {
 				final double latitude = ExtractCoordinate(line, "lat");
 				final double longitude = ExtractCoordinate(line, "lon");
@@ -112,6 +121,9 @@ public class BusStopsExtractor {
 					}
 				}
 
+				/*
+				 * If node turned out to be a bus stop, we will output its info
+				 */
 				if (nodeIsBusStop && inRegion) {
 					WriteLine(busStopsOutput, latitude + "," + longitude + "," + name + "," + note);
 				}
