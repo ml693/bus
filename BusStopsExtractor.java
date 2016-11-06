@@ -46,6 +46,10 @@ public class BusStopsExtractor {
 		return Double.parseDouble(preformattedCoordinate.substring(5, preformattedCoordinate.length() - 1));
 	}
 
+	/*
+	 * TODO(ml693): same method is present in BusStopsExtractor file. Think
+	 * where to move the method to avoid code duplication.
+	 */
 	static void WriteLine(BufferedWriter file, String line) throws IOException {
 		file.write(line);
 		file.newLine();
