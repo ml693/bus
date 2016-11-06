@@ -1,7 +1,7 @@
 /**
  * This program takes osm file and extracts bus stops "of consideration" into csv file.
- * By "of consideration" we mean that user specifies [min longitude, max longitude],
- * [min latitude, max latitude] intervals and only bus stops in this box will be extracted.
+ * By "of consideration" we mean that user specifies [min latitude, max latitude],
+ * [min longitude, max longitude] intervals and only bus stops in this box will be extracted.
  * 
  * Example usage:
  * 
@@ -12,14 +12,14 @@
  *  java BusStopsExtractor cambridgeshire.osm bus_stops.csv
  * 
  *  // 3) The following is equivalent to (2)
- *  java BusStopsExtractor cambridgeshire.osm bus_stops.csv -180.0 180.0 -90.0 90.0
+ *  java BusStopsExtractor cambridgeshire.osm bus_stops.csv -90.0 90.0 -180.0 180.0
  *  
  *  // 4) The general command pattern is
- *  java BusStopsExtractor [input_file.osm] [output_file.csv] [min_lon] [max_lon] [min_lat] [max_lat]
+ *  java BusStopsExtractor [input_file.osm] [output_file.csv] [min_lat] [max_lat] [min_lon] [max_lon]
  *  
  *  Warning: the assumption is that the osm file is correctly formatted 
  *  (e.g. different nodes/ways should be separated into different lines,
- *  lines starting with "<node" should contain latitude and longitude coordinates in them).
+ *  nodes should contain latitude and longitude coordinates in the first line, etc).
  */
 package bus;
 
@@ -36,7 +36,7 @@ public class BusStopsExtractor {
 	static double ExtractCoordinate(String line, String coordinate) {
 		/**
 		 * TODO(ml693): Pattern matcher for now deals only with positive
-		 * coordinates. If coordinate is of the form "-0.123", the matcher will
+		 * coordinates. If coordinate is of the form -0.123, the matcher will
 		 * not accept it. Fix matcher.
 		 */
 		Pattern pattern = Pattern.compile(coordinate + "=" + '"' + "[^ ]+");
@@ -51,12 +51,12 @@ public class BusStopsExtractor {
 		file.newLine();
 	}
 
-	static double minLatitude = -180.0;
-	static double maxLatitude = 180.0;
-	static double minLongitude = -90.0;
-	static double maxLongitude = 90.0;
+	static double minLatitude = -90.0;
+	static double maxLatitude = 90.0;
+	static double minLongitude = -180.0;
+	static double maxLongitude = 180.0;
 
-	static boolean InRegion(double longitude, double latitude) {
+	static boolean InRegion(double latitude, double longitude) {
 		final boolean latitudeCorrect = (latitude >= minLatitude && latitude <= maxLatitude);
 		final boolean longitudeCorrect = (longitude >= minLongitude && longitude <= maxLongitude);
 		return latitudeCorrect && longitudeCorrect;
@@ -90,7 +90,7 @@ public class BusStopsExtractor {
 			if (line.contains("<node") && !line.contains("/>")) {
 				final double latitude = ExtractCoordinate(line, "lat");
 				final double longitude = ExtractCoordinate(line, "lon");
-				final boolean inRegion = InRegion(longitude, latitude);
+				final boolean inRegion = InRegion(latitude, longitude);
 				/**
 				 * The following fields will be populated in the while loop
 				 * below
@@ -113,7 +113,7 @@ public class BusStopsExtractor {
 				}
 
 				if (nodeIsBusStop && inRegion) {
-					WriteLine(busStopsOutput, longitude + "," + latitude + "," + name + "," + note);
+					WriteLine(busStopsOutput, latitude + "," + longitude + "," + name + "," + note);
 				}
 			}
 			line = originalMapInput.readLine();
