@@ -21,8 +21,8 @@ class BusSnapshot {
 	}
 
 	static int ExtractTimestamp(String snapshot) {
-		Pattern pattern = Pattern.compile("timestamp" + "\":" + "[0-9]+");
-		Matcher matcher = pattern.matcher(snapshot);
+	    Pattern pattern = Pattern.compile("timestamp" + "\":" + "[0-9]+");
+	    Matcher matcher = pattern.matcher(snapshot);
 	    matcher.find();
 		return Integer.parseInt(matcher.group().substring(11));
 	}

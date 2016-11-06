@@ -1,13 +1,11 @@
 /* 
- * This program takes JSON files as an input,
- * extracts info about buses from input,
- * and for each bus X produces an output file busX,
- * containing the information for the bus X.
+ * This program takes JSON files as an input, extracts info about buses from input,
+ * and for each bus X produces an output file busX, containing the information for about the bus X.
  * 
- * Example usage: will extract files from ./json directory and place output files to ./buses directory
+ * // Example how to extract files from ./json directory and place output files to ./buses directory
  * java BusTravelHistoryExtractor ./json ./buses
  * 
- * // Example JSON input file:
+ * // Example JSON input file ./json/file1
  * {"received_timestamp":1476227188,"vehicle_id":"8","latitude":51.89,"longitude":0.453,"timestamp":1476227173}
  * TODO(ml693): remove current constrain expecting whole input file be stored in one line.
  * 
@@ -30,7 +28,6 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 public class BusTravelHistoryExtractor {
-
 	/*
 	 * Internal map to store data. At the end this map will get printed as a
 	 * list of files to the output directory.
@@ -51,7 +48,7 @@ public class BusTravelHistoryExtractor {
 			if (!buses.containsKey(busSnapshot.vehicleId)) {
 				buses.put(busSnapshot.vehicleId, new ArrayList<BusSnapshot>());
 			}
-			/* And store info into the map */
+			/* And store info in the map */
 			buses.get(busSnapshot.vehicleId).add(busSnapshot);
 		}
 
@@ -67,15 +64,17 @@ public class BusTravelHistoryExtractor {
 		file.newLine();
 	}
 
-	static void PrintBusHistory(String busDirectory, int vehicleId) throws IOException {
+	static void PrintBusHistory(String busDirectory, int vehicleId)
+			throws IOException {
 		if (buses.containsKey(vehicleId)) {
-			BufferedWriter outputFile = new BufferedWriter(
-					new FileWriter(busDirectory + "/bus" + Integer.toString(vehicleId)));
+			BufferedWriter busOutput = new BufferedWriter(new FileWriter(
+					busDirectory + "/bus" + Integer.toString(vehicleId)));
 			ArrayList<BusSnapshot> history = buses.get(vehicleId);
 			for (BusSnapshot busSnapshot : history) {
-				WriteLine(outputFile, busSnapshot.latitude + " " + busSnapshot.longitude + " " + busSnapshot.timestamp);
+				WriteLine(busOutput, busSnapshot.latitude + " "
+						+ busSnapshot.longitude + " " + busSnapshot.timestamp);
 			}
-			outputFile.close();
+			busOutput.close();
 		}
 	}
 
@@ -100,7 +99,6 @@ public class BusTravelHistoryExtractor {
 		for (String jsonFile : jsonFiles) {
 			AddBusesToMap(jsonFile);
 		}
-
 		/* Finally we output the processed data in args[1] directory */
 		for (int busId : buses.keySet()) {
 			PrintBusHistory(args[1], busId);
