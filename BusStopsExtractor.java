@@ -74,8 +74,8 @@ public class BusStopsExtractor {
 			return;
 		}
 		if (args.length != 2 && args.length != 6) {
-			System.err.println(
-					"Wrong command line arguments. 2 files are required together with 4 optional numbers");
+			System.err.println("Wrong command line arguments."
+					+ " 2 files are required together with 4 optional numbers");
 			return;
 		}
 		if (args.length == 6) {

@@ -1,22 +1,21 @@
 /*
  * This program takes JSON files as an input, extracts info about
- * busesTravelHistory from
- * input, and for each bus X produces an output file busX, containing the
- * information about the bus X.
+ * busesTravelHistory from input, and for each bus X produces an output file
+ * busX, containing the information about the bus X.
  * 
- * // Example how to extract files from ./json directory and place output files
- * // to ./busesTravelHistory directory
- * java BusTravelHistoryExtractor ./json ./busesTravelHistory
+ * // Example how to extract files from json directory and place output files
+ * // to busesTravelHistory directory
+ * java BusTravelHistoryExtractor json busesTravelHistory
  * 
- * // Example JSON input file ./json/file1
+ * // Example JSON input file json/file1
  * |||||||||||||||||||||||||||||| NEW FILE ||||||||||||||||||||||||||||||||||||
- * || {"timestamp":1476227188,"latitude":51.89, "longitude":0.453}
+ * || {vehicle_id="4","timestamp":1476227188,"latitude":51.89,"longitude":0.453}
  * |||||||||||||||||||||||||||||| END OF FILE |||||||||||||||||||||||||||||||||
  * 
  * TODO(ml693): eliminate constrain for whole input to be stored in one line.
  * TODO(ml693): add extra fields to the example to show it can contain more.
  * 
- * // Example csv output file ./busesTravelHistory/bus13
+ * // Example CSV output file busesTravelHistory/bus4
  * |||||||||||||||||||||||||||||| NEW FILE ||||||||||||||||||||||||||||||||||||
  * || timestamp,latitude,longitude
  * || 51.89,0.453,1476227188
@@ -66,10 +65,10 @@ public class BusTravelHistoryExtractor {
 			int busId = ExtractVehicleId(busSnapshotTextEntry);
 			GpsPoint gpsPoint = new GpsPoint(busSnapshotTextEntry);
 
+			/* And store info into the map */
 			if (!busesTravelHistory.containsKey(busId)) {
 				busesTravelHistory.put(busId, new TravelHistory());
 			}
-			/* And store info into the map */
 			busesTravelHistory.get(busId).add(gpsPoint);
 		}
 
@@ -78,8 +77,8 @@ public class BusTravelHistoryExtractor {
 
 	static TravelHistory GetSortedHistoryFromMap(int busId) {
 		TravelHistory travelHistory = busesTravelHistory.get(busId);
-		Collections.sort(travelHistory,
-				(gps1, gps2) -> Integer.compare(gps1.timestamp, gps2.timestamp));
+		Collections.sort(travelHistory, (gps1, gps2) -> Integer
+				.compare(gps1.timestamp, gps2.timestamp));
 		return travelHistory;
 	}
 
@@ -91,7 +90,6 @@ public class BusTravelHistoryExtractor {
 		 * Either eliminate the check or comment about it.
 		 */
 		if (busesTravelHistory.containsKey(busId)) {
-
 			BufferedWriter busOutput = new BufferedWriter(new FileWriter(
 					busDirectory + "/bus" + Integer.toString(busId)));
 			TravelHistory travelHistory = GetSortedHistoryFromMap(busId);
@@ -100,7 +98,6 @@ public class BusTravelHistoryExtractor {
 				gpsPoint.Write(busOutput);
 			}
 			busOutput.close();
-
 		}
 	}
 

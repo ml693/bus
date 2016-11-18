@@ -36,17 +36,18 @@ public class Utils {
 		}
 
 		/* Helper function to construct GpsPoint from jsonTextEntry */
-		static int ExtractTimestamp(String snapshot) {
+		static int ExtractTimestamp(String jsonTextEntry) {
 			Pattern pattern = Pattern.compile("timestamp" + "\":" + "[0-9]+");
-			Matcher matcher = pattern.matcher(snapshot);
+			Matcher matcher = pattern.matcher(jsonTextEntry);
 			matcher.find();
 			return Integer.parseInt(matcher.group().substring(11));
 		}
 
 		/* Helper function to construct GpsPoint from jsonTextEntry */
-		static double ExtractCoordinate(String coordinate, String snapshot) {
+		static double ExtractCoordinate(String coordinate,
+				String jsonTextEntry) {
 			Pattern pattern = Pattern.compile(coordinate + "\":" + "[^,]+");
-			Matcher matcher = pattern.matcher(snapshot);
+			Matcher matcher = pattern.matcher(jsonTextEntry);
 			matcher.find();
 			return Double.parseDouble(
 					matcher.group().substring(coordinate.length() + 2));
@@ -81,8 +82,8 @@ public class Utils {
 	 * Cambridge - London - back to Cambridge would be a trip.
 	 * 
 	 * It's often the case that the bus does NOT follow any trip exactly, hence
-	 * the travel history class above tells the exact path a bus has followed
-	 * for some interval of time.
+	 * the travel history class above tells the exact path a bus followed for
+	 * some interval of time.
 	 */
 	@SuppressWarnings("serial")
 	static class Trip extends ArrayList<GpsPoint> {

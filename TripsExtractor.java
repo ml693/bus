@@ -12,18 +12,18 @@
  * 
  * 
  * 
- * EXAMPLE COMMANG USAGE:
+ * EXAMPLE PROGRAM USAGE:
  * 
  * // To create output files output_folder/1, output_folder/2, ...
- * java bus.RouteExtractor bus_history.csv output_folder
+ * java bus.RouteExtractor bus_history_file output_folder
  * 
  * // To create output files with custom prefix
  * // output_folder/route1, output_folder/route2, ...
- * java bus.RouteExtractor bus_history.csv output_folder route
+ * java bus.RouteExtractor bus_history_file output_folder route
  * 
  * 
  * 
- * INPUT FILE EXPLANATION
+ * INPUT FILE EXPLANATION (bus_history_file above)
  * 
  * Input is a CSV file containing a TIMESTAMP-ORDERED list of GPS locations for
  * a SINGLE bus. Timestamp is the POSIX time. Requirement is that 2 consecutive
@@ -33,7 +33,7 @@
  * become larger in such example cases:
  * 
  * (i) The bus stopped at line_i, turned itself and GPS transmitter off, after
- * 1h started driving again, hence the timestamp difference will be ~1h = 3600.
+ * 1h turned back on, hence the timestamp difference will be ~1h = 3600.
  * Note that latitude and longitude values in line_i will match values in
  * line_i+1.
  * 
@@ -43,10 +43,10 @@
  * latitude/longitude values between line_i and line_i+1, if the bus has moved a
  * lot.
  * 
- * Latitude and longitude coordinates need only to show the approximate
- * location where the bus is. That is, if a bus has travelled through
- * the same location twice, the latitude/longitude coordinates
- * do not need to match precisely, but should be roughly equal.
+ * Latitude and longitude coordinates need only to show the approximate location
+ * where the bus is. That is, if a bus has travelled through the same location
+ * twice, the latitude/longitude coordinates should be roughly equal, but do not
+ * need to match precisely.
  * 
  * 
  * 
@@ -66,7 +66,7 @@
  * || ...
  * || 1000020700,52.1001,0.3001 // leaving B
  * || ...
- * || ... // travelling to A
+ * || ... // travelling back to A
  * || ...
  * || 1000040008,52.0002,0.2002 // back at A
  * || 1000040070,52.0002,0.2002 // staying at A
@@ -78,11 +78,11 @@
  * || ... // travelling to C
  * || ...
  * || 1000080050,51.9000,0.1000 // arrived to C.
- * |||||||||||||||||||||||| END OF FILE ./args[0] |||||||||||||||||||||||||||||
+ * |||||||||||||||||||||||| END OF FILE args[0] |||||||||||||||||||||||||||||||
  * 
  * 
  * 
- * OUTPUT FILES EXPLANATION
+ * OUTPUT FILES EXPLANATION (output_folder/1, output_folder/2 files above)
  * 
  * Output will be multiple CSV files, each containing a TIMESTAMP-ORDERED list
  * of GPS locations for a SINGLE bus. Each output file viewed as a list of lines
@@ -96,7 +96,7 @@
  * EXAMPLE FILES STORED TO OUTPUT DIRECTORY HAVING NAME args[1]:
  * (these will be generated based on the input example above)
  * 
- * |||||||||||||||||||||||| NEW FILE ./args[1]/route1 |||||||||||||||||||||||||
+ * |||||||||||||||||||||||| NEW FILE args[1]/route1 |||||||||||||||||||||||||||
  * || timestamp,latitude,longitude // 1st line of file
  * || 1000000000,52.0000,0.2000 // starting at A
  * || 1000000030,52.0001,0.2001 // leaving A
@@ -104,29 +104,29 @@
  * || ... // travelling to B
  * || ...
  * || 1000020000,52.1000,0.3000 // arrived to B
- * |||||||||||||||||||||||| END OF FILE ./args[1]/route2 ||||||||||||||||||||||
+ * |||||||||||||||||||||||| END OF FILE args[1]/route2 ||||||||||||||||||||||||
  * 
  * 
  * 
- * ||||||||||||||||||||||| NEW FILE ./args[1]/route2 ||||||||||||||||||||||||||
+ * ||||||||||||||||||||||| NEW FILE args[1]/route2 ||||||||||||||||||||||||||||
  * || timestamp,latitude,longitude // 1st line of file
  * || 1000020700,52.1001,0.3001 // leaving B
  * || ...
  * || ... // travelling to A
  * || ...
  * || 1000040008,52.0002,0.2002 // back at A
- * ||||||||||||||||||||||| END OF FILE ./args[1]/route3 |||||||||||||||||||||||
+ * ||||||||||||||||||||||| END OF FILE args[1]/route3 |||||||||||||||||||||||||
  * 
  * 
  * 
- * ||||||||||||||||||||||| NEW FILE ./args[1]/route2 ||||||||||||||||||||||||||
+ * ||||||||||||||||||||||| NEW FILE args[1]/route2 ||||||||||||||||||||||||||||
  * || timestamp,latitude,longitude // 1st line of file
  * || 1000050030,52.0003,0.2003 // leaving A
  * || ...
  * || ... // travelling to C
  * || ...
  * || 1000080050,51.9000,0.1000 // arriving at C.
- * ||||||||||||||||||||||| END OF FILE ./args[1]/route3 |||||||||||||||||||||||
+ * ||||||||||||||||||||||| END OF FILE args[1]/route3 |||||||||||||||||||||||||
  */
 package bus;
 
@@ -137,7 +137,6 @@ import java.io.IOException;
 import java.util.Scanner;
 
 class TripsExtractor {
-
 	/*
 	 * The main method which decides whether the bus started a new trip or not.
 	 * We check that based on how long the bus was standing in the same place.

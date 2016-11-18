@@ -7,13 +7,13 @@
  * EXAMPLE USAGE
  * 
  * // The following will print "trip2",
- * // if "./trips_folder" contains files {trip1, trip2, trip3} and
- * // "./gps_history" is most similar to some sub-trip of trip2.
- * java TripDetector ./gps_history ./trips_folder
+ * // if "trips_folder" contains files {trip1, trip2, trip3} and
+ * // "gps_history_file" is most similar to some sub-trip of trip2.
+ * java TripDetector gps_history_file trips_folder
  * 
  * // This should always print answer "trip1",
  * // because the history of trip1 matches trip1 exactly.
- * java TripDetector ./trips_folder/trip1 ./trips_folder
+ * java TripDetector trips_folder/trip1 trips_folder
  */
 
 package bus;
@@ -28,7 +28,6 @@ import bus.Utils.Trip;
 import bus.Utils.TravelHistory;
 
 class TripDetector {
-
 	/*
 	 * When down-casted, the method can return either an instance of Trip or
 	 * TravelHistory class, depending on what we want.
@@ -47,6 +46,9 @@ class TripDetector {
 	}
 
 	/*
+	 * The smaller similarity measure, the more similar travelHistory to some
+	 * interval of trip is.
+	 * 
 	 * The similarity measure works as follows. For each point p in the travel
 	 * history, we find the "best" segment in the route (two consecutive route's
 	 * points) and sum p distance to both segment's corners. "Best" segment
