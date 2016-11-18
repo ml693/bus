@@ -136,7 +136,7 @@ import java.io.FileWriter;
 import java.io.IOException;
 import java.util.Scanner;
 
-class RouteExtractor {
+class TripsExtractor {
 
 	/*
 	 * The main method which decides whether the bus started a new trip or not.
@@ -157,7 +157,7 @@ class RouteExtractor {
 		}
 
 		/* Preparing variables to output trips */
-		BufferedWriter routeOutput = null;
+		BufferedWriter tripOutput = null;
 		int routeNumber = 0;
 		String outputDirectoryName = args.length == 3 ? args[1] + args[2]
 				: args[1];
@@ -185,14 +185,14 @@ class RouteExtractor {
 			/* If we believe that bus ended one trip and started another */
 			if (NewTripAccordingToTimestamp(currentTimestamp, newTimestamp)) {
 				/* Then we stop writing to current route file */
-				if (routeOutput != null) {
-					routeOutput.close();
+				if (tripOutput != null) {
+					tripOutput.close();
 				}
 				/* And start creating new output file */
 				routeNumber++;
-				routeOutput = new BufferedWriter(
+				tripOutput = new BufferedWriter(
 						new FileWriter(outputDirectoryName + routeNumber));
-				Utils.WriteLine(routeOutput, "timestamp, latitude, longitude");
+				Utils.WriteLine(tripOutput, "timestamp,latitude,longitude");
 			}
 
 			if (newLatitude != currentLatitude
@@ -202,7 +202,7 @@ class RouteExtractor {
 				 * We add new entry to the output file only if the bus is moving
 				 * according to the GPS transmitter.
 				 */
-				Utils.WriteLine(routeOutput,
+				Utils.WriteLine(tripOutput,
 						newTimestamp + "," + String.format("%.4f", newLatitude)
 								+ "," + String.format("%.4f", newLongitude));
 			}
@@ -211,7 +211,7 @@ class RouteExtractor {
 		}
 
 		gpsInput.close();
-		routeOutput.close();
+		tripOutput.close();
 	}
 
 }

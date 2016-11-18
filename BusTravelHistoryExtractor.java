@@ -1,11 +1,12 @@
 /*
- * This program takes JSON files as an input, extracts info about buses from
+ * This program takes JSON files as an input, extracts info about
+ * busesTravelHistory from
  * input, and for each bus X produces an output file busX, containing the
  * information about the bus X.
  * 
  * // Example how to extract files from ./json directory and place output files
- * // to ./buses directory
- * java BusTravelHistoryExtractor ./json ./buses
+ * // to ./busesTravelHistory directory
+ * java BusTravelHistoryExtractor ./json ./busesTravelHistory
  * 
  * // Example JSON input file ./json/file1
  * |||||||||||||||||||||||||||||| NEW FILE ||||||||||||||||||||||||||||||||||||
@@ -15,7 +16,7 @@
  * TODO(ml693): eliminate constrain for whole input to be stored in one line.
  * TODO(ml693): add extra fields to the example to show it can contain more.
  * 
- * // Example csv output file ./buses/bus13
+ * // Example csv output file ./busesTravelHistory/bus13
  * |||||||||||||||||||||||||||||| NEW FILE ||||||||||||||||||||||||||||||||||||
  * || timestamp,latitude,longitude
  * || 51.89,0.453,1476227188
@@ -29,20 +30,29 @@ import java.io.File;
 import java.io.FileReader;
 import java.io.FileWriter;
 import java.io.IOException;
-import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+
+import bus.Utils.GpsPoint;
+import bus.Utils.TravelHistory;
 
 public class BusTravelHistoryExtractor {
 	/*
 	 * Internal map to store data. At the end this map will get printed as a
 	 * list of files to the output directory.
 	 */
-	static HashMap<Integer, ArrayList<BusSnapshot>> buses = new HashMap<Integer, ArrayList<BusSnapshot>>();
+	static HashMap<Integer, TravelHistory> busesTravelHistory = new HashMap<Integer, TravelHistory>();
 
-	static void AddBusesToMap(File file) throws IOException {
+	static int ExtractVehicleId(String snapshot) {
+		Pattern pattern = Pattern.compile("vehicle_id" + "\":\"" + "[0-9]+");
+		Matcher matcher = pattern.matcher(snapshot);
+		matcher.find();
+		return Integer.parseInt(matcher.group().substring(13));
+	}
+
+	static void UpdateBusesTravelHistoryWithFile(File file) throws IOException {
 		BufferedReader jsonInput = new BufferedReader(new FileReader(file));
 		String line = jsonInput.readLine();
 		/* Matches a new bus entry in the file */
@@ -52,32 +62,42 @@ public class BusTravelHistoryExtractor {
 		/* For each bus entry */
 		while (matcher.find()) {
 			/* We extract bus info */
-			BusSnapshot busSnapshot = new BusSnapshot(matcher.group());
-			if (!buses.containsKey(busSnapshot.vehicleId)) {
-				buses.put(busSnapshot.vehicleId, new ArrayList<BusSnapshot>());
+			String busSnapshotTextEntry = matcher.group();
+			int busId = ExtractVehicleId(busSnapshotTextEntry);
+			GpsPoint gpsPoint = new GpsPoint(busSnapshotTextEntry);
+
+			if (!busesTravelHistory.containsKey(busId)) {
+				busesTravelHistory.put(busId, new TravelHistory());
 			}
-			/* And store info in the map */
-			buses.get(busSnapshot.vehicleId).add(busSnapshot);
+			/* And store info into the map */
+			busesTravelHistory.get(busId).add(gpsPoint);
 		}
 
 		jsonInput.close();
 	}
 
+	static TravelHistory GetSortedHistoryFromMap(int busId) {
+		TravelHistory travelHistory = busesTravelHistory.get(busId);
+		Collections.sort(travelHistory,
+				(gps1, gps2) -> Integer.compare(gps1.timestamp, gps2.timestamp));
+		return travelHistory;
+	}
+
 	static void PrintBusHistory(String busDirectory, int busId)
 			throws IOException {
 		/*
-		 * TODO(ml693): this "if" check is redundant so far, because buses map
-		 * will always contain vehicleId key. Either eliminate the check or
-		 * comment about it.
+		 * TODO(ml693): this "if" check is redundant so far, because
+		 * busesTravelHistory map will always contain busId key.
+		 * Either eliminate the check or comment about it.
 		 */
-		if (buses.containsKey(busId)) {
+		if (busesTravelHistory.containsKey(busId)) {
 
 			BufferedWriter busOutput = new BufferedWriter(new FileWriter(
 					busDirectory + "/bus" + Integer.toString(busId)));
-			ArrayList<BusSnapshot> history = buses.get(busId);
+			TravelHistory travelHistory = GetSortedHistoryFromMap(busId);
 			Utils.WriteLine(busOutput, "timestamp,latitude,longitude");
-			for (BusSnapshot busSnapshot : history) {
-				busSnapshot.gpsPoint.Write(busOutput);
+			for (GpsPoint gpsPoint : travelHistory) {
+				gpsPoint.Write(busOutput);
 			}
 			busOutput.close();
 
@@ -92,10 +112,10 @@ public class BusTravelHistoryExtractor {
 		File[] jsonFiles = new File(args[0]).listFiles();
 		/* Then we process each file in the directory */
 		for (File jsonFile : jsonFiles) {
-			AddBusesToMap(jsonFile);
+			UpdateBusesTravelHistoryWithFile(jsonFile);
 		}
 		/* Finally we output the processed data into args[1] directory */
-		for (int busId : buses.keySet()) {
+		for (int busId : busesTravelHistory.keySet()) {
 			PrintBusHistory(args[1], busId);
 		}
 	}

@@ -1,18 +1,61 @@
 /*
- * Auxiliary file containing small fragments of code that are used in more than
- * one file.
+ * Auxiliary file for code fragments used in more than one class.
  */
 package bus;
 
 import java.io.BufferedWriter;
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
+
+import bus.Utils.GpsPoint;
 
 public class Utils {
 
 	static void WriteLine(BufferedWriter file, String line) throws IOException {
 		file.write(line);
 		file.newLine();
+	}
+
+	static class GpsPoint {
+		final int timestamp;
+		final double latitude;
+		final double longitude;
+
+		public GpsPoint(int time, double lat, double lon) {
+			timestamp = time;
+			latitude = lat;
+			longitude = lon;
+		}
+
+		public GpsPoint(String jsonTextEntry) {
+			timestamp = ExtractTimestamp(jsonTextEntry);
+			latitude = ExtractCoordinate("latitude", jsonTextEntry);
+			longitude = ExtractCoordinate("longitude", jsonTextEntry);
+		}
+
+		/* Helper function to construct GpsPoint from jsonTextEntry */
+		static int ExtractTimestamp(String snapshot) {
+			Pattern pattern = Pattern.compile("timestamp" + "\":" + "[0-9]+");
+			Matcher matcher = pattern.matcher(snapshot);
+			matcher.find();
+			return Integer.parseInt(matcher.group().substring(11));
+		}
+
+		/* Helper function to construct GpsPoint from jsonTextEntry */
+		static double ExtractCoordinate(String coordinate, String snapshot) {
+			Pattern pattern = Pattern.compile(coordinate + "\":" + "[^,]+");
+			Matcher matcher = pattern.matcher(snapshot);
+			matcher.find();
+			return Double.parseDouble(
+					matcher.group().substring(coordinate.length() + 2));
+		}
+
+		void Write(BufferedWriter file) throws IOException {
+			WriteLine(file, timestamp + "," + String.format("%.4f", latitude)
+					+ "," + String.format("%.4f", longitude));
+		}
 	}
 
 	/*
@@ -32,29 +75,17 @@ public class Utils {
 	}
 
 	/*
-	 * This class defines what a route is. Route is a predetermined
-	 * path that a bus SHOULD follow. But it's often the case
-	 * that the bus does NOT follow the route exactly. The travel
-	 * history class above tells the exact path bus followed.
+	 * This class defines a trip. Trip is either a past path that a bus followed
+	 * without pausing (short break at the bus stop does not count as pause) or
+	 * a predetermined future route that a bus SHOULD follow. For example,
+	 * Cambridge - London - back to Cambridge would be a trip.
+	 * 
+	 * It's often the case that the bus does NOT follow any trip exactly, hence
+	 * the travel history class above tells the exact path a bus has followed
+	 * for some interval of time.
 	 */
-	static class Route extends ArrayList<GpsPoint> {
-	}
-
-	static class GpsPoint {
-		final int timestamp;
-		final double latitude;
-		final double longitude;
-
-		public GpsPoint(int time, double lat, double lon) {
-			timestamp = time;
-			latitude = lat;
-			longitude = lon;
-		}
-
-		void Write(BufferedWriter file) throws IOException {
-			WriteLine(file, timestamp + "," + String.format("%.4f", latitude)
-					+ "," + String.format("%.4f", longitude));
-		}
+	@SuppressWarnings("serial")
+	static class Trip extends ArrayList<GpsPoint> {
 	}
 
 	/*
