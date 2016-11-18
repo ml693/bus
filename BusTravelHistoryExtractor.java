@@ -1,17 +1,25 @@
-/* 
- * This program takes JSON files as an input, extracts info about buses from input,
- * and for each bus X produces an output file busX, containing the information for about the bus X.
+/*
+ * This program takes JSON files as an input, extracts info about buses from
+ * input, and for each bus X produces an output file busX, containing the
+ * information about the bus X.
  * 
- * // Example how to extract files from ./json directory and place output files to ./buses directory
+ * // Example how to extract files from ./json directory and place output files
+ * // to ./buses directory
  * java BusTravelHistoryExtractor ./json ./buses
  * 
  * // Example JSON input file ./json/file1
- * {"received_timestamp":1476227188,"vehicle_id":"8","latitude":51.89,"longitude":0.453,"timestamp":1476227173}
- * TODO(ml693): remove current constrain expecting whole input file be stored in one line.
+ * |||||||||||||||||||||||||||||| NEW FILE ||||||||||||||||||||||||||||||||||||
+ * || {"timestamp":1476227188,"latitude":51.89, "longitude":0.453}
+ * |||||||||||||||||||||||||||||| END OF FILE |||||||||||||||||||||||||||||||||
  * 
- * // Example output file ./buses/bus13 (contains latitude, longitude and timestamp)
- * 52.30 -0.086 1476251758
- * // TODO(ml693): add more data fields into the output file
+ * TODO(ml693): eliminate constrain for whole input to be stored in one line.
+ * TODO(ml693): add extra fields to the example to show it can contain more.
+ * 
+ * // Example csv output file ./buses/bus13
+ * |||||||||||||||||||||||||||||| NEW FILE ||||||||||||||||||||||||||||||||||||
+ * || timestamp,latitude,longitude
+ * || 51.89,0.453,1476227188
+ * |||||||||||||||||||||||||||||| END OF FILE |||||||||||||||||||||||||||||||||
  */
 package bus;
 
@@ -34,8 +42,8 @@ public class BusTravelHistoryExtractor {
 	 */
 	static HashMap<Integer, ArrayList<BusSnapshot>> buses = new HashMap<Integer, ArrayList<BusSnapshot>>();
 
-	static void AddBusesToMap(String fileName) throws IOException {
-		BufferedReader jsonInput = new BufferedReader(new FileReader(fileName));
+	static void AddBusesToMap(File file) throws IOException {
+		BufferedReader jsonInput = new BufferedReader(new FileReader(file));
 		String line = jsonInput.readLine();
 		/* Matches a new bus entry in the file */
 		Pattern pattern = Pattern.compile("\\{\"received_timestamp" + "[^}]*");
@@ -55,51 +63,38 @@ public class BusTravelHistoryExtractor {
 		jsonInput.close();
 	}
 
-	/*
-	 * TODO(ml693): same method is present in BusStopsExtractor file. Think
-	 * where to move the method to avoid code duplication.
-	 */
-	static void WriteLine(BufferedWriter file, String line) throws IOException {
-		file.write(line);
-		file.newLine();
-	}
-
-	static void PrintBusHistory(String busDirectory, int vehicleId)
+	static void PrintBusHistory(String busDirectory, int busId)
 			throws IOException {
-		if (buses.containsKey(vehicleId)) {
+		/*
+		 * TODO(ml693): this "if" check is redundant so far, because buses map
+		 * will always contain vehicleId key. Either eliminate the check or
+		 * comment about it.
+		 */
+		if (buses.containsKey(busId)) {
+
 			BufferedWriter busOutput = new BufferedWriter(new FileWriter(
-					busDirectory + "/bus" + Integer.toString(vehicleId)));
-			ArrayList<BusSnapshot> history = buses.get(vehicleId);
+					busDirectory + "/bus" + Integer.toString(busId)));
+			ArrayList<BusSnapshot> history = buses.get(busId);
+			Utils.WriteLine(busOutput, "timestamp,latitude,longitude");
 			for (BusSnapshot busSnapshot : history) {
-				WriteLine(busOutput, busSnapshot.latitude + " "
-						+ busSnapshot.longitude + " " + busSnapshot.timestamp);
+				busSnapshot.gpsPoint.Write(busOutput);
 			}
 			busOutput.close();
-		}
-	}
 
-	static ArrayList<String> GetFileNames(String folderName) {
-		File folder = new File(folderName);
-		File[] listOfFiles = folder.listFiles();
-		ArrayList<String> fileNames = new ArrayList<String>();
-		for (File file : listOfFiles) {
-			fileNames.add(folder.getName() + "/" + file.getName());
 		}
-		Collections.sort(fileNames);
-		return fileNames;
 	}
 
 	public static void main(String args[]) throws IOException {
 		/*
-		 * args[0] is a directory containing JSON files. We first extract all
-		 * file names from the directory.
+		 * args[0] is a directory name containing JSON files. We first extract
+		 * all files from the directory.
 		 */
-		ArrayList<String> jsonFiles = GetFileNames(args[0]);
+		File[] jsonFiles = new File(args[0]).listFiles();
 		/* Then we process each file in the directory */
-		for (String jsonFile : jsonFiles) {
+		for (File jsonFile : jsonFiles) {
 			AddBusesToMap(jsonFile);
 		}
-		/* Finally we output the processed data in args[1] directory */
+		/* Finally we output the processed data into args[1] directory */
 		for (int busId : buses.keySet()) {
 			PrintBusHistory(args[1], busId);
 		}
