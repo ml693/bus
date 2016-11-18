@@ -40,8 +40,7 @@
  * (ii) The GPS transmitter failed to transmit data while travelling for ~20
  * minutes, then started to function again. The timestamp difference will be
  * ~20min = 1200. Note that in this case there might be a fairly big change in
- * latitude/longitude values between line_i and line_i+1, if the bus has moved a
- * lot.
+ * latitude/longitude values between line_i and line_i+1, if the bus moved much.
  * 
  * Latitude and longitude coordinates need only to show the approximate location
  * where the bus is. That is, if a bus has travelled through the same location
@@ -54,30 +53,30 @@
  * 
  * ||||||||||||||||||||||||| NEW FILE args[0] |||||||||||||||||||||||||||||||||
  * || timestamp,latitude,longitude // 1st line of file
- * || 1000000000,52.0000,0.2000 // starting at A
+ * || 1000000000,52.0000,0.2000 // starting in A
  * || 1000000030,52.0001,0.2001 // leaving A
  * || ...
  * || ... // travelling to B
  * || ...
- * || 1000020000,52.1000,0.3000 // arrived to B
- * || 1000020050,52.1000,0.3000 // staying at B
+ * || 1000020000,52.1000,0.3000 // arrived at B
+ * || 1000020050,52.1000,0.3000 // staying in B
  * || ...
- * || ... // staying at B
+ * || ... // staying in B
  * || ...
  * || 1000020700,52.1001,0.3001 // leaving B
  * || ...
  * || ... // travelling back to A
  * || ...
  * || 1000040008,52.0002,0.2002 // back at A
- * || 1000040070,52.0002,0.2002 // staying at A
+ * || 1000040070,52.0002,0.2002 // staying in A
  * || ...
- * || ... // staying at A
+ * || ... // staying in A
  * || ...
  * || 1000050030,52.0003,0.2003 // leaving A
  * || ...
  * || ... // travelling to C
  * || ...
- * || 1000080050,51.9000,0.1000 // arrived to C.
+ * || 1000080050,51.9000,0.1000 // arrived at C.
  * |||||||||||||||||||||||| END OF FILE args[0] |||||||||||||||||||||||||||||||
  * 
  * 
@@ -103,7 +102,7 @@
  * || ...
  * || ... // travelling to B
  * || ...
- * || 1000020000,52.1000,0.3000 // arrived to B
+ * || 1000020000,52.1000,0.3000 // arrived at B
  * |||||||||||||||||||||||| END OF FILE args[1]/route2 ||||||||||||||||||||||||
  * 
  * 
@@ -112,7 +111,7 @@
  * || timestamp,latitude,longitude // 1st line of file
  * || 1000020700,52.1001,0.3001 // leaving B
  * || ...
- * || ... // travelling to A
+ * || ... // travelling back to A
  * || ...
  * || 1000040008,52.0002,0.2002 // back at A
  * ||||||||||||||||||||||| END OF FILE args[1]/route3 |||||||||||||||||||||||||

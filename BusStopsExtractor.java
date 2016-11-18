@@ -7,20 +7,19 @@
  * Example usage:
  * 
  * // 1) To extract all bus stops in Cambridge city from a larger file
- * java BusStopsExtractor cambridgeshire.osm bus_stops.csv 0.01 0.22 52.15 52.26
+ * java BusStopsExtractor cambridgeshire bus_stops 0.01 0.22 52.15 52.26
  * 
  * // 2) To extract all bus stops in a file
- * java BusStopsExtractor cambridgeshire.osm bus_stops.csv
+ * java BusStopsExtractor cambridgeshire bus_stops
  * 
  * // 3) The following is equivalent to (2)
- * java BusStopsExtractor cambridgeshire.osm bus_stops.csv -90.0 90.0 -180.0
- * 180.0
+ * java BusStopsExtractor cambridgeshire bus_stops -90.0 90.0 -180.0 180.0
  * 
  * // 4) The general command pattern is
  * java BusStopsExtractor
- * [input_file.osm] [output_file.csv] [min_lat] [max_lat] [min_lon] [max_lon]
+ * [input_file] [output_file] [min_lat] [max_lat] [min_lon] [max_lon]
  * 
- * Warning: the assumption is that the OSM file is well formatted
+ * WARNING: the assumption is that the OSM file is well formatted
  * (e.g. different nodes/ways should be separated into different lines,
  * nodes should contain latitude and longitude coordinates in the first line,
  * etc).
@@ -89,11 +88,11 @@ public class BusStopsExtractor {
 		BufferedWriter busStopsOutput = new BufferedWriter(
 				new FileWriter(args[1]));
 
+		Utils.WriteLine(busStopsOutput, "Latitude, Longitude, Name, Note");
+		String line = originalMapInput.readLine();
 		/*
 		 * Main loop which reads input OSM file and produces output CSV file.
 		 */
-		Utils.WriteLine(busStopsOutput, "Latitude, Longitude, Name, Note");
-		String line = originalMapInput.readLine();
 		while (line != null) {
 			/* If line is a node, we will extract its info */
 			if (line.contains("<node") && !line.contains("/>")) {

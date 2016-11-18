@@ -50,8 +50,8 @@ class TripDetector {
 	 * interval of trip is.
 	 * 
 	 * The similarity measure works as follows. For each point p in the travel
-	 * history, we find the "best" segment in the route (two consecutive route's
-	 * points) and sum p distance to both segment's corners. "Best" segment
+	 * history, we find the "best" segment (i.e. two consecutive route's points)
+	 * in the route and sum p distance to both segment's corners. "Best" segment
 	 * is the one which has the minimal sum. We then return sum of sums ranged
 	 * over all points in the travel history.
 	 * 

@@ -3,11 +3,11 @@
  * busesTravelHistory from input, and for each bus X produces an output file
  * busX, containing the information about the bus X.
  * 
- * // Example how to extract files from json directory and place output files
- * // to busesTravelHistory directory
- * java BusTravelHistoryExtractor json busesTravelHistory
+ * // Example how to extract files from json_folder and place output files to
+ * // buses_travel_history directory
+ * java BusTravelHistoryExtractor json_folder buses_travel_history
  * 
- * // Example JSON input file json/file1
+ * // Example JSON input file json_folder/file1
  * |||||||||||||||||||||||||||||| NEW FILE ||||||||||||||||||||||||||||||||||||
  * || {vehicle_id="4","timestamp":1476227188,"latitude":51.89,"longitude":0.453}
  * |||||||||||||||||||||||||||||| END OF FILE |||||||||||||||||||||||||||||||||
@@ -15,7 +15,7 @@
  * TODO(ml693): eliminate constrain for whole input to be stored in one line.
  * TODO(ml693): add extra fields to the example to show it can contain more.
  * 
- * // Example CSV output file busesTravelHistory/bus4
+ * // Example CSV output file buses_travel_history/bus4
  * |||||||||||||||||||||||||||||| NEW FILE ||||||||||||||||||||||||||||||||||||
  * || timestamp,latitude,longitude
  * || 51.89,0.453,1476227188
@@ -82,13 +82,9 @@ public class BusTravelHistoryExtractor {
 		return travelHistory;
 	}
 
+	/* Method does nothing in case no data is present for busId */
 	static void PrintBusHistory(String busDirectory, int busId)
 			throws IOException {
-		/*
-		 * TODO(ml693): this "if" check is redundant so far, because
-		 * busesTravelHistory map will always contain busId key.
-		 * Either eliminate the check or comment about it.
-		 */
 		if (busesTravelHistory.containsKey(busId)) {
 			BufferedWriter busOutput = new BufferedWriter(new FileWriter(
 					busDirectory + "/bus" + Integer.toString(busId)));
