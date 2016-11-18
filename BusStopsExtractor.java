@@ -36,15 +36,6 @@ import java.util.regex.Pattern;
 
 public class BusStopsExtractor {
 
-	static double ExtractCoordinate(String line, String coordinate) {
-		Pattern pattern = Pattern.compile(coordinate + "=" + '"' + "[^ ]+");
-		Matcher matcher = pattern.matcher(line);
-		matcher.find();
-		String preformattedCoordinate = matcher.group();
-		return Double.parseDouble(preformattedCoordinate.substring(5,
-				preformattedCoordinate.length() - 1));
-	}
-
 	static double minLatitude = -90.0;
 	static double maxLatitude = 90.0;
 	static double minLongitude = -180.0;
@@ -56,6 +47,15 @@ public class BusStopsExtractor {
 		final boolean longitudeCorrect = (longitude >= minLongitude
 				&& longitude <= maxLongitude);
 		return latitudeCorrect && longitudeCorrect;
+	}
+
+	static double ExtractCoordinate(String line, String coordinateName) {
+		Pattern pattern = Pattern.compile(coordinateName + "=" + '"' + "[^ ]+");
+		Matcher matcher = pattern.matcher(line);
+		matcher.find();
+		String preformattedCoordinate = matcher.group();
+		return Double.parseDouble(preformattedCoordinate.substring(5,
+				preformattedCoordinate.length() - 1));
 	}
 
 	static String ExtractTagsValue(String line) {
@@ -94,15 +94,13 @@ public class BusStopsExtractor {
 		 * Main loop which reads input OSM file and produces output CSV file.
 		 */
 		while (line != null) {
-			/* If line is a node, we will extract its info */
+			/* If line is a beginning of new node */
 			if (line.contains("<node") && !line.contains("/>")) {
+				/* We extract some fields from a single line */
 				final double latitude = ExtractCoordinate(line, "lat");
 				final double longitude = ExtractCoordinate(line, "lon");
 				final boolean inRegion = InRegion(latitude, longitude);
-				/**
-				 * The following fields will be populated in the while loop
-				 * below
-				 */
+				/* And populate other fields in the while loop below */
 				boolean nodeIsBusStop = false;
 				String name = "unknown";
 				String note = "unknown";
@@ -120,9 +118,7 @@ public class BusStopsExtractor {
 					}
 				}
 
-				/*
-				 * If node turned out to be a bus stop, we will output its info
-				 */
+				/* If node turns out to be a bus stop, we output its info */
 				if (nodeIsBusStop && inRegion) {
 					Utils.WriteLine(busStopsOutput, latitude + "," + longitude
 							+ "," + name + "," + note);

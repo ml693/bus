@@ -24,15 +24,30 @@ import java.util.ArrayList;
 import java.util.Scanner;
 
 import bus.Utils.GpsPoint;
-import bus.Utils.Trip;
-import bus.Utils.TravelHistory;
 
 class TripDetector {
+
 	/*
-	 * When down-casted, the method can return either an instance of Trip or
-	 * TravelHistory class, depending on what we want.
+	 * This should be used to extract either a travel history or a trip.
+	 * WARNING: trip and travel history in this project are viewed as different
+	 * things, although they both are ArrayList<GpsPoint>.
+	 * TODO(ml693): figure out how to merge trip and history into 1 thing.
+	 * 
+	 * Travel history is bus GPS history for some time interval.
+	 * Suppose a bus started to travel from point A and after 2 hours it has
+	 * travelled through points B and C. Then all of {ABC, AB, BC, A, B, C}
+	 * would be valid histories:
+	 *
+	 * Trip is either a past path that a bus followed
+	 * WITHOUT PAUSING (short break at the bus stop does not count as pause) or
+	 * a predetermined future route that a bus SHOULD FOLLOW. For example,
+	 * Cambridge - London - back to Cambridge would be a trip.
+	 * 
+	 * It's often the case that the bus does NOT FOLLOW any trip exactly, hence
+	 * the travel history tells the exact path a bus followed for
+	 * some interval of time.
 	 */
-	static ArrayList<GpsPoint> PointsFromFile(File file) throws IOException {
+	static ArrayList<GpsPoint> GpsPointsFromFile(File file) throws IOException {
 		ArrayList<GpsPoint> points = new ArrayList<GpsPoint>();
 		Scanner scanner = new Scanner(file).useDelimiter(",|\\n");
 		/* To skip "timestamp,latitude,longitude" line */
@@ -46,14 +61,24 @@ class TripDetector {
 	}
 
 	/*
+	 * Method finds a "best" segment and computes the Euclidean point's
+	 * distance to both segment's corners. It returns the sum of 2 distances.
+	 * Segment is "best" which minimises the returned value.
+	 */
+	static double DistanceSumToBestSegmentCorners(GpsPoint point,
+			ArrayList<GpsPoint> trip) {
+		double minDistance = Double.MAX_VALUE;
+		for (int i = 1; i < trip.size(); i++) {
+			minDistance = Math.min(minDistance,
+					Utils.Distance(point, trip.get(i - 1))
+							+ Utils.Distance(point, trip.get(i)));
+		}
+		return minDistance;
+	}
+
+	/*
 	 * The smaller similarity measure, the more similar travelHistory to some
 	 * interval of trip is.
-	 * 
-	 * The similarity measure works as follows. For each point p in the travel
-	 * history, we find the "best" segment (i.e. two consecutive route's points)
-	 * in the route and sum p distance to both segment's corners. "Best" segment
-	 * is the one which has the minimal sum. We then return sum of sums ranged
-	 * over all points in the travel history.
 	 * 
 	 * The intuition behind this measure is that when a bus is following the
 	 * route exactly, each point in its history will lie on one of the route's
@@ -64,7 +89,8 @@ class TripDetector {
 	 *
 	 * TODO(ml693): improve the SimilarityMeasure procedure for unusual cases.
 	 */
-	static double SimilarityMeasure(TravelHistory travelHistory, Trip trip) {
+	static double SimilarityMeasure(ArrayList<GpsPoint> travelHistory,
+			ArrayList<GpsPoint> trip) {
 		double measure = 0.0;
 		for (GpsPoint point : travelHistory) {
 			measure += DistanceSumToBestSegmentCorners(point, trip);
@@ -72,26 +98,16 @@ class TripDetector {
 		return measure;
 	}
 
-	static double DistanceSumToBestSegmentCorners(GpsPoint point, Trip trip) {
-		double minDistance = Double.MAX_VALUE;
-		for (int i = 1; i < trip.size(); i++) {
-			minDistance = Math.min(minDistance,
-					Utils.Distance(point, trip.get(i - 1))
-							+ Utils.Distance(point, trip.get(i)));
-		}
-		return minDistance;
-	}
-
 	public static void main(String args[]) throws IOException {
-		TravelHistory recentHistory = (TravelHistory) PointsFromFile(
+		ArrayList<GpsPoint> travelHistory = GpsPointsFromFile(
 				new File(args[0]));
 		File[] tripFiles = new File(args[1]).listFiles();
 		File bestTripFile = null;
 		double smallestMeasure = Double.MAX_VALUE;
 
 		for (File tripFile : tripFiles) {
-			Trip trip = (Trip) PointsFromFile(tripFile);
-			double currentMeasure = SimilarityMeasure(recentHistory, trip);
+			ArrayList<GpsPoint> trip = GpsPointsFromFile(tripFile);
+			double currentMeasure = SimilarityMeasure(travelHistory, trip);
 			if (currentMeasure < smallestMeasure) {
 				smallestMeasure = currentMeasure;
 				bestTripFile = tripFile;

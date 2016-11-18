@@ -4,8 +4,8 @@
  * busX, containing the information about the bus X.
  * 
  * // Example how to extract files from json_folder and place output files to
- * // buses_travel_history directory
- * java BusTravelHistoryExtractor json_folder buses_travel_history
+ * // travel_history_folder
+ * java BusTravelHistoryExtractor json_folder travel_history_folder
  * 
  * // Example JSON input file json_folder/file1
  * |||||||||||||||||||||||||||||| NEW FILE ||||||||||||||||||||||||||||||||||||
@@ -18,7 +18,7 @@
  * // Example CSV output file buses_travel_history/bus4
  * |||||||||||||||||||||||||||||| NEW FILE ||||||||||||||||||||||||||||||||||||
  * || timestamp,latitude,longitude
- * || 51.89,0.453,1476227188
+ * || 1476227188,51.89,0.453
  * |||||||||||||||||||||||||||||| END OF FILE |||||||||||||||||||||||||||||||||
  */
 package bus;
@@ -29,20 +29,20 @@ import java.io.File;
 import java.io.FileReader;
 import java.io.FileWriter;
 import java.io.IOException;
-import java.util.Collections;
+import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 import bus.Utils.GpsPoint;
-import bus.Utils.TravelHistory;
 
 public class BusTravelHistoryExtractor {
 	/*
 	 * Internal map to store data. At the end this map will get printed as a
 	 * list of files to the output directory.
 	 */
-	static HashMap<Integer, TravelHistory> busesTravelHistory = new HashMap<Integer, TravelHistory>();
+	static HashMap<Integer, ArrayList<GpsPoint>> busesTravelHistory = new HashMap<Integer, ArrayList<GpsPoint>>();
 
 	static int ExtractVehicleId(String snapshot) {
 		Pattern pattern = Pattern.compile("vehicle_id" + "\":\"" + "[0-9]+");
@@ -67,19 +67,12 @@ public class BusTravelHistoryExtractor {
 
 			/* And store info into the map */
 			if (!busesTravelHistory.containsKey(busId)) {
-				busesTravelHistory.put(busId, new TravelHistory());
+				busesTravelHistory.put(busId, new ArrayList<GpsPoint>());
 			}
 			busesTravelHistory.get(busId).add(gpsPoint);
 		}
 
 		jsonInput.close();
-	}
-
-	static TravelHistory GetSortedHistoryFromMap(int busId) {
-		TravelHistory travelHistory = busesTravelHistory.get(busId);
-		Collections.sort(travelHistory, (gps1, gps2) -> Integer
-				.compare(gps1.timestamp, gps2.timestamp));
-		return travelHistory;
 	}
 
 	/* Method does nothing in case no data is present for busId */
@@ -88,7 +81,7 @@ public class BusTravelHistoryExtractor {
 		if (busesTravelHistory.containsKey(busId)) {
 			BufferedWriter busOutput = new BufferedWriter(new FileWriter(
 					busDirectory + "/bus" + Integer.toString(busId)));
-			TravelHistory travelHistory = GetSortedHistoryFromMap(busId);
+			ArrayList<GpsPoint> travelHistory = busesTravelHistory.get(busId);
 			Utils.WriteLine(busOutput, "timestamp,latitude,longitude");
 			for (GpsPoint gpsPoint : travelHistory) {
 				gpsPoint.Write(busOutput);
@@ -103,8 +96,10 @@ public class BusTravelHistoryExtractor {
 		 * all files from the directory.
 		 */
 		File[] jsonFiles = new File(args[0]).listFiles();
+		Arrays.sort(jsonFiles, (file1, file2) -> file1.compareTo(file2));
 		/* Then we process each file in the directory */
 		for (File jsonFile : jsonFiles) {
+			System.out.println("Processing: " + jsonFile.getName());
 			UpdateBusesTravelHistoryWithFile(jsonFile);
 		}
 		/* Finally we output the processed data into args[1] directory */

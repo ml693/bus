@@ -60,36 +60,6 @@ public class Utils {
 	}
 
 	/*
-	 * TravelHistory class is bus GPS history for some time interval.
-	 * Suppose a bus started to travel from point A and after 2 hours it has so
-	 * far travelled through points B, and C. Then all of the following would be
-	 * valid histories:
-	 * A - B - C;
-	 * A - B;
-	 * B - C;
-	 * A;
-	 * B;
-	 * C;
-	 */
-	@SuppressWarnings("serial")
-	static class TravelHistory extends ArrayList<GpsPoint> {
-	}
-
-	/*
-	 * This class defines a trip. Trip is either a past path that a bus followed
-	 * without pausing (short break at the bus stop does not count as pause) or
-	 * a predetermined future route that a bus SHOULD follow. For example,
-	 * Cambridge - London - back to Cambridge would be a trip.
-	 * 
-	 * It's often the case that the bus does NOT follow any trip exactly, hence
-	 * the travel history class above tells the exact path a bus followed for
-	 * some interval of time.
-	 */
-	@SuppressWarnings("serial")
-	static class Trip extends ArrayList<GpsPoint> {
-	}
-
-	/*
 	 * Geometric distance between two GPS points in space, when latitude
 	 * represents y coordinate and longitude represents x coordinate;
 	 */
