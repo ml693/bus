@@ -10,12 +10,11 @@ import java.util.Scanner;
 import bus.Utils.GpsPoint;
 
 /*
- * Trip is either a past path that a bus followed
- * WITHOUT PAUSING (short break at the bus stop does not count as pause) or
- * a predetermined future route that a bus SHOULD FOLLOW. For example,
- * Cambridge - London - back to Cambridge would be a trip.
+ * Trip is either a past path that a bus followed WITHOUT PAUSING (short break
+ * at the bus stop does not count as pause) or a predetermined future route that
+ * a bus SHOULD FOLLOW. For example, Cambridge - London - back to Cambridge
+ * would be a trip.
  */
-
 public class Trip {
 	final String name;
 	final ArrayList<GpsPoint> gpsPoints;
@@ -40,7 +39,7 @@ public class Trip {
 		this.name = name;
 		this.gpsPoints = gpsPoints;
 	}
-	
+
 	/* Adds an offset to each trip's timestamp */
 	Trip shiftTimeTo(long startingTimestamp) {
 		Trip shiftedTrip = new Trip(name, new ArrayList<GpsPoint>());
