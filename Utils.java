@@ -89,39 +89,6 @@ public class Utils {
 				+ longitudeDifference * longitudeDifference;
 	}
 
-	/*
-	 * This should be used to extract either a travel history or a trip.
-	 * WARNING: trip and travel history in this project are viewed as different
-	 * things, although they both are ArrayList<GpsPoint>.
-	 * TODO(ml693): figure out how to merge trip and history into 1 thing.
-	 * 
-	 * Travel history is bus GPS history for some time interval.
-	 * Suppose a bus started to travel from point A and after 2 hours it has
-	 * travelled through points B and C. Then all of {ABC, AB, BC, A, B, C}
-	 * would be valid histories:
-	 *
-	 * Trip is either a past path that a bus followed
-	 * WITHOUT PAUSING (short break at the bus stop does not count as pause) or
-	 * a predetermined future route that a bus SHOULD FOLLOW. For example,
-	 * Cambridge - London - back to Cambridge would be a trip.
-	 * 
-	 * It's often the case that the bus does NOT FOLLOW any trip exactly, hence
-	 * the travel history tells the exact path a bus followed for
-	 * some interval of time.
-	 */
-	static ArrayList<GpsPoint> gpsPointsFromFile(File file) throws IOException {
-		ArrayList<GpsPoint> points = new ArrayList<GpsPoint>();
-		Scanner scanner = new Scanner(file).useDelimiter(",|\\n");
-		/* To skip "timestamp,latitude,longitude" line */
-		scanner.nextLine();
-		while (scanner.hasNext()) {
-			points.add(new GpsPoint(scanner.nextInt(), scanner.nextDouble(),
-					scanner.nextDouble()));
-		}
-		scanner.close();
-		return points;
-	}
-
 	static void CheckCommandLineArguments(String[] args) throws IOException {
 		if (args.length != 2) {
 			throw (new IOException("Wrong command line arguments provided. "
