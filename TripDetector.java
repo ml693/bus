@@ -32,7 +32,7 @@ class TripDetector {
 	 * distance to both segment's corners. It returns the sum of 2 distances.
 	 * Segment is "best" which minimises the returned value.
 	 */
-	static double DistanceSumToBestSegmentCorners(GpsPoint point,
+	static double distanceSumToBestSegmentCorners(GpsPoint point,
 			ArrayList<GpsPoint> trip) {
 		double minDistance = Double.MAX_VALUE;
 		for (int i = 1; i < trip.size(); i++) {
@@ -44,26 +44,8 @@ class TripDetector {
 	}
 
 	/*
-	 * Method finds a "best" segment (as above), and instead of returning the
-	 * distance, returns the index to the first segment's corner.
-	 */
-	static int BestSegment(GpsPoint point, ArrayList<GpsPoint> trip) {
-		double minDistance = Double.MAX_VALUE;
-		int bestIndex = 0;
-		for (int i = 1; i < trip.size(); i++) {
-			double newDistance = Utils.Distance(point, trip.get(i - 1))
-					+ Utils.Distance(point, trip.get(i));
-			if (newDistance < minDistance) {
-				minDistance = newDistance;
-				bestIndex = i - 1;
-			}
-		}
-		return bestIndex;
-	}
-
-	/*
-	 * The smaller similarity measure, the more similar travelHistory to some
-	 * interval of trip is.
+	 * The smaller similarity measure, the more similar tripsInterval to some
+	 * interval of fullTrip is.
 	 * 
 	 * The intuition behind this measure is that when a bus is following the
 	 * route exactly, each point in its history will lie on one of the route's
@@ -72,35 +54,27 @@ class TripDetector {
 	 * exactly, then point's distance to the "best" segment's corners due to
 	 * triangle inequality will be larger.
 	 *
-	 * TODO(ml693): improve the SimilarityMeasure procedure for unusual cases.
+	 * TODO(ml693): improve the similarityMeasure procedure for unusual cases.
 	 */
-	static double SimilarityMeasure(ArrayList<GpsPoint> tripPoints,
-			ArrayList<GpsPoint> profilePoints) {
+	static double similarityMeasure(ArrayList<GpsPoint> tripsInterval,
+			ArrayList<GpsPoint> fullTrip) {
 		double measure = 0.0;
-		for (GpsPoint point : tripPoints) {
-			measure += DistanceSumToBestSegmentCorners(point, profilePoints);
+		for (GpsPoint point : tripsInterval) {
+			measure += distanceSumToBestSegmentCorners(point, fullTrip);
 		}
 		return measure;
 	}
 
-	/*
-	 * TODO(ml693): replace this code by
-	 * similarTrips = DetectSimilarTrips();
-	 * for (trip : similarTrips) {
-	 * if (SimilarityMeasure(trip) < bestMeasure) {
-	 * bestTrip = trip;
-	 * }
-	 * }
-	 */
-	static Trip detectMostSimilarTrip(Trip travelHistory, File allTripsFolder)
+	/* Finds trip t which minimises similarityMeasure(tripsInterval, t). */
+	static Trip detectMostSimilarTrip(Trip tripsInterval, File allTripsFolder)
 			throws IOException {
-		File[] tripFiles = allTripsFolder.listFiles();
+		ArrayList<Trip> similarTrips = detectSimilarTrips(tripsInterval,
+				allTripsFolder);
 		Trip bestTrip = null;
 		double smallestMeasure = Double.MAX_VALUE;
 
-		for (File tripFile : tripFiles) {
-			Trip currentTrip = new Trip(tripFile);
-			double currentMeasure = SimilarityMeasure(travelHistory.gpsPoints,
+		for (Trip currentTrip : similarTrips) {
+			double currentMeasure = similarityMeasure(tripsInterval.gpsPoints,
 					currentTrip.gpsPoints);
 			if (currentMeasure < smallestMeasure) {
 				smallestMeasure = currentMeasure;
@@ -113,16 +87,15 @@ class TripDetector {
 		return bestTrip;
 	}
 
-	/* allTripsFolder will only contain CSV files */
-
-	static ArrayList<Trip> detectSimilarTrips(Trip travelHistory,
+	/* allTripsFolder should only contain CSV files */
+	static ArrayList<Trip> detectSimilarTrips(Trip tripInterval,
 			File allTripsFolder) throws IOException {
 		ArrayList<Trip> similarTrips = new ArrayList<Trip>();
 		File[] filesInFolder = allTripsFolder.listFiles();
 		for (File file : filesInFolder) {
 			Trip trip = new Trip(file);
 			System.out.println("Detecting similarity for trip " + trip.name);
-			if (SimilarityMeasure(travelHistory.gpsPoints,
+			if (similarityMeasure(tripInterval.gpsPoints,
 					trip.gpsPoints) < SIMILARITY_THRESHOLD) {
 				similarTrips.add(trip);
 			}
@@ -132,8 +105,8 @@ class TripDetector {
 
 	public static void main(String args[]) throws IOException {
 		Utils.check2CommandLineArguments(args, "file", "folder");
-		Trip travelHistory = new Trip(new File(args[0]));
-		detectMostSimilarTrip(travelHistory, new File(args[1]));
+		Trip tripInterval = new Trip(new File(args[0]));
+		detectMostSimilarTrip(tripInterval, new File(args[1]));
 	}
 
 }

@@ -20,8 +20,8 @@ public class FuturePredictor {
 	 * travelled in roughly equal amount of time.
 	 */
 	static boolean equallyCongested(Trip subtrip, Trip trip) {
-		return TripDetector.SimilarityMeasure(subtrip.gpsPoints, trip.gpsPoints)
-				+ TripDetector.SimilarityMeasure(trip.gpsPoints,
+		return TripDetector.similarityMeasure(subtrip.gpsPoints, trip.gpsPoints)
+				+ TripDetector.similarityMeasure(trip.gpsPoints,
 						subtrip.gpsPoints) < CONGESTION_THRESHOLD;
 	}
 
