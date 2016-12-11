@@ -78,10 +78,7 @@ public class BusTravelHistoryExtractor {
 
 	public static void main(String args[]) throws IOException {
 		Utils.check2CommandLineArguments(args, "folder", "folder");
-		/*
-		 * args[0] is a directory name containing JSON files. We first extract
-		 * all files from the directory.
-		 */
+		/* We first extract all JSON files from the args[0] folder. */
 		File[] jsonFiles = new File(args[0]).listFiles();
 		/*
 		 * TODO(ml693): check whether the expectation below is correct.
