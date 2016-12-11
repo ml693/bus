@@ -15,50 +15,17 @@
  * // because the history of trip1 matches trip1 exactly.
  * java TripDetector trips_folder/trip1 trips_folder
  */
-
 package bus;
 
 import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
-import java.util.Scanner;
 
 import bus.Utils.GpsPoint;
 
 class TripDetector {
 
-	/*
-	 * This should be used to extract either a travel history or a trip.
-	 * WARNING: trip and travel history in this project are viewed as different
-	 * things, although they both are ArrayList<GpsPoint>.
-	 * TODO(ml693): figure out how to merge trip and history into 1 thing.
-	 * 
-	 * Travel history is bus GPS history for some time interval.
-	 * Suppose a bus started to travel from point A and after 2 hours it has
-	 * travelled through points B and C. Then all of {ABC, AB, BC, A, B, C}
-	 * would be valid histories:
-	 *
-	 * Trip is either a past path that a bus followed
-	 * WITHOUT PAUSING (short break at the bus stop does not count as pause) or
-	 * a predetermined future route that a bus SHOULD FOLLOW. For example,
-	 * Cambridge - London - back to Cambridge would be a trip.
-	 * 
-	 * It's often the case that the bus does NOT FOLLOW any trip exactly, hence
-	 * the travel history tells the exact path a bus followed for
-	 * some interval of time.
-	 */
-	static ArrayList<GpsPoint> GpsPointsFromFile(File file) throws IOException {
-		ArrayList<GpsPoint> points = new ArrayList<GpsPoint>();
-		Scanner scanner = new Scanner(file).useDelimiter(",|\\n");
-		/* To skip "timestamp,latitude,longitude" line */
-		scanner.nextLine();
-		while (scanner.hasNext()) {
-			points.add(new GpsPoint(scanner.nextInt(), scanner.nextDouble(),
-					scanner.nextDouble()));
-		}
-		scanner.close();
-		return points;
-	}
+	static double SIMILARITY_THRESHOLD = 0.1;
 
 	/*
 	 * Method finds a "best" segment and computes the Euclidean point's
@@ -77,6 +44,24 @@ class TripDetector {
 	}
 
 	/*
+	 * Method finds a "best" segment (as above), and instead of returning the
+	 * distance, returns the index to the first segment's corner.
+	 */
+	static int BestSegment(GpsPoint point, ArrayList<GpsPoint> trip) {
+		double minDistance = Double.MAX_VALUE;
+		int bestIndex = 0;
+		for (int i = 1; i < trip.size(); i++) {
+			double newDistance = Utils.Distance(point, trip.get(i - 1))
+					+ Utils.Distance(point, trip.get(i));
+			if (newDistance < minDistance) {
+				minDistance = newDistance;
+				bestIndex = i - 1;
+			}
+		}
+		return bestIndex;
+	}
+
+	/*
 	 * The smaller similarity measure, the more similar travelHistory to some
 	 * interval of trip is.
 	 * 
@@ -89,32 +74,66 @@ class TripDetector {
 	 *
 	 * TODO(ml693): improve the SimilarityMeasure procedure for unusual cases.
 	 */
-	static double SimilarityMeasure(ArrayList<GpsPoint> travelHistory,
-			ArrayList<GpsPoint> trip) {
+	static double SimilarityMeasure(ArrayList<GpsPoint> tripPoints,
+			ArrayList<GpsPoint> profilePoints) {
 		double measure = 0.0;
-		for (GpsPoint point : travelHistory) {
-			measure += DistanceSumToBestSegmentCorners(point, trip);
+		for (GpsPoint point : tripPoints) {
+			measure += DistanceSumToBestSegmentCorners(point, profilePoints);
 		}
 		return measure;
 	}
 
-	public static void main(String args[]) throws IOException {
-		ArrayList<GpsPoint> travelHistory = GpsPointsFromFile(
-				new File(args[0]));
-		File[] tripFiles = new File(args[1]).listFiles();
-		File bestTripFile = null;
+	/*
+	 * TODO(ml693): replace this code by
+	 * similarTrips = DetectSimilarTrips();
+	 * for (trip : similarTrips) {
+	 * if (SimilarityMeasure(trip) < bestMeasure) {
+	 * bestTrip = trip;
+	 * }
+	 * }
+	 */
+	static Trip detectMostSimilarTrip(Trip travelHistory, File allTripsFolder)
+			throws IOException {
+		File[] tripFiles = allTripsFolder.listFiles();
+		Trip bestTrip = null;
 		double smallestMeasure = Double.MAX_VALUE;
 
 		for (File tripFile : tripFiles) {
-			ArrayList<GpsPoint> trip = GpsPointsFromFile(tripFile);
-			double currentMeasure = SimilarityMeasure(travelHistory, trip);
+			Trip currentTrip = new Trip(tripFile);
+			double currentMeasure = SimilarityMeasure(travelHistory.gpsPoints,
+					currentTrip.gpsPoints);
 			if (currentMeasure < smallestMeasure) {
 				smallestMeasure = currentMeasure;
-				bestTripFile = tripFile;
+				bestTrip = currentTrip;
 			}
 		}
 
-		System.out.println(bestTripFile.getName());
+		System.out.println("Best trip detected with measure " + smallestMeasure
+				+ ": " + bestTrip.name);
+		return bestTrip;
+	}
+
+	/* allTripsFolder will only contain CSV files */
+
+	static ArrayList<Trip> detectSimilarTrips(Trip travelHistory,
+			File allTripsFolder) throws IOException {
+		ArrayList<Trip> similarTrips = new ArrayList<Trip>();
+		File[] filesInFolder = allTripsFolder.listFiles();
+		for (File file : filesInFolder) {
+			Trip trip = new Trip(file);
+			System.out.println("Detecting similarity for trip " + trip.name);
+			if (SimilarityMeasure(travelHistory.gpsPoints,
+					trip.gpsPoints) < SIMILARITY_THRESHOLD) {
+				similarTrips.add(trip);
+			}
+		}
+		return similarTrips;
+	}
+
+	public static void main(String args[]) throws IOException {
+		Utils.CheckCommandLineArguments(args);
+		Trip travelHistory = new Trip(new File(args[0]));
+		detectMostSimilarTrip(travelHistory, new File(args[1]));
 	}
 
 }

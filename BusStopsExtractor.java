@@ -90,9 +90,7 @@ public class BusStopsExtractor {
 
 		Utils.WriteLine(busStopsOutput, "Latitude, Longitude, Name, Note");
 		String line = originalMapInput.readLine();
-		/*
-		 * Main loop which reads input OSM file and produces output CSV file.
-		 */
+		/* Main loop which reads input OSM file and produces output CSV file. */
 		while (line != null) {
 			/* If line is a beginning of new node */
 			if (line.contains("<node") && !line.contains("/>")) {

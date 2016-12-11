@@ -42,7 +42,7 @@ public class BusTravelHistoryExtractor {
 	 * Internal map to store data. At the end this map will get printed as a
 	 * list of files to the output directory.
 	 */
-	static HashMap<Integer, ArrayList<GpsPoint>> busesTravelHistory = new HashMap<Integer, ArrayList<GpsPoint>>();
+	static HashMap<Integer, Trip> allTrips = new HashMap<Integer, Trip>();
 
 	static int ExtractVehicleId(String snapshot) {
 		Pattern pattern = Pattern.compile("vehicle_id" + "\":\"" + "[0-9]+");
@@ -55,7 +55,10 @@ public class BusTravelHistoryExtractor {
 		BufferedReader jsonInput = new BufferedReader(new FileReader(file));
 		String line = jsonInput.readLine();
 		/* Matches a new bus entry in the file */
-		Pattern pattern = Pattern.compile("\\{\"received_timestamp" + "[^}]*");
+		String openParenthesesRegex = "\\{";
+		String untilClosedParenthesesRegex = "[^}]*";
+		Pattern pattern = Pattern
+				.compile(openParenthesesRegex + untilClosedParenthesesRegex);
 		Matcher matcher = pattern.matcher(line);
 
 		/* For each bus entry */
@@ -66,45 +69,46 @@ public class BusTravelHistoryExtractor {
 			GpsPoint gpsPoint = new GpsPoint(busSnapshotTextEntry);
 
 			/* And store info into the map */
-			if (!busesTravelHistory.containsKey(busId)) {
-				busesTravelHistory.put(busId, new ArrayList<GpsPoint>());
+			if (!allTrips.containsKey(busId)) {
+				allTrips.put(busId,
+						new Trip("date" + file.getParent() + "_bus" + busId,
+								new ArrayList<GpsPoint>()));
 			}
-			busesTravelHistory.get(busId).add(gpsPoint);
+			allTrips.get(busId).gpsPoints.add(gpsPoint);
 		}
 
 		jsonInput.close();
 	}
 
-	/* Method does nothing in case no data is present for busId */
-	static void PrintBusHistory(String busDirectory, int busId)
-			throws IOException {
-		if (busesTravelHistory.containsKey(busId)) {
-			BufferedWriter busOutput = new BufferedWriter(new FileWriter(
-					busDirectory + "/bus" + Integer.toString(busId)));
-			ArrayList<GpsPoint> travelHistory = busesTravelHistory.get(busId);
-			Utils.WriteLine(busOutput, "timestamp,latitude,longitude");
-			for (GpsPoint gpsPoint : travelHistory) {
-				gpsPoint.Write(busOutput);
-			}
-			busOutput.close();
-		}
-	}
-
 	public static void main(String args[]) throws IOException {
+		Utils.CheckCommandLineArguments(args);
 		/*
 		 * args[0] is a directory name containing JSON files. We first extract
 		 * all files from the directory.
 		 */
 		File[] jsonFiles = new File(args[0]).listFiles();
+		/*
+		 * TODO(ml693): check whether the expectation below is correct.
+		 * 
+		 * We expect timestamps received from buses are delivered in order.
+		 * 
+		 * More formally, we expect that if name of file1 is alphabetically
+		 * smaller than name of file2, then each x1 value in the file1 of the
+		 * form "timestamp":"x1" will be smaller than each x2 value in the file2
+		 * of the form "timestamp":"x2".
+		 * 
+		 * Therefore, we sort files here so that processing files in order
+		 * would put data into allTrips in order. That would
+		 * allow us to avoid sorting the busesTravelHistory map.
+		 */
 		Arrays.sort(jsonFiles, (file1, file2) -> file1.compareTo(file2));
-		/* Then we process each file in the directory */
 		for (File jsonFile : jsonFiles) {
 			System.out.println("Processing: " + jsonFile.getName());
 			UpdateBusesTravelHistoryWithFile(jsonFile);
 		}
-		/* Finally we output the processed data into args[1] directory */
-		for (int busId : busesTravelHistory.keySet()) {
-			PrintBusHistory(args[1], busId);
+		/* At the end we output the processed data into args[1] directory */
+		for (Trip trip : allTrips.values()) {
+			trip.writeToFolder(args[1]);
 		}
 	}
 }
