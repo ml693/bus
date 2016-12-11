@@ -131,7 +131,7 @@ class TripDetector {
 	}
 
 	public static void main(String args[]) throws IOException {
-		Utils.CheckCommandLineArguments(args);
+		Utils.check2CommandLineArguments(args, "file", "folder");
 		Trip travelHistory = new Trip(new File(args[0]));
 		detectMostSimilarTrip(travelHistory, new File(args[1]));
 	}

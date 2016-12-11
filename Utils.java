@@ -4,6 +4,7 @@
 package bus;
 
 import java.io.BufferedWriter;
+import java.io.File;
 import java.io.IOException;
 
 public class Utils {
@@ -29,10 +30,34 @@ public class Utils {
 				+ longitudeDifference * longitudeDifference;
 	}
 
-	static void CheckCommandLineArguments(String[] args) throws IOException {
+	private static boolean fileMatchesExpectation(String fileName,
+			String expectation) throws IOException {
+		switch (expectation) {
+		case "file":
+			return new File(fileName).isFile();
+		case "folder":
+			return new File(fileName).isDirectory();
+		default:
+			throw (new IOException("Argument expectation is given wrong name"));
+		}
+	}
+
+	static void check2CommandLineArguments(String[] args, String firstArgument,
+			String secondArgument) throws IOException {
 		if (args.length != 2) {
-			throw (new IOException("Wrong command line arguments provided. "
-					+ "These should be [path_to_file] [path_to_folder]"));
+			throw (new IOException(
+					"Wrong number of command line arguments. Should be 2 but "
+							+ args.length + " were given."));
+		}
+		if (!fileMatchesExpectation(args[0], firstArgument)) {
+			throw (new IOException(
+					"First command line argument is wrong. It has to be a "
+							+ firstArgument + " name."));
+		}
+		if (!fileMatchesExpectation(args[0], firstArgument)) {
+			throw (new IOException(
+					"Second command line argument is wrong. It has to be a "
+							+ secondArgument + " name."));
 		}
 	}
 }

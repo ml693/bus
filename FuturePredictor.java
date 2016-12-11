@@ -91,7 +91,7 @@ public class FuturePredictor {
 	}
 
 	public static void main(String[] args) throws IOException {
-		Utils.CheckCommandLineArguments(args);
+		Utils.check2CommandLineArguments(args, "file", "folder");
 		Trip recentTrip = new Trip(new File(args[0]));
 
 		/* First find buses that were travelling along the same route. */
