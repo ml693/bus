@@ -50,11 +50,13 @@ public class Utils {
 							+ args.length + " were given."));
 		}
 		if (!fileMatchesExpectation(args[0], firstArgument)) {
+			/* Telling that 1st argument has to be a file name */
 			throw (new IOException(
 					"First command line argument is wrong. It has to be a "
 							+ firstArgument + " name."));
 		}
 		if (!fileMatchesExpectation(args[0], firstArgument)) {
+			/* Telling that 2nd argument has to be a folder name */
 			throw (new IOException(
 					"Second command line argument is wrong. It has to be a "
 							+ secondArgument + " name."));

@@ -11,8 +11,8 @@
  * file might be missing (e.g. if a bus was on and standing for 30min, we will
  * remove all lines showing that it was standing at the same place).
  * 
- * // To create output files output_folder/subtrip0, output_folder/subtrip1, ...
- * java bus.RouteExtractor bus_history_folder output_folder
+ * // Create files output_folder/trip_subtrip0, output_folder/trip_subtrip1, ...
+ * java bus.RouteExtractor trip output_folder
  */
 package bus;
 
@@ -36,8 +36,8 @@ class TripsExtractor {
 	 * Writes current sub trip to file if it's long enough.
 	 * Does nothing otherwise.
 	 */
-	public static boolean flushCurrentSubTrip(Trip subTrip, File folderToFlush)
-			throws IOException {
+	public static boolean currentSubTripFlushed(Trip subTrip,
+			File folderToFlush) throws IOException {
 		if (subTrip.gpsPoints.size() > 30) {
 			subTrip.writeToFolder(folderToFlush);
 			return true;
@@ -119,7 +119,7 @@ class TripsExtractor {
 	 * EXAMPLE FILES STORED TO OUTPUT DIRECTORY
 	 * (these will be generated based on the input example above)
 	 * 
-	 * // New file outputFolder/subtrip0
+	 * // New file outputFolder/travelHistoryFile_subtrip0
 	 * timestamp,latitude,longitude // 1st line of file
 	 * 1000000000,52.0000,0.2000 // starting at A
 	 * 1000000030,52.0001,0.2001 // leaving A
@@ -127,25 +127,25 @@ class TripsExtractor {
 	 * ... // travelling to B
 	 * ...
 	 * 1000020000,52.1000,0.3000 // arrived at B
-	 * // End of file outputFolder/subtrip0
+	 * // End of file outputFolder/travelHistoryFile_subtrip0
 	 * 
-	 * // New file outputFolder/subtrip1
+	 * // New file outputFolder/travelHistoryFile_subtrip1
 	 * timestamp,latitude,longitude // 1st line of file
 	 * 1000020700,52.1001,0.3001 // leaving B
 	 * ...
 	 * ... // travelling back to A
 	 * ...
 	 * 1000040008,52.0002,0.2002 // back at A
-	 * // End of file outputFolder/subtrip1
+	 * // End of file outputFolder/travelHistoryFile_subtrip1
 	 * 
-	 * // New file outputFolder/subtrip2
+	 * // New file outputFolder/travelHistoryFile_subtrip2
 	 * timestamp,latitude,longitude // 1st line of file
 	 * 1000050030,52.0003,0.2003 // leaving A
 	 * ...
 	 * ... // travelling to C
 	 * ...
 	 * 1000080050,51.9000,0.1000 // arriving at C.
-	 * // End of file outputFolder/subtrip3
+	 * // End of file outputFolder/travelHistoryFile_subtrip2
 	 */
 	public static void extractTripsFromTravelHistoryFile(File travelHistoryFile,
 			File outputFolder) throws IOException {
@@ -175,7 +175,7 @@ class TripsExtractor {
 
 			if (newSubtripAccordingToTimestamp(currentTimestamp,
 					newTimestamp)) {
-				if (flushCurrentSubTrip(currentSubTrip, outputFolder)) {
+				if (currentSubTripFlushed(currentSubTrip, outputFolder)) {
 					extractedTripsCount++;
 				}
 				currentSubTrip = new Trip(
@@ -198,7 +198,7 @@ class TripsExtractor {
 			currentLongitude = newLongitude;
 		}
 		/* Don't forget to add the final sub trip */
-		if (flushCurrentSubTrip(currentSubTrip, outputFolder)) {
+		if (currentSubTripFlushed(currentSubTrip, outputFolder)) {
 			extractedTripsCount++;
 		}
 
