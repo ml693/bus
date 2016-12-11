@@ -9,7 +9,7 @@ import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
 
-import bus.Utils.GpsPoint;
+import bus.GpsPoint;
 
 public class FuturePredictor {
 

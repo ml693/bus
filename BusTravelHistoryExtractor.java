@@ -35,7 +35,7 @@ import java.util.HashMap;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
-import bus.Utils.GpsPoint;
+import bus.GpsPoint;
 
 public class BusTravelHistoryExtractor {
 	/*

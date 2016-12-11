@@ -21,7 +21,7 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Scanner;
 
-import bus.Utils.GpsPoint;
+import bus.GpsPoint;
 
 class TripsExtractor {
 	/*

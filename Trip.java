@@ -7,7 +7,7 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Scanner;
 
-import bus.Utils.GpsPoint;
+import bus.GpsPoint;
 
 /*
  * Trip is either a past path that a bus followed WITHOUT PAUSING (short break
