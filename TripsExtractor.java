@@ -21,8 +21,6 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Scanner;
 
-import bus.GpsPoint;
-
 class TripsExtractor {
 	/*
 	 * The main method which decides whether the bus started a new trip or not.
