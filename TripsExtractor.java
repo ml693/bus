@@ -18,6 +18,7 @@ package bus;
 
 import java.io.File;
 import java.io.IOException;
+import java.text.ParseException;
 import java.util.ArrayList;
 import java.util.Scanner;
 
@@ -29,7 +30,7 @@ class TripsExtractor {
 	 */
 	public static boolean newSubtripAccordingToTimestamp(long currentTimestamp,
 			long newTimestamp) {
-		return (newTimestamp - currentTimestamp) > 600L;
+		return (newTimestamp - currentTimestamp) > 180L;
 	}
 
 	/*
@@ -37,7 +38,7 @@ class TripsExtractor {
 	 * Does nothing otherwise.
 	 */
 	public static boolean currentSubTripFlushed(Trip subTrip,
-			File folderToFlush) throws IOException {
+			File folderToFlush) throws IOException, ParseException {
 		if (subTrip.gpsPoints.size() > 30) {
 			subTrip.writeToFolder(folderToFlush);
 			return true;
@@ -148,7 +149,9 @@ class TripsExtractor {
 	 * // End of file outputFolder/travelHistoryFile_subtrip2
 	 */
 	public static void extractTripsFromTravelHistoryFile(File travelHistoryFile,
-			File outputFolder) throws IOException {
+			File outputFolder) throws Exception {
+		System.out.println("Scanning file " + travelHistoryFile.getName());
+
 		/* Preparing variables to read input file */
 		int extractedTripsCount = 0;
 		long currentTimestamp = 0L;
@@ -169,7 +172,7 @@ class TripsExtractor {
 			 * wrong order, then the program will either throw an exception or
 			 * silently terminate computing wrong results.
 			 */
-			long newTimestamp = gpsInput.nextLong();
+			long newTimestamp = Utils.convertDateToTimestamp(gpsInput.next());
 			double newLatitude = gpsInput.nextDouble();
 			double newLongitude = gpsInput.nextDouble();
 
@@ -205,11 +208,11 @@ class TripsExtractor {
 		System.out.println("Extracted " + extractedTripsCount + " trips.");
 	}
 
-	public static void main(String args[]) throws IOException {
+	public static void main(String args[]) throws Exception {
 		File[] travelHistoryFiles = (new File(args[0])).listFiles();
+		File outputFolder = new File(args[1]);
 		for (File travelHistoryFile : travelHistoryFiles) {
-			extractTripsFromTravelHistoryFile(travelHistoryFile,
-					new File(args[1]));
+			extractTripsFromTravelHistoryFile(travelHistoryFile, outputFolder);
 		}
 	}
 

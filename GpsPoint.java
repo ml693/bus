@@ -2,6 +2,7 @@ package bus;
 
 import java.io.BufferedWriter;
 import java.io.IOException;
+import java.text.ParseException;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -10,20 +11,24 @@ class GpsPoint {
 	final double latitude;
 	final double longitude;
 
-	public GpsPoint(long time, double lat, double lon) {
-		timestamp = time;
-		latitude = lat;
-		longitude = lon;
+	public GpsPoint(long timestamp, double latitude, double longitude) {
+		this.timestamp = timestamp;
+		this.latitude = latitude;
+		this.longitude = longitude;
 	}
 
+	/*
+	 * Example jsonTextEntry: '{vehicle_id="4","timestamp":1476227188,
+	 * "latitude":51.89,"longitude":0.453, "trip_id":EBS_22}'
+	 */
 	public GpsPoint(String jsonTextEntry) {
-		timestamp = ExtractTimestamp(jsonTextEntry);
-		latitude = ExtractCoordinate("latitude", jsonTextEntry);
-		longitude = ExtractCoordinate("longitude", jsonTextEntry);
+		timestamp = extractTimestamp(jsonTextEntry);
+		latitude = extractCoordinate("latitude", jsonTextEntry);
+		longitude = extractCoordinate("longitude", jsonTextEntry);
 	}
 
 	/* Helper function to construct GpsPoint from jsonTextEntry */
-	static int ExtractTimestamp(String jsonTextEntry) {
+	static Long extractTimestamp(String jsonTextEntry) {
 		/*
 		 * It's important to include \" character to extract
 		 * "timestamp" but not "received_timestamp".
@@ -33,11 +38,11 @@ class GpsPoint {
 		Pattern pattern = Pattern.compile(timestampRegex + integerRegex);
 		Matcher matcher = pattern.matcher(jsonTextEntry);
 		matcher.find();
-		return Integer.parseInt(matcher.group().substring(12));
+		return Long.parseLong(matcher.group().substring(12));
 	}
 
 	/* Helper function to construct GpsPoint from jsonTextEntry */
-	static double ExtractCoordinate(String coordinate, String jsonTextEntry) {
+	static double extractCoordinate(String coordinate, String jsonTextEntry) {
 		Pattern pattern = Pattern.compile(coordinate + "\":" + "[^,]+");
 		Matcher matcher = pattern.matcher(jsonTextEntry);
 		matcher.find();
@@ -45,14 +50,13 @@ class GpsPoint {
 				matcher.group().substring(coordinate.length() + 2));
 	}
 
-	void Write(BufferedWriter writer) throws IOException {
-		Utils.WriteLine(writer,
-				timestamp + "," + String.format("%.4f", latitude) + ","
-						+ String.format("%.4f", longitude));
+	String serializeToPrintString() throws ParseException {
+		String date = Utils.convertTimestampToDate(timestamp);
+		return date + "," + String.format("%.4f", latitude) + ","
+				+ String.format("%.4f", longitude);
 	}
 
-	void println() {
-		System.out.println(timestamp + "," + String.format("%.4f", latitude)
-				+ "," + String.format("%.4f", longitude));
+	void write(BufferedWriter writer) throws IOException, ParseException {
+		Utils.writeLine(writer, serializeToPrintString());
 	}
 }

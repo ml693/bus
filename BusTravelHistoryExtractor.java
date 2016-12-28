@@ -66,9 +66,9 @@ public class BusTravelHistoryExtractor {
 
 			/* And store info into the map */
 			if (!allTrips.containsKey(busId)) {
-				allTrips.put(busId,
-						new Trip("date" + file.getParent() + "_bus" + busId,
-								new ArrayList<GpsPoint>()));
+				allTrips.put(busId, new Trip(
+						"day" + file.getParentFile().getName() + "_bus" + busId,
+						new ArrayList<GpsPoint>()));
 			}
 			allTrips.get(busId).gpsPoints.add(gpsPoint);
 		}
@@ -76,8 +76,8 @@ public class BusTravelHistoryExtractor {
 		jsonInput.close();
 	}
 
-	public static void main(String args[]) throws IOException {
-		Utils.check2CommandLineArguments(args, "folder", "folder");
+	public static void main(String args[]) throws Exception {
+		Utils.checkCommandLineArguments(args, "folder", "folder");
 		/* We first extract all JSON files from the args[0] folder. */
 		File[] jsonFiles = new File(args[0]).listFiles();
 		/*

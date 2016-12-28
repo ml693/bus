@@ -5,24 +5,42 @@
  */
 package bus;
 
-import java.io.File;
 import java.io.IOException;
+import java.text.ParseException;
 import java.util.ArrayList;
-
-import bus.GpsPoint;
 
 public class FuturePredictor {
 
-	static final double CONGESTION_THRESHOLD = 0.15;
+	private static final double CONGESTION_THRESHOLD = 2.2;
+	private static final double DISTANCE_BOUND = 0.000003;
+	private static final long DURATION_DIFFERENCE_LIMIT = 80;
+
+	private static boolean endPointsMatch(Trip subTrip, Trip trip) {
+		GpsPoint subTripFirstPoint = subTrip.gpsPoints.get(0);
+		GpsPoint subTripLastPoint = subTrip.lastPoint();
+		GpsPoint tripFirstPoint = trip.gpsPoints.get(0);
+		GpsPoint tripLastPoint = trip.lastPoint();
+
+		return (Utils.squaredDistance(subTripFirstPoint,
+				tripFirstPoint) < DISTANCE_BOUND)
+				&& (Utils.squaredDistance(subTripLastPoint,
+						tripLastPoint) < DISTANCE_BOUND);
+	}
 
 	/*
 	 * Heuristic which checks whether roughly equal amount of distance was
 	 * travelled in roughly equal amount of time.
 	 */
 	static boolean equallyCongested(Trip subtrip, Trip trip) {
+		Long durationDifference = trip.duration() - subtrip.duration();
+		if (Math.abs(durationDifference) < DURATION_DIFFERENCE_LIMIT) {
+			return false;
+		}
+		/* TODO(ml693): replace sum of 2 similarity measures by one value. */
 		return TripDetector.similarityMeasure(subtrip.gpsPoints, trip.gpsPoints)
 				+ TripDetector.similarityMeasure(trip.gpsPoints,
-						subtrip.gpsPoints) < CONGESTION_THRESHOLD;
+						subtrip.gpsPoints) < CONGESTION_THRESHOLD
+				&& endPointsMatch(subtrip, trip);
 	}
 
 	/* Finds point in trip that was closest to the last point of recentTrip */
@@ -59,51 +77,35 @@ public class FuturePredictor {
 
 	static Trip generateFuturePrediction(Trip recentTrip, Trip trip) {
 		int closestPointIndex = closestPointIndex(recentTrip, trip);
-		long timeFrame = recentTrip.duration();
-		long tripTimestamp = trip.gpsPoints.get(closestPointIndex).timestamp;
-		int index = closestPointIndex + 1;
 
-		while (index < trip.gpsPoints.size()
-				&& trip.gpsPoints.get(index).timestamp
-						- tripTimestamp < timeFrame) {
-			index++;
-		}
+		return (closestPointIndex + 1 == trip.gpsPoints.size()) ? null :
 
-		return new Trip(trip.name,
-				new ArrayList<GpsPoint>(
-						trip.gpsPoints.subList(closestPointIndex + 1, index)))
-								.shiftTimeTo(tripTimestamp);
+		new Trip(trip.name,
+				new ArrayList<GpsPoint>(trip.gpsPoints
+						.subList(closestPointIndex + 1, trip.gpsPoints.size())))
+								.shiftTimeTo(recentTrip.lastPoint().timestamp
+										+ trip.gpsPoints.get(
+												closestPointIndex + 1).timestamp
+										- trip.gpsPoints.get(
+												closestPointIndex).timestamp);
 	}
 
-	static ArrayList<Trip> predictEquallyCongestedTrips(Trip recentTrip,
-			ArrayList<Trip> trips) throws IOException {
+	static ArrayList<Trip> generatePredictionsFromEquallyCongestedTrips(
+			Trip recentTrip, ArrayList<Trip> trips)
+					throws IOException, ParseException {
 		ArrayList<Trip> predictedTrips = new ArrayList<Trip>();
 		for (Trip trip : trips) {
 			Trip subTrip = generateSubtrip(recentTrip, trip);
 			if (equallyCongested(subTrip, recentTrip)) {
 				/* TODO(ml693): remove this line after debugging */
-				subTrip.writeToFolder("equally_congested");
-
-				predictedTrips.add(generateFuturePrediction(recentTrip, trip));
+				subTrip.shiftTimeTo(recentTrip.gpsPoints.get(0).timestamp)
+						.writeToFolder("equally_congested");
+				Trip predictedTrip = generateFuturePrediction(recentTrip, trip);
+				if (predictedTrip != null) {
+					predictedTrips.add(predictedTrip);
+				}
 			}
 		}
 		return predictedTrips;
-	}
-
-	public static void main(String[] args) throws IOException {
-		Utils.check2CommandLineArguments(args, "file", "folder");
-		Trip recentTrip = new Trip(new File(args[0]));
-
-		/* First find buses that were travelling along the same route. */
-		ArrayList<Trip> similarTrips = TripDetector
-				.detectSimilarTrips(recentTrip, new File(args[1]));
-
-		/* Then filter those trips out that were much faster or slower */
-		ArrayList<Trip> predictedTrips = predictEquallyCongestedTrips(
-				recentTrip, similarTrips);
-
-		for (Trip predictedTrip : predictedTrips) {
-			predictedTrip.writeToFolder("future_predictions");
-		}
 	}
 }

@@ -88,7 +88,7 @@ public class BusStopsExtractor {
 		BufferedWriter busStopsOutput = new BufferedWriter(
 				new FileWriter(args[1]));
 
-		Utils.WriteLine(busStopsOutput, "Latitude, Longitude, Name, Note");
+		Utils.writeLine(busStopsOutput, "Latitude, Longitude, Name, Note");
 		String line = originalMapInput.readLine();
 		/* Main loop which reads input OSM file and produces output CSV file. */
 		while (line != null) {
@@ -118,7 +118,7 @@ public class BusStopsExtractor {
 
 				/* If node turns out to be a bus stop, we output its info */
 				if (nodeIsBusStop && inRegion) {
-					Utils.WriteLine(busStopsOutput, latitude + "," + longitude
+					Utils.writeLine(busStopsOutput, latitude + "," + longitude
 							+ "," + name + "," + note);
 				}
 			}
