@@ -1,8 +1,3 @@
-/*
- * Not finished class. It takes input file showing the most recent sub trip of a
- * bus. So far it finds all similar sub trips ever made by buses in the past and
- * generates files telling how those buses were travelling further.
- */
 package bus;
 
 import java.io.IOException;
@@ -37,11 +32,10 @@ public class FuturePredictor {
 		if (Math.abs(durationDifference) > DURATION_DIFFERENCE_LIMIT) {
 			return false;
 		}
-
-		return (TripDetector.similarityMeasure(subTrip,
-				trip) < TripDetector.SIMILARITY_THRESHOLD
-				|| TripDetector.similarityMeasure(trip,
-						subTrip) < TripDetector.SIMILARITY_THRESHOLD)
+		double measure1 = TripDetector.similarityMeasure(subTrip, trip);
+		double measure2 = TripDetector.similarityMeasure(trip, subTrip);
+		return (measure1 < TripDetector.SIMILARITY_THRESHOLD
+				|| measure2 < TripDetector.SIMILARITY_THRESHOLD)
 				&& endPointsMatch(trip, subTrip);
 	}
 
@@ -77,14 +71,18 @@ public class FuturePredictor {
 
 	private static Trip generateFuturePrediction(Trip recentTrip, Trip trip) {
 		int closestPointIndex = closestPointIndex(recentTrip.lastPoint(), trip);
-		return (closestPointIndex + 1 == trip.gpsPoints.size()) ? null
-				: new Trip(trip.name, new ArrayList<GpsPoint>(trip.gpsPoints
-						.subList(closestPointIndex + 1, trip.gpsPoints.size())))
-								.shiftTimeTo(recentTrip.lastPoint().timestamp
-										+ trip.gpsPoints.get(
-												closestPointIndex + 1).timestamp
-										- trip.gpsPoints.get(
-												closestPointIndex).timestamp);
+		if (closestPointIndex + 1 == trip.gpsPoints.size()) {
+			return null;
+		}
+
+		ArrayList<GpsPoint> predictionPoints = new ArrayList<GpsPoint>(
+				trip.gpsPoints.subList(closestPointIndex + 1,
+						trip.gpsPoints.size()));
+		long adjustedTime = recentTrip.lastPoint().timestamp
+				+ trip.gpsPoints.get(closestPointIndex + 1).timestamp
+				- trip.gpsPoints.get(closestPointIndex).timestamp;
+
+		return new Trip(trip.name, predictionPoints).shiftTimeTo(adjustedTime);
 	}
 
 	/*
