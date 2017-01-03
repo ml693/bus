@@ -1,4 +1,6 @@
 /**
+ * Deprecated (in a sense that it's unlikely we're going to use this code again)
+ * 
  * This program takes OSM file and extracts bus stops "of consideration" into
  * CSV file. By "of consideration" we mean that the user specifies
  * [min latitude, max latitude], [min longitude, max longitude] intervals and

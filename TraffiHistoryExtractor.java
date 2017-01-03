@@ -18,7 +18,7 @@ public class TraffiHistoryExtractor {
 			throws IOException, ParseException {
 		HashMap<String, Trip> dayTrips = new HashMap<String, Trip>();
 
-		Scanner scanner = new Scanner(inputFile).useDelimiter(",|\r?\n");
+		Scanner scanner = Utils.csvScanner(inputFile);
 		/* Skip timestamp,latitude,etc meta line */
 		scanner.nextLine();
 

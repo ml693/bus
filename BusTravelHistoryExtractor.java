@@ -70,7 +70,9 @@ public class BusTravelHistoryExtractor {
 						"day" + file.getParentFile().getName() + "_bus" + busId,
 						new ArrayList<GpsPoint>()));
 			}
-			allTrips.get(busId).gpsPoints.add(gpsPoint);
+			if (gpsPoint.latitude != 0.0 || gpsPoint.longitude != 0.0) {
+				allTrips.get(busId).gpsPoints.add(gpsPoint);
+			}
 		}
 
 		jsonInput.close();
@@ -99,9 +101,10 @@ public class BusTravelHistoryExtractor {
 			System.out.println("Processing: " + jsonFile.getName());
 			UpdateBusesTravelHistoryWithFile(jsonFile);
 		}
-		/* At the end we output the processed data into args[1] directory */
+		/* At the end we output the processed data into args[1] folder */
+		File outputFolder = new File(args[1]);
 		for (Trip trip : allTrips.values()) {
-			trip.writeToFolder(args[1]);
+			trip.writeToFolder(outputFolder);
 		}
 	}
 }

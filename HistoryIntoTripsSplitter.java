@@ -22,31 +22,35 @@ import java.text.ParseException;
 import java.util.ArrayList;
 import java.util.Scanner;
 
-class TripsExtractor {
+class HistoryIntoTripsSplitter {
+
+	private static final long SAME_PLACE_THRESHOLD = 360L;
+	private static final int ENOUGH_GPS_POINTS = 30;
+
 	/*
 	 * The main method which decides whether the bus started a new trip or not.
 	 * We check that based on how long the bus was standing in the same place.
 	 * Such heuristic works for now, but can be freely changed if we want.
 	 */
-	public static boolean newSubtripAccordingToTimestamp(long currentTimestamp,
+	private static boolean newSubtripAccordingToTimestamp(long currentTimestamp,
 			long newTimestamp) {
-		return (newTimestamp - currentTimestamp) > 180L;
+		return (newTimestamp - currentTimestamp) > SAME_PLACE_THRESHOLD;
 	}
 
 	/*
 	 * Writes current sub trip to file if it's long enough.
 	 * Does nothing otherwise.
 	 */
-	public static boolean currentSubTripFlushed(Trip subTrip,
+	private static boolean currentSubTripFlushed(Trip subTrip,
 			File folderToFlush) throws IOException, ParseException {
-		if (subTrip.gpsPoints.size() > 30) {
+		if (subTrip.gpsPoints.size() >= ENOUGH_GPS_POINTS) {
 			subTrip.writeToFolder(folderToFlush);
 			return true;
 		}
 		return false;
 	}
 
-	public static String generateName(File travelHistoryFile,
+	private static String generateName(File travelHistoryFile,
 			int extractedTripsCount) {
 		return travelHistoryFile.getName() + "_subtrip" + extractedTripsCount;
 	}
@@ -54,23 +58,20 @@ class TripsExtractor {
 	/*
 	 * EXPLANATION OF travelHistoryFile ARGUMENT
 	 * 
-	 * Input is a CSV file containing a TIMESTAMP-ORDERED list of GPS locations
-	 * for a SINGLE bus. Timestamp is the POSIX time. Requirement is that 2
-	 * consecutive lines i and (i+1) should have timestamp_i <= timestamp_i+1.
-	 * There is no restriction placed on how large or small the difference
-	 * (timestamp_i+1 - timestamp_i) should be. In practise the difference will
-	 * be ~30s, but might become larger in such example cases:
+	 * Input is a CSV file containing a TIME-ORDERED list of GPS locations
+	 * for a SINGLE bus. Requirement is that 2 consecutive lines i and (i+1)
+	 * should have time_i <= time_i+1. There is no restriction placed on how
+	 * large or small the difference (timestamp_i+1 - timestamp_i) should be. In
+	 * practise the difference will be ~30s, but might become larger when:
 	 * 
 	 * (i) The bus stopped at line_i, turned itself and GPS transmitter off,
-	 * after 1h turned back on, hence the timestamp difference will be ~1h =
-	 * 3600. Note that latitude and longitude values in line_i will match values
-	 * in line_i+1.
+	 * after 1h turned back on, hence the time difference will be 1h. Note
+	 * that latitude and longitude values in line_i will match line_i+1.
 	 * 
-	 * (ii) The GPS transmitter failed to transmit data while travelling for ~20
-	 * minutes, then started to function again. The timestamp difference will be
-	 * ~20min = 1200. Note that in this case there might be a fairly big change
-	 * in latitude/longitude values between line_i and line_i+1, if the bus
-	 * moved much.
+	 * (ii) The GPS transmitter failed to transmit data while travelling for 20
+	 * minutes, then started to function again. The time difference will be
+	 * 20min but in this case there might be a big change in latitude/longitude
+	 * values between line_i and line_i+1, if the bus moved much.
 	 * 
 	 * Latitude and longitude coordinates need only to show the approximate
 	 * location where the bus is. That is, if a bus has travelled through the
@@ -80,38 +81,38 @@ class TripsExtractor {
 	 * EXAMPLE CONTENTS OF travelHistoryFile ARGUMENT
 	 * 
 	 * // New file
-	 * timestamp,latitude,longitude // 1st line of file
-	 * 1000000000,52.0000,0.2000 // starting in A
-	 * 1000000030,52.0001,0.2001 // leaving A
+	 * time,latitude,longitude // 1st line of file
+	 * 2016-10-18 06:00:00,52.0000,0.2000 // starting in A
+	 * 2016-10-18 06:00:30,52.0001,0.2001 // leaving A
 	 * ...
 	 * ... // travelling to B
 	 * ...
-	 * 1000020000,52.1000,0.3000 // arrived at B
-	 * 1000020050,52.1000,0.3000 // staying in B
+	 * 2016-10-18 07:00:00,52.1000,0.3000 // arrived at B
+	 * 2016-10-18 07:00:30,52.1000,0.3000 // staying in B
 	 * ...
 	 * ... // staying in B
 	 * ...
-	 * 1000020700,52.1001,0.3001 // leaving B
+	 * 2016-10-18 07:40:00,52.1001,0.3001 // leaving B
 	 * ...
 	 * ... // travelling back to A
 	 * ...
-	 * 1000040008,52.0002,0.2002 // back at A
-	 * 1000040070,52.0002,0.2002 // staying in A
+	 * 2016-10-18 08:30:03,52.0002,0.2002 // back at A
+	 * 2016-10-18 08:30,34,52.0002,0.2002 // staying in A
 	 * ...
 	 * ... // staying in A
 	 * ...
-	 * 1000050030,52.0003,0.2003 // leaving A
+	 * 2016-10-18 09:00:02,52.0003,0.2003 // leaving A
 	 * ...
 	 * ... // travelling to C
 	 * ...
-	 * 1000080050,51.9000,0.1000 // arrived at C.
+	 * 2016-10-18 10:10:00,51.9000,0.1000 // arrived at C.
 	 * // End of file
 	 * 
 	 * OUTPUT FILES EXPLANATION
 	 * 
-	 * Output will be multiple CSV files, each containing a TIMESTAMP-ORDERED
-	 * list of GPS locations for a SINGLE bus. Each output file viewed as a list
-	 * of lines is a sublist of the input file. Each output file should contain
+	 * Output will be multiple CSV files, each containing a TIME-ORDERED list of
+	 * GPS locations for a SINGLE bus. Each output file viewed as a sequence of
+	 * lines is a subsequence of the input file. Each output file should contain
 	 * a single bus sub trip. For example, if input file contains a history of a
 	 * bus having iterated through one route 5 times, then this program will
 	 * create 5 output files, the i-th output file containing the history of the
@@ -122,34 +123,34 @@ class TripsExtractor {
 	 * 
 	 * // New file outputFolder/travelHistoryFile_subtrip0
 	 * timestamp,latitude,longitude // 1st line of file
-	 * 1000000000,52.0000,0.2000 // starting at A
-	 * 1000000030,52.0001,0.2001 // leaving A
+	 * 2016-10-18 06:00:00,52.0000,0.2000 // starting at A
+	 * 2016-10-18 06:00:30,52.0001,0.2001 // leaving A
 	 * ...
 	 * ... // travelling to B
 	 * ...
-	 * 1000020000,52.1000,0.3000 // arrived at B
+	 * 2016-10-18 07:00:00,52.1000,0.3000 // arrived at B
 	 * // End of file outputFolder/travelHistoryFile_subtrip0
 	 * 
 	 * // New file outputFolder/travelHistoryFile_subtrip1
 	 * timestamp,latitude,longitude // 1st line of file
-	 * 1000020700,52.1001,0.3001 // leaving B
+	 * 2016-10-18 07:40:00,52.1001,0.3001 // leaving B
 	 * ...
 	 * ... // travelling back to A
 	 * ...
-	 * 1000040008,52.0002,0.2002 // back at A
+	 * 2016-10-18 08:30:03,52.0002,0.2002 // back at A
 	 * // End of file outputFolder/travelHistoryFile_subtrip1
 	 * 
 	 * // New file outputFolder/travelHistoryFile_subtrip2
 	 * timestamp,latitude,longitude // 1st line of file
-	 * 1000050030,52.0003,0.2003 // leaving A
+	 * 2016-10-18 09:00:02,52.0003,0.2003 // leaving A
 	 * ...
 	 * ... // travelling to C
 	 * ...
-	 * 1000080050,51.9000,0.1000 // arriving at C.
+	 * 2016-10-18 10:10:00,51.9000,0.1000 // arriving at C.
 	 * // End of file outputFolder/travelHistoryFile_subtrip2
 	 */
 	public static void extractTripsFromTravelHistoryFile(File travelHistoryFile,
-			File outputFolder) throws Exception {
+			File outputFolder) throws IOException, ParseException {
 		System.out.println("Scanning file " + travelHistoryFile.getName());
 
 		/* Preparing variables to read input file */

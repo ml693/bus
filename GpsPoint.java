@@ -28,7 +28,7 @@ class GpsPoint {
 	}
 
 	/* Helper function to construct GpsPoint from jsonTextEntry */
-	static Long extractTimestamp(String jsonTextEntry) {
+	private long extractTimestamp(String jsonTextEntry) {
 		/*
 		 * It's important to include \" character to extract
 		 * "timestamp" but not "received_timestamp".
@@ -42,7 +42,7 @@ class GpsPoint {
 	}
 
 	/* Helper function to construct GpsPoint from jsonTextEntry */
-	static double extractCoordinate(String coordinate, String jsonTextEntry) {
+	private double extractCoordinate(String coordinate, String jsonTextEntry) {
 		Pattern pattern = Pattern.compile(coordinate + "\":" + "[^,]+");
 		Matcher matcher = pattern.matcher(jsonTextEntry);
 		matcher.find();
@@ -50,13 +50,14 @@ class GpsPoint {
 				matcher.group().substring(coordinate.length() + 2));
 	}
 
-	String serializeToPrintString() throws ParseException {
+	/* For printing */
+	private String serializeToString() throws ParseException {
 		String date = Utils.convertTimestampToDate(timestamp);
 		return date + "," + String.format("%.4f", latitude) + ","
 				+ String.format("%.4f", longitude);
 	}
 
 	void write(BufferedWriter writer) throws IOException, ParseException {
-		Utils.writeLine(writer, serializeToPrintString());
+		Utils.writeLine(writer, serializeToString());
 	}
 }

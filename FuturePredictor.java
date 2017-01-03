@@ -8,14 +8,15 @@ package bus;
 import java.io.IOException;
 import java.text.ParseException;
 import java.util.ArrayList;
+import java.util.Collections;
+import java.util.function.Function;
 
 public class FuturePredictor {
+	private static final double DISTANCE_BOUND = 0.00004;
+	private static final long DURATION_DIFFERENCE_LIMIT = 80L;
+	private static final long RECENT_INTERVAL = 2400L;
 
-	private static final double CONGESTION_THRESHOLD = 2.2;
-	private static final double DISTANCE_BOUND = 0.000003;
-	private static final long DURATION_DIFFERENCE_LIMIT = 80;
-
-	private static boolean endPointsMatch(Trip subTrip, Trip trip) {
+	private static boolean endPointsMatch(Trip trip, Trip subTrip) {
 		GpsPoint subTripFirstPoint = subTrip.gpsPoints.get(0);
 		GpsPoint subTripLastPoint = subTrip.lastPoint();
 		GpsPoint tripFirstPoint = trip.gpsPoints.get(0);
@@ -31,25 +32,24 @@ public class FuturePredictor {
 	 * Heuristic which checks whether roughly equal amount of distance was
 	 * travelled in roughly equal amount of time.
 	 */
-	static boolean equallyCongested(Trip subtrip, Trip trip) {
-		Long durationDifference = trip.duration() - subtrip.duration();
-		if (Math.abs(durationDifference) < DURATION_DIFFERENCE_LIMIT) {
+	private static boolean equallyCongested(Trip trip, Trip subTrip) {
+		long durationDifference = trip.duration() - subTrip.duration();
+		if (Math.abs(durationDifference) > DURATION_DIFFERENCE_LIMIT) {
 			return false;
 		}
-		/* TODO(ml693): replace sum of 2 similarity measures by one value. */
-		return TripDetector.similarityMeasure(subtrip.gpsPoints, trip.gpsPoints)
-				+ TripDetector.similarityMeasure(trip.gpsPoints,
-						subtrip.gpsPoints) < CONGESTION_THRESHOLD
-				&& endPointsMatch(subtrip, trip);
+
+		return (TripDetector.similarityMeasure(subTrip,
+				trip) < TripDetector.SIMILARITY_THRESHOLD
+				|| TripDetector.similarityMeasure(trip,
+						subTrip) < TripDetector.SIMILARITY_THRESHOLD)
+				&& endPointsMatch(trip, subTrip);
 	}
 
-	/* Finds point in trip that was closest to the last point of recentTrip */
-	static int closestPointIndex(Trip recentTrip, Trip trip) {
-		GpsPoint mostRecentPoint = recentTrip.lastPoint();
-		int closestPointIndex = 0;
-		double closestPointDistance = Utils.squaredDistance(mostRecentPoint,
-				trip.gpsPoints.get(0));
-		for (int i = 1; i < trip.gpsPoints.size(); i++) {
+	/* Finds point in trip that was closest to the mostRecentPoint */
+	private static int closestPointIndex(GpsPoint mostRecentPoint, Trip trip) {
+		int closestPointIndex = -1;
+		double closestPointDistance = Double.MAX_VALUE;
+		for (int i = 0; i < trip.gpsPoints.size(); i++) {
 			double newDistance = Utils.squaredDistance(mostRecentPoint,
 					trip.gpsPoints.get(i));
 			if (newDistance < closestPointDistance) {
@@ -60,8 +60,8 @@ public class FuturePredictor {
 		return closestPointIndex;
 	}
 
-	static Trip generateSubtrip(Trip recentTrip, Trip trip) {
-		int closestPointIndex = closestPointIndex(recentTrip, trip);
+	private static Trip generateSubtrip(Trip recentTrip, Trip trip) {
+		int closestPointIndex = closestPointIndex(recentTrip.lastPoint(), trip);
 		long timeFrame = recentTrip.duration();
 		long tripTimestamp = trip.gpsPoints.get(closestPointIndex).timestamp;
 		int index = closestPointIndex;
@@ -75,13 +75,10 @@ public class FuturePredictor {
 				trip.gpsPoints.subList(index, closestPointIndex + 1)));
 	}
 
-	static Trip generateFuturePrediction(Trip recentTrip, Trip trip) {
-		int closestPointIndex = closestPointIndex(recentTrip, trip);
-
-		return (closestPointIndex + 1 == trip.gpsPoints.size()) ? null :
-
-		new Trip(trip.name,
-				new ArrayList<GpsPoint>(trip.gpsPoints
+	private static Trip generateFuturePrediction(Trip recentTrip, Trip trip) {
+		int closestPointIndex = closestPointIndex(recentTrip.lastPoint(), trip);
+		return (closestPointIndex + 1 == trip.gpsPoints.size()) ? null
+				: new Trip(trip.name, new ArrayList<GpsPoint>(trip.gpsPoints
 						.subList(closestPointIndex + 1, trip.gpsPoints.size())))
 								.shiftTimeTo(recentTrip.lastPoint().timestamp
 										+ trip.gpsPoints.get(
@@ -90,22 +87,81 @@ public class FuturePredictor {
 												closestPointIndex).timestamp);
 	}
 
-	static ArrayList<Trip> generatePredictionsFromEquallyCongestedTrips(
-			Trip recentTrip, ArrayList<Trip> trips)
-					throws IOException, ParseException {
-		ArrayList<Trip> predictedTrips = new ArrayList<Trip>();
+	/*
+	 * Finds all equally congested trips with the recentTrip, and for each
+	 * equally congested trip t, uses its interval as prediction (except for the
+	 * case where t has no further GPS points to be used for prediction).
+	 */
+	private static ArrayList<Trip> generatePredictionsFromEquallyCongestedTrips(
+			Trip recentTrip, ArrayList<Trip> trips) throws IOException,
+					ParseException, ProjectSpecificException {
+		ArrayList<Trip> predictions = new ArrayList<Trip>();
 		for (Trip trip : trips) {
 			Trip subTrip = generateSubtrip(recentTrip, trip);
-			if (equallyCongested(subTrip, recentTrip)) {
-				/* TODO(ml693): remove this line after debugging */
-				subTrip.shiftTimeTo(recentTrip.gpsPoints.get(0).timestamp)
-						.writeToFolder("equally_congested");
+			if (equallyCongested(recentTrip, subTrip)) {
 				Trip predictedTrip = generateFuturePrediction(recentTrip, trip);
 				if (predictedTrip != null) {
-					predictedTrips.add(predictedTrip);
+					String newName = recentTrip.lastPoint().timestamp
+							- subTrip.lastPoint().timestamp < RECENT_INTERVAL
+									? predictedTrip.name + "_recent"
+									: predictedTrip.name + "_old";
+					predictions.add(predictedTrip.rename(newName));
 				}
 			}
 		}
-		return predictedTrips;
+
+		if (predictions.size() == 0) {
+			throw (new ProjectSpecificException(
+					"Failed to generate predictions for " + recentTrip.name));
+		} else {
+			return predictions;
+		}
+	}
+
+	static long calculatePredictionToBusStop(
+			Function<GpsPoint, Boolean> atBusStop, Trip tripToPredict,
+			ArrayList<Trip> historicalTrips) throws IOException, ParseException,
+					ProjectSpecificException {
+		ArrayList<Trip> predictions = FuturePredictor
+				.generatePredictionsFromEquallyCongestedTrips(tripToPredict,
+						historicalTrips);
+		return FuturePredictor.calculateAverageArrivalTime(tripToPredict.name,
+				predictions, atBusStop);
+	}
+
+	private static long averageArrivalTimestamp(
+			ArrayList<Long> arrivalTimestamps) throws ParseException {
+		Collections.sort(arrivalTimestamps);
+		return arrivalTimestamps.get(arrivalTimestamps.size() / 2);
+	}
+
+	private static long calculateAverageArrivalTime(String tripName,
+			ArrayList<Trip> predictions, Function<GpsPoint, Boolean> atBusStop)
+					throws IOException, ParseException,
+					ProjectSpecificException {
+		ArrayList<Long> recentStoppingTimes = new ArrayList<Long>();
+		ArrayList<Long> oldStoppingTimes = new ArrayList<Long>();
+		for (Trip prediction : predictions) {
+			for (GpsPoint point : prediction.gpsPoints) {
+				if (atBusStop.apply(point)) {
+					if (prediction.name.contains("recent")) {
+						recentStoppingTimes.add(point.timestamp);
+					} else {
+						oldStoppingTimes.add(point.timestamp);
+					}
+					break;
+				}
+			}
+		}
+
+		if (recentStoppingTimes.size() + oldStoppingTimes.size() == 0) {
+			throw new ProjectSpecificException("Failed to predict for trip "
+					+ tripName + " despite having " + predictions.size()
+					+ " predictions.");
+		}
+
+		return recentStoppingTimes.size() > 0
+				? averageArrivalTimestamp(recentStoppingTimes)
+				: averageArrivalTimestamp(oldStoppingTimes);
 	}
 }

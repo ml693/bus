@@ -1,5 +1,5 @@
 /*
- * Program predicts which trip the bus is following given a file showing
+ * Program determines which trip the bus is following given a file showing
  * the most recent bus GPS travel history, and a directory containing all
  * possible bus trips. For more details about the format of input files,
  * look at the TripsExtractor class documentation.
@@ -24,23 +24,36 @@ import java.util.ArrayList;
 
 class TripDetector {
 
-	static double SIMILARITY_THRESHOLD = 1.2;
+	static double SIMILARITY_THRESHOLD = 4f;
+
+	static private double DISTANCE_TOO_SMALL_TO_CONSIDER = 0.0005f;
+	static private double SIGNIFICANT_RATIO_THRESHOLD = 1.1f;
 
 	/*
-	 * Method finds a "best" segment and computes the Euclidean point's
-	 * distance to both segment's corners. It returns the sum of 2 distances.
-	 * Segment is "best" which minimises the returned value.
+	 * Method finds a "best" segment and computes the Euclidean point's distance
+	 * to both segment's corners. Returns the ratio (a + b) / c, where a and b
+	 * are distances to segment's corners, c is the segment's length. Segment is
+	 * "best" which minimises the returned value. For GPS point very close to
+	 * the segment we return 1 instead of a ratio.
 	 */
-	static double errorToBestSegmentCorners(GpsPoint point,
-			ArrayList<GpsPoint> trip) {
-		double minDistance = Double.MAX_VALUE;
-		for (int i = 1; i < trip.size(); i++) {
-			minDistance = Math.min(minDistance,
-					(Utils.Distance(point, trip.get(i - 1))
-							+ Utils.Distance(point, trip.get(i)))
-							/ Utils.Distance(trip.get(i - 1), trip.get(i)));
+	private static double ratioToBestSegmentCorners(GpsPoint point, Trip trip) {
+		double minError = Double.MAX_VALUE;
+		for (int i = 1; i < trip.gpsPoints.size(); i++) {
+			double distanceToCorners = Utils.Distance(point,
+					trip.gpsPoints.get(i - 1))
+					+ Utils.Distance(point, trip.gpsPoints.get(i));
+			if (distanceToCorners <= DISTANCE_TOO_SMALL_TO_CONSIDER) {
+				return 1.0;
+			}
+
+			double ratioError = distanceToCorners / Utils
+					.Distance(trip.gpsPoints.get(i - 1), trip.gpsPoints.get(i));
+			if (ratioError < SIGNIFICANT_RATIO_THRESHOLD) {
+				return 1.0;
+			}
+			minError = Math.min(minError, ratioError);
 		}
-		return minDistance;
+		return minError;
 	}
 
 	/*
@@ -54,49 +67,55 @@ class TripDetector {
 	 * exactly, then point's distance to the "best" segment's corners due to
 	 * triangle inequality will be larger.
 	 */
-	static double similarityMeasure(ArrayList<GpsPoint> tripsInterval,
-			ArrayList<GpsPoint> fullTrip) {
+	static double similarityMeasure(Trip tripsInterval, Trip fullTrip) {
 		double accumulatedError = 0.0;
-		for (GpsPoint point : tripsInterval) {
-			accumulatedError += errorToBestSegmentCorners(point, fullTrip);
+		/*
+		 * We ignore first and last points in case tripsInterval is exactly the
+		 * start or exactly the end of the fullTrip. It's because there is no
+		 * good segment to align first (or last) point with, and that will
+		 * introduce unnecessary errors.
+		 */
+		for (int p = 1; p < tripsInterval.gpsPoints.size() - 1; p++) {
+			accumulatedError += ratioToBestSegmentCorners(
+					tripsInterval.gpsPoints.get(p), fullTrip);
 		}
-		return accumulatedError / tripsInterval.size();
+		return accumulatedError - (tripsInterval.gpsPoints.size() - 2);
 	}
 
 	/* Finds trip t which minimises similarityMeasure(tripsInterval, t). */
 	static Trip detectMostSimilarTrip(Trip tripsInterval, File allTripsFolder)
-			throws IOException, ParseException {
+			throws IOException, ParseException, ProjectSpecificException {
 		ArrayList<Trip> similarTrips = detectSimilarTrips(tripsInterval,
 				allTripsFolder);
 		Trip bestTrip = null;
 		double smallestMeasure = Double.MAX_VALUE;
 
-		for (Trip currentTrip : similarTrips) {
-			double currentMeasure = similarityMeasure(tripsInterval.gpsPoints,
-					currentTrip.gpsPoints);
+		for (Trip trip : similarTrips) {
+			double currentMeasure = similarityMeasure(tripsInterval, trip);
 			if (currentMeasure < smallestMeasure) {
 				smallestMeasure = currentMeasure;
-				bestTrip = currentTrip;
+				bestTrip = trip;
 			}
 		}
 
-		System.out.println("Best trip detected with measure " + smallestMeasure
-				+ ": " + bestTrip.name);
-		return bestTrip;
+		if (bestTrip == null) {
+			throw new ProjectSpecificException(
+					"No similar trips found for " + tripsInterval.name);
+		} else {
+			System.out.println("Best trip detected with measure "
+					+ smallestMeasure + ": " + bestTrip.name);
+			return bestTrip;
+		}
 	}
 
 	/* allTripsFolder should only contain CSV files */
 	static ArrayList<Trip> detectSimilarTrips(Trip tripInterval,
 			File allTripsFolder) throws IOException, ParseException {
 		ArrayList<Trip> similarTrips = new ArrayList<Trip>();
-
 		ArrayList<Trip> allTrips = Trip.extractTripsFromFolder(allTripsFolder);
 		for (Trip trip : allTrips) {
-			if (similarityMeasure(tripInterval.gpsPoints,
-					trip.gpsPoints) < SIMILARITY_THRESHOLD) {
-				System.out.println("For trip " + trip.name
-						+ " similarity measure equals to " + similarityMeasure(
-								tripInterval.gpsPoints, trip.gpsPoints));
+			if (similarityMeasure(tripInterval, trip) < SIMILARITY_THRESHOLD) {
+				System.out.println(trip.name + " is similar!");
 				similarTrips.add(trip);
 			}
 		}

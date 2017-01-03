@@ -19,13 +19,13 @@ public class Utils {
 		/* \r is for windows-style line separator */
 		return new Scanner(file).useDelimiter(",|\r?\n");
 	}
-	
+
 	static void writeLine(BufferedWriter writer, String line)
 			throws IOException {
 		writer.write(line);
 		writer.newLine();
 	}
-	
+
 	static ArrayList<Trip> extractTripsFromFiles(File[] files)
 			throws Exception {
 		ArrayList<Trip> trips = new ArrayList<Trip>();
@@ -45,7 +45,11 @@ public class Utils {
 
 	static double squaredDistance(GpsPoint p1, GpsPoint p2) {
 		double latitudeDifference = p1.latitude - p2.latitude;
-		double longitudeDifference = p1.longitude - p2.longitude;
+		/*
+		 * In UK difference in latitude looks about twice larger than
+		 * difference in longitude, hence need to rescale.
+		 */
+		double longitudeDifference = 2 * (p1.longitude - p2.longitude);
 		return latitudeDifference * latitudeDifference
 				+ longitudeDifference * longitudeDifference;
 	}
@@ -63,6 +67,12 @@ public class Utils {
 		}
 	}
 
+	/*
+	 * Function checking whether appropriate files and folders exist. E.g.
+	 * checkCommandLineArguments({"a", "b", "b/c"}, "file", "folder", "file")
+	 * Checks whether there exists a file "a", a folder "b" and a file "c"
+	 * inside the folder "b".
+	 */
 	static void checkCommandLineArguments(String[] args, String... fileOrFolder)
 			throws ProjectSpecificException {
 		if (args.length != fileOrFolder.length) {
@@ -81,10 +91,10 @@ public class Utils {
 			}
 		}
 	}
-	
-	static Long convertDateToTimestamp(String date) throws ParseException {
+
+	static long convertDateToTimestamp(String date) throws ParseException {
 		SimpleDateFormat simpleDateFormat = new SimpleDateFormat(
-				"yyyy-MM-dd hh:mm:ss");
+				"yyyy-mm-dd HH:mm:ss");
 		Date time = simpleDateFormat.parse(date);
 		return time.getTime() / 1000;
 	}
@@ -92,7 +102,7 @@ public class Utils {
 	static String convertTimestampToDate(Long timestamp) throws ParseException {
 		Date date = new Date(timestamp * 1000);
 		SimpleDateFormat simpleDateFormat = new SimpleDateFormat(
-				"yyyy-MM-dd hh:mm:ss");
+				"yyyy-MM-dd HH:mm:ss");
 		return simpleDateFormat.format(date);
 	}
 }

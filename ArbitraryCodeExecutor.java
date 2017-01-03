@@ -1,9 +1,8 @@
 package bus;
 
 import java.io.File;
-import java.io.IOException;
 import java.util.ArrayList;
-import java.util.Collections;
+import java.util.function.Function;
 
 /*
  * A class which contains main method to run anything we want. If one wants to
@@ -13,8 +12,8 @@ import java.util.Collections;
 class ArbitraryCodeExecutor {
 
 	static boolean atMadingleyPark(GpsPoint point) {
-		return (point.latitude >= 52.2144 && point.latitude <= 52.2147
-				&& point.longitude >= 0.0830 && point.longitude <= 0.0840);
+		return (point.latitude >= 52.2138 && point.latitude <= 52.2150
+				&& point.longitude >= 0.0825 && point.longitude <= 0.0843);
 	}
 
 	static boolean stoppedAtMadingleyPark(Trip trip) {
@@ -26,7 +25,12 @@ class ArbitraryCodeExecutor {
 		return false;
 	}
 
-	static Long madingleyStopTimestamp(Trip trip) {
+	static boolean atVictoria(GpsPoint point) {
+		return (point.latitude >= 51.4940 && point.latitude <= 51.4955
+				&& point.longitude >= -0.147 && point.longitude <= -0.145);
+	}
+
+	static long madingleyStopTimestamp(Trip trip) {
 		for (GpsPoint point : trip.gpsPoints) {
 			if (atMadingleyPark(point)) {
 				return point.timestamp;
@@ -35,7 +39,34 @@ class ArbitraryCodeExecutor {
 		return -1L;
 	}
 
+	static long victoriaStopTimestamp(Trip trip) {
+		for (GpsPoint point : trip.gpsPoints) {
+			if (atVictoria(point)) {
+				return point.timestamp;
+			}
+		}
+		return -1L;
+	}
+
+	static boolean atLuton(GpsPoint point) {
+		return (point.latitude >= 51.87 && point.latitude <= 51.88
+				&& point.longitude >= -0.40 && point.longitude <= -0.36);
+	}
+
 	static void extractThroughMadingley(String[] args) throws Exception {
+		extractThroughRegion(args, ArbitraryCodeExecutor::atMadingleyPark);
+	}
+
+	static void extractThroughLuton(String[] args) throws Exception {
+		extractThroughRegion(args, ArbitraryCodeExecutor::atLuton);
+	}
+
+	static void extractThroughVictoria(String[] args) throws Exception {
+		extractThroughRegion(args, ArbitraryCodeExecutor::atVictoria);
+	}
+
+	static void extractThroughRegion(String[] args,
+			Function<GpsPoint, Boolean> passedThrough) throws Exception {
 		Utils.checkCommandLineArguments(args, "folder", "folder");
 		File inputFolder = new File(args[0]);
 		File[] tripFiles = inputFolder.listFiles();
@@ -43,9 +74,11 @@ class ArbitraryCodeExecutor {
 		for (File tripFile : tripFiles) {
 			Trip trip = new Trip(tripFile);
 			System.out.println("Processing trip " + trip.name);
-			if (stoppedAtMadingleyPark(trip)) {
-				System.out.println("This trip stopped at Madingley Park");
-				trip.writeToFolder(outputFolder);
+			for (GpsPoint point : trip.gpsPoints) {
+				if (passedThrough.apply(point)) {
+					trip.writeToFolder(outputFolder);
+					break;
+				}
 			}
 		}
 	}
@@ -63,33 +96,6 @@ class ArbitraryCodeExecutor {
 		for (Trip goodTrip : goodTrips) {
 			goodTrip.writeToFolder(outputFolder);
 		}
-	}
-
-	static Long calculateAverageArrivalTime(ArrayList<Trip> predictions)
-			throws Exception {
-		ArrayList<Long> stoppingTimes = new ArrayList<Long>();
-		for (Trip prediction : predictions) {
-			for (GpsPoint point : prediction.gpsPoints) {
-				if (atMadingleyPark(point)) {
-					stoppingTimes.add(point.timestamp);
-					break;
-				}
-			}
-		}
-		if (stoppingTimes.size() == 0) {
-			throw new Exception("Failed to predict");
-		}
-		
-		Collections.sort(stoppingTimes);
-		return stoppingTimes.get(stoppingTimes.size() / 2);
-	}
-
-	static Long predictForMadingley(Trip tripToPredict,
-			ArrayList<Trip> historicalTrips) throws Exception {
-		ArrayList<Trip> predictions = FuturePredictor
-				.generatePredictionsFromEquallyCongestedTrips(tripToPredict,
-						historicalTrips);
-		return calculateAverageArrivalTime(predictions);
 	}
 
 	static boolean closeEnough(GpsPoint p1, GpsPoint p2) {
@@ -111,18 +117,25 @@ class ArbitraryCodeExecutor {
 		while (index < trip.gpsPoints.size()) {
 			if (delimitingPoint(trip.gpsPoints.get(index))) {
 				delimitingIndex = index;
-				Long delimitArrivalTime = trip.gpsPoints.get(index).timestamp;
+				long delimitArrivalTime = trip.gpsPoints.get(index).timestamp;
 				while (index < trip.gpsPoints.size()
 						&& !atMadingleyPark(trip.gpsPoints.get(index))
 						&& (trip.gpsPoints.get(index).timestamp
-								- delimitArrivalTime) < 1800) {
+								- delimitArrivalTime) < 1500) {
+
+					if (trip.gpsPoints.get(index).timestamp
+							- delimitArrivalTime > 200
+							&& delimitingPoint(trip.gpsPoints.get(index))) {
+						break;
+					}
 					index++;
 				}
-				if (index < trip.gpsPoints.size()) {
-					Long timeDifference = (trip.gpsPoints.get(index).timestamp
+				if (index < trip.gpsPoints.size()
+						&& atMadingleyPark(trip.gpsPoints.get(index))) {
+					long timeDifference = (trip.gpsPoints.get(index).timestamp
 							- delimitArrivalTime);
-					if (timeDifference < 1800) {
-						return delimitingIndex + 1;
+					if (timeDifference < 1200) {
+						return delimitingIndex + 3;
 					}
 				}
 			}
@@ -149,44 +162,50 @@ class ArbitraryCodeExecutor {
 						new ArrayList<GpsPoint>(trip.gpsPoints.subList(
 								indexToDelimit, trip.gpsPoints.size())));
 				futurePart.writeToFolder(futurePartsFolder);
+			} else {
+				System.out.println(
+						"For trip " + trip.name + " things didn't work out.");
 			}
 		}
 	}
 
-	public static void evaluatePredictionToMadingley(String[] args)
-			throws Exception {
+	public static void evaluatePrediction(String[] args) throws Exception {
 		Utils.checkCommandLineArguments(args, "folder", "folder", "folder");
-		ArrayList<Trip> historicalTrips = Trip
-				.extractTripsFromFolder(new File(args[0]));
+		File allTripsFolder = new File(args[0]);
+
 		ArrayList<Trip> recentTrips = Trip
 				.extractTripsFromFolder(new File(args[1]));
 
-		Long accumulatedAbsoluteError = 0L;
-		Long accumulatedError = 0L;
+		long accumulatedAbsoluteError = 0L;
 
 		for (Trip recentTrip : recentTrips) {
-			Long predictedTimestamp = predictForMadingley(recentTrip,
-					historicalTrips);
+			ArrayList<Trip> historicalTrips = Trip.extractTripsFromFolder(
+					allTripsFolder, recentTrip.lastPoint().timestamp - 30L);
+			long predictedTimestamp = FuturePredictor
+					.calculatePredictionToBusStop(
+							ArbitraryCodeExecutor::atVictoria, recentTrip,
+							historicalTrips);
 			Trip futureTrip = new Trip(
 					new File(args[2] + "/" + recentTrip.name));
-			Long actualTimestamp = madingleyStopTimestamp(futureTrip);
-			Long error = actualTimestamp - predictedTimestamp;
-			accumulatedError += error;
+			long actualTimestamp = victoriaStopTimestamp(futureTrip);
+			long error = actualTimestamp - predictedTimestamp;
 			accumulatedAbsoluteError += Math.abs(error);
 
-			System.out.println(recentTrip.name + " was predicted for "
+			System.out.println(recentTrip.name + " started at "
+					+ Utils.convertTimestampToDate(
+							recentTrip.lastPoint().timestamp)
+					+ ", was predicted for "
 					+ Utils.convertTimestampToDate(predictedTimestamp)
 					+ ", actually arrived at "
 					+ Utils.convertTimestampToDate(actualTimestamp)
 					+ ", prediction error is " + error);
 		}
-		System.out.println(
-				"MAE = " + accumulatedAbsoluteError / recentTrips.size());
-		System.out.println(
-				"Average error = " + accumulatedError / recentTrips.size());
+		System.out.println("Mean absolute prediction error is MAE = "
+				+ accumulatedAbsoluteError / recentTrips.size() + " seconds.");
 	}
 
 	public static void main(String[] args) throws Exception {
-		evaluatePredictionToMadingley(args);
+		evaluatePrediction(args);
+		System.out.println("Ended");
 	}
 }

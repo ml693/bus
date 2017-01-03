@@ -16,7 +16,6 @@ import java.util.Scanner;
  * Stansted - London part can be considered as a trip on its own).
  */
 public class Trip {
-	static final Long MILLISECONDS_IN_SECOND = 1000L;
 
 	final String name;
 	final ArrayList<GpsPoint> gpsPoints;
@@ -26,7 +25,7 @@ public class Trip {
 		gpsPoints = new ArrayList<GpsPoint>();
 		Scanner scanner = Utils.csvScanner(file);
 
-		/* To skip "timestamp,latitude,longitude" line */
+		/* To skip "time,latitude,longitude" line */
 		scanner.nextLine();
 
 		/* Reading GPS points one by one */
@@ -38,6 +37,19 @@ public class Trip {
 		scanner.close();
 	}
 
+	/* Reads trip only until specific moment of time. */
+	Trip(File file, long untilTimestamp) throws IOException, ParseException {
+		Trip wholeTrip = new Trip(file);
+		this.name = wholeTrip.name;
+		this.gpsPoints = new ArrayList<GpsPoint>();
+		for (GpsPoint point : wholeTrip.gpsPoints) {
+			if (point.timestamp > untilTimestamp) {
+				return;
+			}
+			this.gpsPoints.add(point);
+		}
+	}
+
 	Trip(String name, ArrayList<GpsPoint> gpsPoints) {
 		this.name = name;
 		this.gpsPoints = gpsPoints;
@@ -47,6 +59,10 @@ public class Trip {
 	Trip(String name) {
 		this.name = name;
 		gpsPoints = new ArrayList<GpsPoint>();
+	}
+
+	Trip rename(String newName) {
+		return new Trip(newName, gpsPoints);
 	}
 
 	/* Adds an offset to each trip's timestamp */
@@ -61,21 +77,6 @@ public class Trip {
 		return shiftedTrip;
 	}
 
-	Trip extractTimeInterval(long from, long until) {
-		int startingIndex = 0;
-		while (startingIndex < gpsPoints.size()
-				&& gpsPoints.get(startingIndex).timestamp <= from) {
-			startingIndex++;
-		}
-		int lastIndex = startingIndex;
-		while (lastIndex < gpsPoints.size()
-				&& gpsPoints.get(lastIndex).timestamp <= until) {
-			lastIndex++;
-		}
-		return new Trip(name, new ArrayList<GpsPoint>(
-				gpsPoints.subList(startingIndex, lastIndex)));
-	}
-
 	static ArrayList<Trip> extractTripsFromFolder(File folder)
 			throws IOException, ParseException {
 		ArrayList<Trip> trips = new ArrayList<Trip>();
@@ -86,15 +87,24 @@ public class Trip {
 		return trips;
 	}
 
-	void writeToFolder(String folderName) throws IOException, ParseException {
-		writeToFolder(new File(folderName));
+	static ArrayList<Trip> extractTripsFromFolder(File folder,
+			long untilTimestamp) throws IOException, ParseException {
+		ArrayList<Trip> trips = new ArrayList<Trip>();
+		File[] files = folder.listFiles();
+		for (File file : files) {
+			Trip trip = new Trip(file, untilTimestamp);
+			if (trip.gpsPoints.size() > 0) {
+				trips.add(trip);
+			}
+		}
+		return trips;
 	}
 
+	/* The file to which we output is specified by trips name */
 	void writeToFolder(File folder) throws IOException, ParseException {
-		folder.mkdir();
 		BufferedWriter writer = new BufferedWriter(
 				new FileWriter(folder + "/" + name));
-		Utils.writeLine(writer, "timestamp,latitude,longitude");
+		Utils.writeLine(writer, "time,latitude,longitude");
 		for (GpsPoint point : gpsPoints) {
 			point.write(writer);
 		}
