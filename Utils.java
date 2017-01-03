@@ -17,6 +17,20 @@ public class Utils {
 	
 	static final String SIMPLE_DATE_FORMAT = "yyyy-MM-dd HH:mm:ss";
 	static final long MILLISECONDS_IN_ONE_SECOND = 1000;
+	
+	static long convertDateToTimestamp(String date) throws ParseException {
+		SimpleDateFormat simpleDateFormat = new SimpleDateFormat(
+				SIMPLE_DATE_FORMAT);
+		Date time = simpleDateFormat.parse(date);
+		return time.getTime() / MILLISECONDS_IN_ONE_SECOND;
+	}
+
+	static String convertTimestampToDate(Long timestamp) throws ParseException {
+		Date date = new Date(timestamp * MILLISECONDS_IN_ONE_SECOND);
+		SimpleDateFormat simpleDateFormat = new SimpleDateFormat(
+				SIMPLE_DATE_FORMAT);
+		return simpleDateFormat.format(date);
+	}
 
 	static Scanner csvScanner(File file) throws IOException {
 		/* \r is for windows-style line separator */
@@ -93,19 +107,5 @@ public class Utils {
 								+ fileOrFolder[i] + " name."));
 			}
 		}
-	}
-
-	static long convertDateToTimestamp(String date) throws ParseException {
-		SimpleDateFormat simpleDateFormat = new SimpleDateFormat(
-				SIMPLE_DATE_FORMAT);
-		Date time = simpleDateFormat.parse(date);
-		return time.getTime() / MILLISECONDS_IN_ONE_SECOND;
-	}
-
-	static String convertTimestampToDate(Long timestamp) throws ParseException {
-		Date date = new Date(timestamp * MILLISECONDS_IN_ONE_SECOND);
-		SimpleDateFormat simpleDateFormat = new SimpleDateFormat(
-				SIMPLE_DATE_FORMAT);
-		return simpleDateFormat.format(date);
 	}
 }
