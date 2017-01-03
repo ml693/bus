@@ -11,21 +11,16 @@ class HistoryIntoTripsSplitter {
 	/*
 	 * Program takes CSV file showing a GPS history of a single bus. It
 	 * (roughly) splits the GPS history into multiple time intervals and stores
-	 * each
-	 * time interval as an output CSV file. The expectation is that each time
-	 * interval represents a single trip a bus has made. This behaviour is
-	 * repeated
-	 * for each file in the input folder.
+	 * each time interval as an output CSV file. The expectation is that each
+	 * time interval represents a single trip a bus has made. This behaviour is
+	 * repeated for each file in the input folder.
 	 * 
 	 * WARNING: How exactly the content of output files should be generated is
-	 * not
-	 * specified precisely. Output content generation procedure might change if
-	 * we
-	 * think it's better to extract trips in another way. Some lines from the
-	 * input
-	 * file might be missing (e.g. if a bus was on and standing for 30min, we
-	 * will
-	 * remove all lines showing that it was standing at the same place).
+	 * not specified precisely. Output content generation procedure might change
+	 * if we think it's better to extract trips in another way. Some lines from
+	 * the input file might be missing (e.g. if a bus was on and standing for
+	 * 30min, we will remove all lines showing that it was standing at the same
+	 * place).
 	 * 
 	 * // Create files output_folder/trip_subtrip0, output_folder/trip_subtrip1,
 	 * ...

@@ -16,7 +16,6 @@ import java.util.Scanner;
  * Stansted - London part can be considered as a trip on its own).
  */
 public class Trip {
-
 	final String name;
 	final ArrayList<GpsPoint> gpsPoints;
 

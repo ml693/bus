@@ -11,7 +11,6 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 public class BusTravelHistoryExtractor {
-
 	/*
 	 * This program takes JSON files as an input, extracts info about
 	 * busesTravelHistory from input, and for each bus X produces an output file

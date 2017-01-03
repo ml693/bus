@@ -6,7 +6,6 @@ import java.text.ParseException;
 import java.util.ArrayList;
 
 class TripDetector {
-	
 	/*
 	 * Program determines which trip the bus is following given a file showing
 	 * the most recent bus GPS travel history, and a directory containing all
