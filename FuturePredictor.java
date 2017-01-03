@@ -120,11 +120,10 @@ public class FuturePredictor {
 			Function<GpsPoint, Boolean> atBusStop, Trip tripToPredict,
 			ArrayList<Trip> historicalTrips) throws IOException, ParseException,
 					ProjectSpecificException {
-		ArrayList<Trip> predictions = FuturePredictor
-				.generatePredictionsFromEquallyCongestedTrips(tripToPredict,
-						historicalTrips);
-		return FuturePredictor.calculateAverageArrivalTime(tripToPredict.name,
-				predictions, atBusStop);
+		ArrayList<Trip> predictions = generatePredictionsFromEquallyCongestedTrips(
+				tripToPredict, historicalTrips);
+		return calculateAverageArrivalTime(tripToPredict.name, predictions,
+				atBusStop);
 	}
 
 	private static long averageArrivalTimestamp(
