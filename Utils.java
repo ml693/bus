@@ -14,10 +14,10 @@ import java.util.Date;
 import java.util.Scanner;
 
 public class Utils {
-	
-	static final String SIMPLE_DATE_FORMAT = "yyyy-MM-dd HH:mm:ss";
-	static final long MILLISECONDS_IN_ONE_SECOND = 1000;
-	
+
+	private static final String SIMPLE_DATE_FORMAT = "yyyy-MM-dd HH:mm:ss";
+	private static final long MILLISECONDS_IN_ONE_SECOND = 1000;
+
 	static long convertDateToTimestamp(String date) throws ParseException {
 		SimpleDateFormat simpleDateFormat = new SimpleDateFormat(
 				SIMPLE_DATE_FORMAT);

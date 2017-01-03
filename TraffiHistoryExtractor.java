@@ -14,7 +14,7 @@ import java.util.Scanner;
 
 public class TraffiHistoryExtractor {
 
-	public static void ExtractDaysHistory(File inputFile, File outputFolder)
+	public static void extractDaysHistory(File inputFile, File outputFolder)
 			throws IOException, ParseException {
 		HashMap<String, Trip> dayTrips = new HashMap<String, Trip>();
 
@@ -72,6 +72,6 @@ public class TraffiHistoryExtractor {
 
 	public static void main(String args[]) throws Exception {
 		Utils.checkCommandLineArguments(args, "file", "folder");
-		ExtractDaysHistory(new File(args[0]), new File(args[1]));
+		extractDaysHistory(new File(args[0]), new File(args[1]));
 	}
 }

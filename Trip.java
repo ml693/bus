@@ -20,9 +20,15 @@ public class Trip {
 	final String name;
 	final ArrayList<GpsPoint> gpsPoints;
 
+	/* Read whole trip from file */
 	Trip(File file) throws IOException, ParseException {
-		name = file.getName();
-		gpsPoints = new ArrayList<GpsPoint>();
+		this(file, Long.MAX_VALUE);
+	}
+
+	/* Reads trip only until specific moment of time. */
+	Trip(File file, long untilTimestamp) throws IOException, ParseException {
+		this.name = file.getName();
+		this.gpsPoints = new ArrayList<GpsPoint>();
 		Scanner scanner = Utils.csvScanner(file);
 
 		/* To skip "time,latitude,longitude" line */
@@ -30,35 +36,21 @@ public class Trip {
 
 		/* Reading GPS points one by one */
 		while (scanner.hasNext()) {
-			gpsPoints.add(
-					new GpsPoint(Utils.convertDateToTimestamp(scanner.next()),
-							scanner.nextDouble(), scanner.nextDouble()));
-		}
-		scanner.close();
-	}
-
-	/* Reads trip only until specific moment of time. */
-	Trip(File file, long untilTimestamp) throws IOException, ParseException {
-		Trip wholeTrip = new Trip(file);
-		this.name = wholeTrip.name;
-		this.gpsPoints = new ArrayList<GpsPoint>();
-		for (GpsPoint point : wholeTrip.gpsPoints) {
+			GpsPoint point = new GpsPoint(
+					Utils.convertDateToTimestamp(scanner.next()),
+					scanner.nextDouble(), scanner.nextDouble());
 			if (point.timestamp > untilTimestamp) {
+				scanner.close();
 				return;
 			}
 			this.gpsPoints.add(point);
 		}
+		scanner.close();
 	}
 
 	Trip(String name, ArrayList<GpsPoint> gpsPoints) {
 		this.name = name;
 		this.gpsPoints = gpsPoints;
-	}
-
-	/* To construct empty trip to which we will add GPS points. */
-	Trip(String name) {
-		this.name = name;
-		gpsPoints = new ArrayList<GpsPoint>();
 	}
 
 	Trip rename(String newName) {

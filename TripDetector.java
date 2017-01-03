@@ -26,8 +26,8 @@ class TripDetector {
 
 	static double SIMILARITY_THRESHOLD = 4f;
 
-	static private double DISTANCE_TOO_SMALL_TO_CONSIDER = 0.0005f;
-	static private double SIGNIFICANT_RATIO_THRESHOLD = 1.1f;
+	private static double DISTANCE_TOO_SMALL_TO_CONSIDER = 0.0005f;
+	private static double SIGNIFICANT_RATIO_THRESHOLD = 1.1f;
 
 	/*
 	 * Method finds a "best" segment and computes the Euclidean point's distance
@@ -119,7 +119,6 @@ class TripDetector {
 				similarTrips.add(trip);
 			}
 		}
-
 		return similarTrips;
 	}
 

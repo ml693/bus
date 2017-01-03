@@ -18,7 +18,6 @@ public class RoutesExtractor {
 
 	static void readBusStops(File stopsFile) throws IOException {
 		Scanner scanner = Utils.csvScanner(stopsFile);
-
 		/* Skipping header line */
 		scanner.nextLine();
 
