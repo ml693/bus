@@ -14,6 +14,9 @@ import java.util.Date;
 import java.util.Scanner;
 
 public class Utils {
+	
+	static final String SIMPLE_DATE_FORMAT = "yyyy-MM-dd HH:mm:ss";
+	static final long MILLISECONDS_IN_ONE_SECOND = 1000;
 
 	static Scanner csvScanner(File file) throws IOException {
 		/* \r is for windows-style line separator */
@@ -39,7 +42,7 @@ public class Utils {
 	 * Geometric distance between two GPS points in space, when latitude
 	 * represents y coordinate and longitude represents x coordinate;
 	 */
-	static double Distance(GpsPoint p1, GpsPoint p2) {
+	static double distance(GpsPoint p1, GpsPoint p2) {
 		return Math.sqrt(squaredDistance(p1, p2));
 	}
 
@@ -94,15 +97,15 @@ public class Utils {
 
 	static long convertDateToTimestamp(String date) throws ParseException {
 		SimpleDateFormat simpleDateFormat = new SimpleDateFormat(
-				"yyyy-mm-dd HH:mm:ss");
+				SIMPLE_DATE_FORMAT);
 		Date time = simpleDateFormat.parse(date);
-		return time.getTime() / 1000;
+		return time.getTime() / MILLISECONDS_IN_ONE_SECOND;
 	}
 
 	static String convertTimestampToDate(Long timestamp) throws ParseException {
-		Date date = new Date(timestamp * 1000);
+		Date date = new Date(timestamp * MILLISECONDS_IN_ONE_SECOND);
 		SimpleDateFormat simpleDateFormat = new SimpleDateFormat(
-				"yyyy-MM-dd HH:mm:ss");
+				SIMPLE_DATE_FORMAT);
 		return simpleDateFormat.format(date);
 	}
 }

@@ -161,7 +161,7 @@ class HistoryIntoTripsSplitter {
 		Trip currentSubTrip = new Trip(
 				generateName(travelHistoryFile, extractedTripsCount),
 				new ArrayList<GpsPoint>());
-		Scanner gpsInput = new Scanner(travelHistoryFile).useDelimiter(",|\\n");
+		Scanner gpsInput = Utils.csvScanner(travelHistoryFile);
 		/* To skip "timestamp,latitude,longitude" line */
 		gpsInput.nextLine();
 
@@ -201,16 +201,16 @@ class HistoryIntoTripsSplitter {
 			currentLatitude = newLatitude;
 			currentLongitude = newLongitude;
 		}
+		
 		/* Don't forget to add the final sub trip */
 		if (currentSubTripFlushed(currentSubTrip, outputFolder)) {
 			extractedTripsCount++;
 		}
-
 		System.out.println("Extracted " + extractedTripsCount + " trips.");
 	}
 
 	public static void main(String args[]) throws Exception {
-		File[] travelHistoryFiles = (new File(args[0])).listFiles();
+		File[] travelHistoryFiles = new File(args[0]).listFiles();
 		File outputFolder = new File(args[1]);
 		for (File travelHistoryFile : travelHistoryFiles) {
 			extractTripsFromTravelHistoryFile(travelHistoryFile, outputFolder);

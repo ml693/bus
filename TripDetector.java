@@ -39,15 +39,15 @@ class TripDetector {
 	private static double ratioToBestSegmentCorners(GpsPoint point, Trip trip) {
 		double minError = Double.MAX_VALUE;
 		for (int i = 1; i < trip.gpsPoints.size(); i++) {
-			double distanceToCorners = Utils.Distance(point,
+			double distanceToCorners = Utils.distance(point,
 					trip.gpsPoints.get(i - 1))
-					+ Utils.Distance(point, trip.gpsPoints.get(i));
+					+ Utils.distance(point, trip.gpsPoints.get(i));
 			if (distanceToCorners <= DISTANCE_TOO_SMALL_TO_CONSIDER) {
 				return 1.0;
 			}
 
 			double ratioError = distanceToCorners / Utils
-					.Distance(trip.gpsPoints.get(i - 1), trip.gpsPoints.get(i));
+					.distance(trip.gpsPoints.get(i - 1), trip.gpsPoints.get(i));
 			if (ratioError < SIGNIFICANT_RATIO_THRESHOLD) {
 				return 1.0;
 			}
