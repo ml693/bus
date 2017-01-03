@@ -13,6 +13,11 @@ import java.util.HashMap;
 import java.util.Scanner;
 
 public class TraffiHistoryExtractor {
+	
+	public static void main(String args[]) throws Exception {
+		Utils.checkCommandLineArguments(args, "file", "folder");
+		extractDaysHistory(new File(args[0]), new File(args[1]));
+	}
 
 	public static void extractDaysHistory(File inputFile, File outputFolder)
 			throws IOException, ParseException {
@@ -68,10 +73,5 @@ public class TraffiHistoryExtractor {
 			dayTrips.get(vehicleId).writeToFolder(outputFolder);
 		}
 
-	}
-
-	public static void main(String args[]) throws Exception {
-		Utils.checkCommandLineArguments(args, "file", "folder");
-		extractDaysHistory(new File(args[0]), new File(args[1]));
 	}
 }

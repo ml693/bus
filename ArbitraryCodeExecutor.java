@@ -10,6 +10,11 @@ import java.util.function.Function;
  * get 'polluted' with arbitrary code.
  */
 class ArbitraryCodeExecutor {
+	
+	public static void main(String[] args) throws Exception {
+		evaluatePrediction(args);
+		System.out.println("Ended");
+	}
 
 	static boolean atMadingleyPark(GpsPoint point) {
 		return (point.latitude >= 52.2138 && point.latitude <= 52.2150
@@ -202,10 +207,5 @@ class ArbitraryCodeExecutor {
 		}
 		System.out.println("Mean absolute prediction error is MAE = "
 				+ accumulatedAbsoluteError / recentTrips.size() + " seconds.");
-	}
-
-	public static void main(String[] args) throws Exception {
-		evaluatePrediction(args);
-		System.out.println("Ended");
 	}
 }

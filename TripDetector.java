@@ -1,20 +1,3 @@
-/*
- * Program determines which trip the bus is following given a file showing
- * the most recent bus GPS travel history, and a directory containing all
- * possible bus trips. For more details about the format of input files,
- * look at the TripsExtractor class documentation.
- * 
- * EXAMPLE USAGE
- * 
- * // The following will print "trip2",
- * // if "trips_folder" contains files {trip1, trip2, trip3} and
- * // "gps_history_file" is most similar to some sub-trip of trip2.
- * java TripDetector gps_history_file trips_folder
- * 
- * // This should always print answer "trip1",
- * // because the history of trip1 matches trip1 exactly.
- * java TripDetector trips_folder/trip1 trips_folder
- */
 package bus;
 
 import java.io.File;
@@ -23,6 +6,29 @@ import java.text.ParseException;
 import java.util.ArrayList;
 
 class TripDetector {
+	
+	/*
+	 * Program determines which trip the bus is following given a file showing
+	 * the most recent bus GPS travel history, and a directory containing all
+	 * possible bus trips. For more details about the format of input files,
+	 * look at the TripsExtractor class documentation.
+	 * 
+	 * EXAMPLE USAGE
+	 * 
+	 * // The following will print "trip2",
+	 * // if "trips_folder" contains files {trip1, trip2, trip3} and
+	 * // "gps_history_file" is most similar to some sub-trip of trip2.
+	 * java TripDetector gps_history_file trips_folder
+	 * 
+	 * // This should always print answer "trip1",
+	 * // because the history of trip1 matches trip1 exactly.
+	 * java TripDetector trips_folder/trip1 trips_folder
+	 */
+	public static void main(String args[]) throws Exception {
+		Utils.checkCommandLineArguments(args, "file", "folder");
+		Trip tripInterval = new Trip(new File(args[0]));
+		detectMostSimilarTrip(tripInterval, new File(args[1]));
+	}
 
 	static double SIMILARITY_THRESHOLD = 4f;
 
@@ -120,12 +126,6 @@ class TripDetector {
 			}
 		}
 		return similarTrips;
-	}
-
-	public static void main(String args[]) throws Exception {
-		Utils.checkCommandLineArguments(args, "file", "folder");
-		Trip tripInterval = new Trip(new File(args[0]));
-		detectMostSimilarTrip(tripInterval, new File(args[1]));
 	}
 
 }

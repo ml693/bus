@@ -30,7 +30,6 @@ public class Trip {
 		this.name = file.getName();
 		this.gpsPoints = new ArrayList<GpsPoint>();
 		Scanner scanner = Utils.csvScanner(file);
-
 		/* To skip "time,latitude,longitude" line */
 		scanner.nextLine();
 

@@ -1,19 +1,3 @@
-/*
- * Program takes CSV file showing a GPS history of a single bus. It
- * (roughly) splits the GPS history into multiple time intervals and stores each
- * time interval as an output CSV file. The expectation is that each time
- * interval represents a single trip a bus has made. This behaviour is repeated
- * for each file in the input folder.
- * 
- * WARNING: How exactly the content of output files should be generated is not
- * specified precisely. Output content generation procedure might change if we
- * think it's better to extract trips in another way. Some lines from the input
- * file might be missing (e.g. if a bus was on and standing for 30min, we will
- * remove all lines showing that it was standing at the same place).
- * 
- * // Create files output_folder/trip_subtrip0, output_folder/trip_subtrip1, ...
- * java bus.RouteExtractor trip output_folder
- */
 package bus;
 
 import java.io.File;
@@ -24,6 +8,37 @@ import java.util.Scanner;
 
 class HistoryIntoTripsSplitter {
 
+	/*
+	 * Program takes CSV file showing a GPS history of a single bus. It
+	 * (roughly) splits the GPS history into multiple time intervals and stores
+	 * each
+	 * time interval as an output CSV file. The expectation is that each time
+	 * interval represents a single trip a bus has made. This behaviour is
+	 * repeated
+	 * for each file in the input folder.
+	 * 
+	 * WARNING: How exactly the content of output files should be generated is
+	 * not
+	 * specified precisely. Output content generation procedure might change if
+	 * we
+	 * think it's better to extract trips in another way. Some lines from the
+	 * input
+	 * file might be missing (e.g. if a bus was on and standing for 30min, we
+	 * will
+	 * remove all lines showing that it was standing at the same place).
+	 * 
+	 * // Create files output_folder/trip_subtrip0, output_folder/trip_subtrip1,
+	 * ...
+	 * java bus.RouteExtractor trip output_folder
+	 */
+	public static void main(String args[]) throws Exception {
+		File[] travelHistoryFiles = new File(args[0]).listFiles();
+		File outputFolder = new File(args[1]);
+		for (File travelHistoryFile : travelHistoryFiles) {
+			extractTripsFromTravelHistoryFile(travelHistoryFile, outputFolder);
+		}
+	}
+
 	private static final long SAME_PLACE_THRESHOLD = 360L;
 	private static final int ENOUGH_GPS_POINTS = 30;
 
@@ -32,7 +47,7 @@ class HistoryIntoTripsSplitter {
 	 * We check that based on how long the bus was standing in the same place.
 	 * Such heuristic works for now, but can be freely changed if we want.
 	 */
-	private static boolean newSubtripAccordingToTimestamp(long currentTimestamp,
+	private static boolean newSubtripBasedOnTime(long currentTimestamp,
 			long newTimestamp) {
 		return (newTimestamp - currentTimestamp) > SAME_PLACE_THRESHOLD;
 	}
@@ -167,25 +182,18 @@ class HistoryIntoTripsSplitter {
 
 		/* Main loop reading GPS data from bus history input file */
 		while (gpsInput.hasNext()) {
-			/*
-			 * Note we're relying on correctly formatted input file here. If
-			 * input contains wrong number of entries per line, or entries in
-			 * wrong order, then the program will either throw an exception or
-			 * silently terminate computing wrong results.
-			 */
 			long newTimestamp = Utils.convertDateToTimestamp(gpsInput.next());
 			double newLatitude = gpsInput.nextDouble();
 			double newLongitude = gpsInput.nextDouble();
 
-			if (newSubtripAccordingToTimestamp(currentTimestamp,
-					newTimestamp)) {
+			if (newSubtripBasedOnTime(currentTimestamp, newTimestamp)) {
 				if (currentSubTripFlushed(currentSubTrip, outputFolder)) {
 					extractedTripsCount++;
 				}
+				currentTimestamp = newTimestamp;
 				currentSubTrip = new Trip(
 						generateName(travelHistoryFile, extractedTripsCount),
 						new ArrayList<GpsPoint>());
-				currentTimestamp = newTimestamp;
 			}
 
 			if (newLatitude != currentLatitude
@@ -201,20 +209,12 @@ class HistoryIntoTripsSplitter {
 			currentLatitude = newLatitude;
 			currentLongitude = newLongitude;
 		}
-		
+
 		/* Don't forget to add the final sub trip */
 		if (currentSubTripFlushed(currentSubTrip, outputFolder)) {
 			extractedTripsCount++;
 		}
 		System.out.println("Extracted " + extractedTripsCount + " trips.");
-	}
-
-	public static void main(String args[]) throws Exception {
-		File[] travelHistoryFiles = new File(args[0]).listFiles();
-		File outputFolder = new File(args[1]);
-		for (File travelHistoryFile : travelHistoryFiles) {
-			extractTripsFromTravelHistoryFile(travelHistoryFile, outputFolder);
-		}
 	}
 
 }
