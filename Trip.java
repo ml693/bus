@@ -69,12 +69,7 @@ public class Trip {
 
 	static ArrayList<Trip> extractTripsFromFolder(File folder)
 			throws IOException, ParseException {
-		ArrayList<Trip> trips = new ArrayList<Trip>();
-		File[] files = folder.listFiles();
-		for (File file : files) {
-			trips.add(new Trip(file));
-		}
-		return trips;
+		return extractTripsFromFolder(folder, Long.MAX_VALUE);
 	}
 
 	static ArrayList<Trip> extractTripsFromFolder(File folder,

@@ -12,6 +12,13 @@ import java.util.regex.Pattern;
 
 public class BusTravelHistoryExtractor {
 	/*
+	 * Internal map to store data. At the end this map will get printed as a
+	 * list of files to the output directory.
+	 */
+	static HashMap<Integer, Trip> allHistories = new HashMap<Integer, Trip>();
+	
+	
+	/*
 	 * This program takes JSON files as an input, extracts info about
 	 * busesTravelHistory from input, and for each bus X produces an output file
 	 * busX, containing the information about the bus X.
@@ -49,8 +56,8 @@ public class BusTravelHistoryExtractor {
 		 * of the form "timestamp":"x2".
 		 * 
 		 * Therefore, we sort files here so that processing files in order
-		 * would put data into allTrips in order. That would
-		 * allow us to avoid sorting the busesTravelHistory map.
+		 * would put data into allHistories in order. That would
+		 * allow us to avoid sorting the allHistories map.
 		 */
 		Arrays.sort(jsonFiles, (file1, file2) -> file1.compareTo(file2));
 		for (File jsonFile : jsonFiles) {
@@ -59,16 +66,10 @@ public class BusTravelHistoryExtractor {
 		}
 		/* At the end we output the processed data into args[1] folder */
 		File outputFolder = new File(args[1]);
-		for (Trip trip : allTrips.values()) {
+		for (Trip trip : allHistories.values()) {
 			trip.writeToFolder(outputFolder);
 		}
 	}
-
-	/*
-	 * Internal map to store data. At the end this map will get printed as a
-	 * list of files to the output directory.
-	 */
-	static HashMap<Integer, Trip> allTrips = new HashMap<Integer, Trip>();
 
 	static int extractVehicleId(String snapshot) {
 		Pattern pattern = Pattern.compile("vehicle_id" + "\":\"" + "[0-9]+");
@@ -95,13 +96,14 @@ public class BusTravelHistoryExtractor {
 			GpsPoint gpsPoint = new GpsPoint(busSnapshotTextEntry);
 
 			/* And store info into the map */
-			if (!allTrips.containsKey(busId)) {
-				allTrips.put(busId, new Trip(
-						"day" + file.getParentFile().getName() + "_bus" + busId,
-						new ArrayList<GpsPoint>()));
+			if (!allHistories.containsKey(busId)) {
+				allHistories.put(busId, new Trip(
+										"day" + file.getParentFile().getName()
+												+ "_bus" + busId,
+										new ArrayList<GpsPoint>()));
 			}
 			if (gpsPoint.latitude != 0.0 || gpsPoint.longitude != 0.0) {
-				allTrips.get(busId).gpsPoints.add(gpsPoint);
+				allHistories.get(busId).gpsPoints.add(gpsPoint);
 			}
 		}
 
