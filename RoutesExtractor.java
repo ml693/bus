@@ -10,11 +10,15 @@ import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.Scanner;
+import java.util.Set;
 
 public class RoutesExtractor {
 
 	static HashMap<Long, BusStop> busStops = new HashMap<Long, BusStop>();
+
+	static Set<String> duplicateRoute = new HashSet<String>();
 
 	static void readBusStops(File stopsFile) throws IOException {
 		Scanner scanner = Utils.csvScanner(stopsFile);
@@ -22,7 +26,7 @@ public class RoutesExtractor {
 		scanner.nextLine();
 
 		/*
-		 * Assumption is that stops.txt file contains line, each of the form
+		 * Assumption is that stops.txt file contains lines of the form
 		 * stop_id,stop_code,stop_name,stop_lat,stop_lon
 		 */
 		while (scanner.hasNext()) {
@@ -65,7 +69,13 @@ public class RoutesExtractor {
 				tripName = scanner.next();
 			}
 
-			route.writeToFolder(routesFolder);
+			String serializedRoute = route.serialize();
+			if (!duplicateRoute.contains(serializedRoute)) {
+				duplicateRoute.add(serializedRoute);
+				route.writeToFolder(routesFolder);
+			} else {
+				System.out.println("Duplicate " + route.name + " found!");
+			}
 		}
 	}
 
@@ -79,7 +89,7 @@ public class RoutesExtractor {
 		readBusStops(new File(args[0] + "/stops.txt"));
 
 		constructRoutes(new File(args[0] + "/stop_times.txt"),
-				new File("routes"));
+				new File(args[1]));
 	}
 
 }

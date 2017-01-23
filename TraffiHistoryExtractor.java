@@ -13,7 +13,7 @@ import java.util.HashMap;
 import java.util.Scanner;
 
 public class TraffiHistoryExtractor {
-	
+
 	public static void main(String args[]) throws Exception {
 		Utils.checkCommandLineArguments(args, "file", "folder");
 		extractDaysHistory(new File(args[0]), new File(args[1]));
@@ -21,7 +21,7 @@ public class TraffiHistoryExtractor {
 
 	public static void extractDaysHistory(File inputFile, File outputFolder)
 			throws IOException, ParseException {
-		HashMap<String, Trip> dayTrips = new HashMap<String, Trip>();
+		HashMap<String, ArrayList<GpsPoint>> dayTrips = new HashMap<String, ArrayList<GpsPoint>>();
 
 		Scanner scanner = Utils.csvScanner(inputFile);
 		/* Skip timestamp,latitude,etc meta line */
@@ -63,14 +63,18 @@ public class TraffiHistoryExtractor {
 			GpsPoint gpsPoint = new GpsPoint(timestamp, latitude, longitude);
 			String key = inputFile.getName() + "_id" + vehicleId;
 			if (!dayTrips.containsKey(key)) {
-				dayTrips.put(key, new Trip(key, new ArrayList<GpsPoint>()));
+				dayTrips.put(key, new ArrayList<GpsPoint>());
 			}
-			dayTrips.get(key).gpsPoints.add(gpsPoint);
+			dayTrips.get(key).add(gpsPoint);
 		}
 		scanner.close();
 
-		for (String vehicleId : dayTrips.keySet()) {
-			dayTrips.get(vehicleId).writeToFolder(outputFolder);
+		for (String key : dayTrips.keySet()) {
+			try {
+				new Trip(key, dayTrips.get(key)).writeToFolder(outputFolder);
+			} catch (ProjectSpecificException exception) {
+				System.out.println(key + " has too little GPS entries!");
+			}
 		}
 
 	}

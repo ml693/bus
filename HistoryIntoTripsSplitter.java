@@ -27,37 +27,77 @@ class HistoryIntoTripsSplitter {
 	 * java bus.RouteExtractor trip output_folder
 	 */
 	public static void main(String args[]) throws Exception {
+		GpsPoint p1 = new GpsPoint(0L, 51.9073500, -0.4430700);
+		GpsPoint p2 = new GpsPoint(0L, 51.8862000, -0.4242500);
+		System.out.println(Utils.distance(p1, p2));
+
 		File[] travelHistoryFiles = new File(args[0]).listFiles();
 		File outputFolder = new File(args[1]);
 		for (File travelHistoryFile : travelHistoryFiles) {
 			extractTripsFromTravelHistoryFile(travelHistoryFile, outputFolder);
 		}
+
 	}
 
-	private static final long SAME_PLACE_THRESHOLD = 360L;
-	private static final int ENOUGH_GPS_POINTS = 30;
+	private static final double DISTANCE_SHOWING_THAT_BUS_IS_MOVING = 0.00002;
+	private static final int POINTS_THAT_ARE_TURNING_AROUND = 2;
+	private static final long ONE_TRIP_TIME_RATIO = 600L;
 
 	/*
-	 * The main method which decides whether the bus started a new trip or not.
-	 * We check that based on how long the bus was standing in the same place.
-	 * Such heuristic works for now, but can be freely changed if we want.
+	 * We want to delimit the trip if the bus has turned around.
+	 * This heuristic will delimit such trips with certain level of success.
 	 */
-	private static boolean newSubtripBasedOnTime(long currentTimestamp,
-			long newTimestamp) {
-		return (newTimestamp - currentTimestamp) > SAME_PLACE_THRESHOLD;
+	static boolean busIsTurningAround(ArrayList<GpsPoint> points) {
+		for (int p = points.size() - 1; p >= points.size()
+				- POINTS_THAT_ARE_TURNING_AROUND && p > 0; p--) {
+			boolean busIsMovingForward = true;
+			for (int i = points.size() - POINTS_THAT_ARE_TURNING_AROUND
+					- 1; i > 0; i--) {
+				if (points.get(p).ratioToSegmentCorners(points.get(i - 1),
+						points.get(i)) == 1.0) {
+					busIsMovingForward = false;
+					break;
+				}
+			}
+			if (busIsMovingForward) {
+				return false;
+			}
+		}
+		return points.size() > Trip.MINIMUM_NUMBER_OF_GPS_POINTS;
 	}
 
-	/*
-	 * Writes current sub trip to file if it's long enough.
-	 * Does nothing otherwise.
-	 */
-	private static boolean currentSubTripFlushed(Trip subTrip,
-			File folderToFlush) throws IOException, ParseException {
-		if (subTrip.gpsPoints.size() >= ENOUGH_GPS_POINTS) {
-			subTrip.writeToFolder(folderToFlush);
+	private static boolean busMovedSignificantDistance(
+			ArrayList<GpsPoint> points, GpsPoint currentPoint,
+			GpsPoint newPoint) {
+		if (points.size() == 0) {
+			/* We allow bus to start moving first */
 			return true;
 		}
-		return false;
+		GpsPoint lastPoint = points.get(points.size() - 1);
+		return Utils.distance(lastPoint, currentPoint) + Utils.distance(
+				currentPoint, newPoint) >= DISTANCE_SHOWING_THAT_BUS_IS_MOVING;
+	}
+
+	private static boolean busJumpedUnrealisticDistance(GpsPoint currentPoint,
+			GpsPoint newPoint) {
+		return (Utils.distance(currentPoint, newPoint) > 0.0002);
+	}
+
+	/*
+	 * If enough recent GPS points are gathered, creates a trip from them and
+	 * writes it to a file. Does nothing otherwise.
+	 */
+	private static boolean flushGpsPoints(ArrayList<GpsPoint> currentGpsPoints,
+			File travelHistoryFile, int extractedTripsCount, File outputFolder)
+					throws IOException, ParseException {
+		try {
+			String newName = generateName(travelHistoryFile,
+					extractedTripsCount);
+			new Trip(newName, currentGpsPoints).writeToFolder(outputFolder);
+			return true;
+		} catch (ProjectSpecificException exception) {
+			return false;
+		}
 	}
 
 	private static String generateName(File travelHistoryFile,
@@ -162,51 +202,58 @@ class HistoryIntoTripsSplitter {
 	public static void extractTripsFromTravelHistoryFile(File travelHistoryFile,
 			File outputFolder) throws IOException, ParseException {
 		System.out.println("Scanning file " + travelHistoryFile.getName());
+		Scanner gpsInput = Utils.csvScanner(travelHistoryFile);
+		/* To skip "time,latitude,longitude" line */
+		gpsInput.nextLine();
 
 		/* Preparing variables to read input file */
 		int extractedTripsCount = 0;
-		long currentTimestamp = 0L;
-		double currentLatitude = 0.0;
-		double currentLongitude = 0.0;
-		Trip currentSubTrip = new Trip(
-				generateName(travelHistoryFile, extractedTripsCount),
-				new ArrayList<GpsPoint>());
-		Scanner gpsInput = Utils.csvScanner(travelHistoryFile);
-		/* To skip "timestamp,latitude,longitude" line */
-		gpsInput.nextLine();
+		ArrayList<GpsPoint> points = new ArrayList<GpsPoint>();
+		GpsPoint currentPoint = new GpsPoint(
+				Utils.convertDateToTimestamp(gpsInput.next()),
+				gpsInput.nextDouble(), gpsInput.nextDouble());
 
 		/* Main loop reading GPS data from bus history input file */
 		while (gpsInput.hasNext()) {
-			long newTimestamp = Utils.convertDateToTimestamp(gpsInput.next());
-			double newLatitude = gpsInput.nextDouble();
-			double newLongitude = gpsInput.nextDouble();
+			GpsPoint newPoint = new GpsPoint(
+					Utils.convertDateToTimestamp(gpsInput.next()),
+					gpsInput.nextDouble(), gpsInput.nextDouble());
 
-			if (newSubtripBasedOnTime(currentTimestamp, newTimestamp)) {
-				if (currentSubTripFlushed(currentSubTrip, outputFolder)) {
+			if (newPoint.timestamp
+					- currentPoint.timestamp > ONE_TRIP_TIME_RATIO
+					|| busJumpedUnrealisticDistance(currentPoint, newPoint)) {
+				if (flushGpsPoints(points, travelHistoryFile,
+						extractedTripsCount, outputFolder)) {
 					extractedTripsCount++;
 				}
-				currentTimestamp = newTimestamp;
-				currentSubTrip = new Trip(
-						generateName(travelHistoryFile, extractedTripsCount),
-						new ArrayList<GpsPoint>());
+				points = new ArrayList<GpsPoint>();
 			}
 
-			if (newLatitude != currentLatitude
-					|| newLongitude != currentLongitude) {
-				currentTimestamp = newTimestamp;
-				/*
-				 * We add new entry to the output file only if the bus is moving
-				 * according to the GPS transmitter.
-				 */
-				currentSubTrip.gpsPoints.add(
-						new GpsPoint(newTimestamp, newLatitude, newLongitude));
+			if (busMovedSignificantDistance(points, currentPoint, newPoint)) {
+				points.add(currentPoint);
 			}
-			currentLatitude = newLatitude;
-			currentLongitude = newLongitude;
+
+			currentPoint = newPoint;
+
+			if (busIsTurningAround(points)) {
+				ArrayList<GpsPoint> aroundPoints = new ArrayList<GpsPoint>(
+						points.subList(
+								points.size() - POINTS_THAT_ARE_TURNING_AROUND,
+								points.size()));
+				for (int i = 0; i < POINTS_THAT_ARE_TURNING_AROUND; i++) {
+					points.remove(points.size() - 1);
+				}
+				if (flushGpsPoints(points, travelHistoryFile,
+						extractedTripsCount, outputFolder)) {
+					extractedTripsCount++;
+				}
+				points = aroundPoints;
+			}
 		}
 
 		/* Don't forget to add the final sub trip */
-		if (currentSubTripFlushed(currentSubTrip, outputFolder)) {
+		if (flushGpsPoints(points, travelHistoryFile, extractedTripsCount,
+				outputFolder)) {
 			extractedTripsCount++;
 		}
 		System.out.println("Extracted " + extractedTripsCount + " trips.");

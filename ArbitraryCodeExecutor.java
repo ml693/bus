@@ -10,9 +10,10 @@ import java.util.function.Function;
  * get 'polluted' with arbitrary code.
  */
 class ArbitraryCodeExecutor {
-	
+
 	public static void main(String[] args) throws Exception {
-		evaluatePrediction(args);
+		Utils.checkCommandLineArguments(args, "folder", "folder");
+		extractThroughVictoria(args);
 		System.out.println("Ended");
 	}
 
@@ -81,6 +82,8 @@ class ArbitraryCodeExecutor {
 			System.out.println("Processing trip " + trip.name);
 			for (GpsPoint point : trip.gpsPoints) {
 				if (passedThrough.apply(point)) {
+					System.out
+							.println("Trip " + trip.name + " passed through!");
 					trip.writeToFolder(outputFolder);
 					break;
 				}
@@ -94,7 +97,7 @@ class ArbitraryCodeExecutor {
 
 		Trip profileTripThroughMadingley = new Trip(new File(args[0]));
 		File allTripsFolder = new File(args[1]);
-		ArrayList<Trip> goodTrips = TripDetector.detectSimilarTrips(
+		ArrayList<Trip> goodTrips = PathDetector.detectSimilarTrips(
 				profileTripThroughMadingley, allTripsFolder);
 
 		File outputFolder = new File(args[2]);
@@ -104,7 +107,7 @@ class ArbitraryCodeExecutor {
 	}
 
 	static boolean closeEnough(GpsPoint p1, GpsPoint p2) {
-		return (Utils.squaredDistance(p1, p2) < 0.000001);
+		return (Utils.distance(p1, p2) < 0.000001);
 	}
 
 	static boolean delimitingPoint(GpsPoint point) {

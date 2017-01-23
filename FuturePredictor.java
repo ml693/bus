@@ -17,9 +17,9 @@ public class FuturePredictor {
 		GpsPoint tripFirstPoint = trip.gpsPoints.get(0);
 		GpsPoint tripLastPoint = trip.lastPoint();
 
-		return (Utils.squaredDistance(subTripFirstPoint,
+		return (Utils.distance(subTripFirstPoint,
 				tripFirstPoint) < DISTANCE_BOUND)
-				&& (Utils.squaredDistance(subTripLastPoint,
+				&& (Utils.distance(subTripLastPoint,
 						tripLastPoint) < DISTANCE_BOUND);
 	}
 
@@ -29,13 +29,7 @@ public class FuturePredictor {
 	 */
 	private static boolean equallyCongested(Trip trip, Trip subTrip) {
 		long durationDifference = trip.duration() - subTrip.duration();
-		if (Math.abs(durationDifference) > DURATION_DIFFERENCE_LIMIT) {
-			return false;
-		}
-		double measure1 = TripDetector.similarityMeasure(subTrip, trip);
-		double measure2 = TripDetector.similarityMeasure(trip, subTrip);
-		return (measure1 < TripDetector.SIMILARITY_THRESHOLD
-				|| measure2 < TripDetector.SIMILARITY_THRESHOLD)
+		return (Math.abs(durationDifference) > DURATION_DIFFERENCE_LIMIT)
 				&& endPointsMatch(trip, subTrip);
 	}
 
@@ -44,7 +38,7 @@ public class FuturePredictor {
 		int closestPointIndex = -1;
 		double closestPointDistance = Double.MAX_VALUE;
 		for (int i = 0; i < trip.gpsPoints.size(); i++) {
-			double newDistance = Utils.squaredDistance(mostRecentPoint,
+			double newDistance = Utils.distance(mostRecentPoint,
 					trip.gpsPoints.get(i));
 			if (newDistance < closestPointDistance) {
 				closestPointIndex = i;
@@ -54,7 +48,8 @@ public class FuturePredictor {
 		return closestPointIndex;
 	}
 
-	private static Trip generateSubtrip(Trip recentTrip, Trip trip) {
+	private static Trip generateSubtrip(Trip recentTrip, Trip trip)
+			throws ProjectSpecificException {
 		int closestPointIndex = closestPointIndex(recentTrip.lastPoint(), trip);
 		long timeFrame = recentTrip.duration();
 		long tripTimestamp = trip.gpsPoints.get(closestPointIndex).timestamp;
@@ -69,10 +64,12 @@ public class FuturePredictor {
 				trip.gpsPoints.subList(index, closestPointIndex + 1)));
 	}
 
-	private static Trip generateFuturePrediction(Trip recentTrip, Trip trip) {
+	static Trip generateFuturePrediction(Trip recentTrip, Trip trip)
+			throws ProjectSpecificException {
 		int closestPointIndex = closestPointIndex(recentTrip.lastPoint(), trip);
 		if (closestPointIndex + 1 == trip.gpsPoints.size()) {
-			return null;
+			throw new ProjectSpecificException(
+					"No future points for trip " + trip.name);
 		}
 
 		ArrayList<GpsPoint> predictionPoints = new ArrayList<GpsPoint>(
@@ -103,7 +100,7 @@ public class FuturePredictor {
 							- subTrip.lastPoint().timestamp < RECENT_INTERVAL
 									? predictedTrip.name + "_recent"
 									: predictedTrip.name + "_old";
-					predictions.add(predictedTrip.rename(newName));
+					predictions.add(predictedTrip.makeCopyWithNewName(newName));
 				}
 			}
 		}

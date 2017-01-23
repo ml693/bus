@@ -14,14 +14,17 @@ public class BusStop {
 		this.longitude = longitude;
 	}
 
+	String serialize() {
+		return name + "," + String.format("%.5f", latitude) + ","
+				+ String.format("%.5f", longitude);
+	}
+
 	void write(BufferedWriter writer) throws IOException {
-		Utils.writeLine(writer, name + "," + String.format("%.4f", latitude)
-				+ "," + String.format("%.4f", longitude));
+		Utils.writeLine(writer, serialize());
 	}
 
 	void println() {
-		System.out.println(
-				"Stop: " + name + ",lat=" + latitude + ",lon=" + longitude);
+		System.out.println(serialize());
 	}
 
 }

@@ -10,4 +10,10 @@ class ProjectSpecificException extends Exception {
 	ProjectSpecificException(String message) {
 		super(message);
 	}
+
+	static ProjectSpecificException tripDoesNotHaveEnoughPoints() {
+		return new ProjectSpecificException(
+				"Trip can not be constructed because it does not have "
+						+ Trip.MINIMUM_NUMBER_OF_GPS_POINTS + " GPS points.");
+	}
 }

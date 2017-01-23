@@ -57,18 +57,15 @@ public class Utils {
 	 * represents y coordinate and longitude represents x coordinate;
 	 */
 	static double distance(GpsPoint p1, GpsPoint p2) {
-		return Math.sqrt(squaredDistance(p1, p2));
-	}
-
-	static double squaredDistance(GpsPoint p1, GpsPoint p2) {
-		double latitudeDifference = p1.latitude - p2.latitude;
-		/*
-		 * In UK difference in latitude looks about twice larger than
-		 * difference in longitude, hence need to rescale.
-		 */
-		double longitudeDifference = 2 * (p1.longitude - p2.longitude);
-		return latitudeDifference * latitudeDifference
-				+ longitudeDifference * longitudeDifference;
+		double scaleToRadians = Math.PI / 180f;
+		double sinLatitude1 = Math.sin(p1.latitude * scaleToRadians);
+		double sinLatitude2 = Math.sin(p2.latitude * scaleToRadians);
+		double cosLatitude1 = Math.cos(p1.latitude * scaleToRadians);
+		double cosLatitude2 = Math.cos(p2.latitude * scaleToRadians);
+		double cosLongitude = Math
+				.cos((p1.longitude - p2.longitude) * scaleToRadians);
+		return Math.acos(sinLatitude1 * sinLatitude2
+				+ cosLatitude1 * cosLatitude2 * cosLongitude);
 	}
 
 	private static boolean fileMatchesExpectation(String fileName,

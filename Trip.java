@@ -16,16 +16,20 @@ import java.util.Scanner;
  * Stansted - London part can be considered as a trip on its own).
  */
 public class Trip {
+	static final int MINIMUM_NUMBER_OF_GPS_POINTS = 8;
+
 	final String name;
 	final ArrayList<GpsPoint> gpsPoints;
 
 	/* Read whole trip from file */
-	Trip(File file) throws IOException, ParseException {
+	Trip(File file)
+			throws IOException, ParseException, ProjectSpecificException {
 		this(file, Long.MAX_VALUE);
 	}
 
 	/* Reads trip only until specific moment of time. */
-	Trip(File file, long untilTimestamp) throws IOException, ParseException {
+	Trip(File file, long untilTimestamp)
+			throws IOException, ParseException, ProjectSpecificException {
 		this.name = file.getName();
 		this.gpsPoints = new ArrayList<GpsPoint>();
 		Scanner scanner = Utils.csvScanner(file);
@@ -44,42 +48,65 @@ public class Trip {
 			this.gpsPoints.add(point);
 		}
 		scanner.close();
+
+		if (this.gpsPoints.size() < MINIMUM_NUMBER_OF_GPS_POINTS) {
+			throw ProjectSpecificException.tripDoesNotHaveEnoughPoints();
+		}
 	}
 
-	Trip(String name, ArrayList<GpsPoint> gpsPoints) {
+	Trip(String name, ArrayList<GpsPoint> gpsPoints)
+			throws ProjectSpecificException {
+		if (gpsPoints.size() < MINIMUM_NUMBER_OF_GPS_POINTS) {
+			throw ProjectSpecificException.tripDoesNotHaveEnoughPoints();
+		}
+
 		this.name = name;
 		this.gpsPoints = gpsPoints;
 	}
 
-	Trip rename(String newName) {
-		return new Trip(newName, gpsPoints);
+	Trip makeCopyWithNewName(String newName) {
+		try {
+			return new Trip(newName, this.gpsPoints);
+		} catch (ProjectSpecificException exception) {
+			/* This code path will never be reached */
+			throw new RuntimeException(exception);
+		}
 	}
 
 	/* Adds an offset to each trip's timestamp */
 	Trip shiftTimeTo(long startingTimestamp) {
-		Trip shiftedTrip = new Trip(name, new ArrayList<GpsPoint>());
 		long timeShift = startingTimestamp - gpsPoints.get(0).timestamp;
+		ArrayList<GpsPoint> shiftedGpsPoints = new ArrayList<GpsPoint>();
 		for (GpsPoint point : gpsPoints) {
-			GpsPoint shiftedPoint = new GpsPoint(point.timestamp + timeShift,
-					point.latitude, point.longitude);
-			shiftedTrip.gpsPoints.add(shiftedPoint);
+			shiftedGpsPoints.add(new GpsPoint(point.timestamp + timeShift,
+					point.latitude, point.longitude));
 		}
-		return shiftedTrip;
+
+		try {
+			return new Trip(this.name, shiftedGpsPoints);
+		} catch (ProjectSpecificException exception) {
+			/* This code path should never be reached */
+			return null;
+		}
 	}
 
 	static ArrayList<Trip> extractTripsFromFolder(File folder)
-			throws IOException, ParseException {
+			throws IOException, ParseException, ProjectSpecificException {
 		return extractTripsFromFolder(folder, Long.MAX_VALUE);
 	}
 
 	static ArrayList<Trip> extractTripsFromFolder(File folder,
-			long untilTimestamp) throws IOException, ParseException {
+			long untilTimestamp) throws IOException, ParseException,
+					ProjectSpecificException {
 		ArrayList<Trip> trips = new ArrayList<Trip>();
 		File[] files = folder.listFiles();
+		System.out.println("Starting to read " + files.length + " trips.");
 		for (File file : files) {
 			Trip trip = new Trip(file, untilTimestamp);
-			if (trip.gpsPoints.size() > 0) {
-				trips.add(trip);
+			trips.add(trip);
+			if (trips.size() % 1000 == 0) {
+				System.out.println(
+						"Succesfully read trip " + trips.size() + " trips.");
 			}
 		}
 		return trips;
@@ -103,6 +130,14 @@ public class Trip {
 	/* Returns the length of this trip in seconds */
 	long duration() {
 		return lastPoint().timestamp - gpsPoints.get(0).timestamp;
+	}
+
+	double totalDistanceTravelled() {
+		double distance = 0.0;
+		for (int i = 1; i < gpsPoints.size(); i++) {
+			distance += Utils.distance(gpsPoints.get(i - 1), gpsPoints.get(i));
+		}
+		return distance;
 	}
 
 }

@@ -15,31 +15,29 @@ public class BusTravelHistoryExtractor {
 	 * Internal map to store data. At the end this map will get printed as a
 	 * list of files to the output directory.
 	 */
-	static HashMap<Integer, Trip> allHistories = new HashMap<Integer, Trip>();
-	
-	
+	static HashMap<String, ArrayList<GpsPoint>> allHistories = new HashMap<String, ArrayList<GpsPoint>>();
+
 	/*
-	 * This program takes JSON files as an input, extracts info about
-	 * busesTravelHistory from input, and for each bus X produces an output file
-	 * busX, containing the information about the bus X.
+	 * This program takes JSON files as an input, extracts info about buses
+	 * travel histories from input, and for each bus X produces a separate
+	 * output file containing the information about the bus X.
 	 * 
-	 * // Example how to extract files from json_folder and place output files to
-	 * // travel_history_folder
+	 * To generate output files from json_folder into history_folder run
 	 * java BusTravelHistoryExtractor json_folder travel_history_folder
 	 * 
-	 * // Example JSON input file json_folder/file1
-	 * |||||||||||||||||||||||||||||| NEW FILE ||||||||||||||||||||||||||||||||||||
-	 * || {vehicle_id="4","timestamp":1476227188,"latitude":51.89,"longitude":0.453}
-	 * |||||||||||||||||||||||||||||| END OF FILE |||||||||||||||||||||||||||||||||
+	 * Example JSON input file
+	 * json_folder/file1:
+	 * {vehicle_id="4","timestamp":1476227188, "bearing":162.0
+	 * "latitude":51.8944,"longitude":0.4532, "route_id":"CBL-10"}
+	 *
+	 * Example CSV output file (timestamp is converted to a readable time field)
+	 * buses_travel_history/bus4:
+	 * time,latitude,longitude
+	 * 2016-10-11 16:06:28,51.8944,0.4532
+	 * ... // file will contain more entries generated from other files
 	 * 
-	 * TODO(ml693): eliminate constrain for whole input to be stored in one line.
+	 * TODO(ml693): eliminate constrain for whole input to be in one line.
 	 * TODO(ml693): add extra fields to the example to show it can contain more.
-	 * 
-	 * // Example CSV output file buses_travel_history/bus4
-	 * |||||||||||||||||||||||||||||| NEW FILE ||||||||||||||||||||||||||||||||||||
-	 * || timestamp,latitude,longitude
-	 * || 1476227188,51.89,0.453
-	 * |||||||||||||||||||||||||||||| END OF FILE |||||||||||||||||||||||||||||||||
 	 */
 	public static void main(String args[]) throws Exception {
 		Utils.checkCommandLineArguments(args, "folder", "folder");
@@ -66,8 +64,13 @@ public class BusTravelHistoryExtractor {
 		}
 		/* At the end we output the processed data into args[1] folder */
 		File outputFolder = new File(args[1]);
-		for (Trip trip : allHistories.values()) {
-			trip.writeToFolder(outputFolder);
+		for (String key : allHistories.keySet()) {
+			try {
+				new Trip(key, allHistories.get(key))
+						.writeToFolder(outputFolder);
+			} catch (ProjectSpecificException exception) {
+				System.out.println(key + " has too little GPS entries!");
+			}
 		}
 	}
 
@@ -92,18 +95,16 @@ public class BusTravelHistoryExtractor {
 		while (matcher.find()) {
 			/* We extract bus info */
 			String busSnapshotTextEntry = matcher.group();
-			int busId = extractVehicleId(busSnapshotTextEntry);
+			String key = "day" + file.getParentFile().getName() + "_bus"
+					+ extractVehicleId(busSnapshotTextEntry);
 			GpsPoint gpsPoint = new GpsPoint(busSnapshotTextEntry);
 
 			/* And store info into the map */
-			if (!allHistories.containsKey(busId)) {
-				allHistories.put(busId, new Trip(
-										"day" + file.getParentFile().getName()
-												+ "_bus" + busId,
-										new ArrayList<GpsPoint>()));
+			if (!allHistories.containsKey(key)) {
+				allHistories.put(key, new ArrayList<GpsPoint>());
 			}
 			if (gpsPoint.latitude != 0.0 || gpsPoint.longitude != 0.0) {
-				allHistories.get(busId).gpsPoints.add(gpsPoint);
+				allHistories.get(key).add(gpsPoint);
 			}
 		}
 
