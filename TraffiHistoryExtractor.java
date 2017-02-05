@@ -1,5 +1,9 @@
-/* TODO(ml693): make code cleaner */
-
+/*
+ * TODO(ml693): make code cleaner
+ * This class is not important. I wanted to use it on a different source on
+ * data, but that's unlikely to happen in the nearest future.
+ *
+ */
 package bus;
 
 import java.io.File;
