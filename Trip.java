@@ -61,7 +61,6 @@ public class Trip {
 		if (gpsPoints.size() < MINIMUM_NUMBER_OF_GPS_POINTS) {
 			throw ProjectSpecificException.tripDoesNotHaveEnoughPoints(name);
 		}
-
 		this.name = name;
 		this.gpsPoints = gpsPoints;
 	}
@@ -70,7 +69,7 @@ public class Trip {
 		try {
 			return new Trip(newName, this.gpsPoints);
 		} catch (ProjectSpecificException exception) {
-			/* This code path will never be reached */
+			/* This code path should never be reached */
 			throw new RuntimeException(exception);
 		}
 	}
@@ -88,17 +87,16 @@ public class Trip {
 			return new Trip(this.name, shiftedGpsPoints);
 		} catch (ProjectSpecificException exception) {
 			/* This code path should never be reached */
-			return null;
+			throw new RuntimeException(exception);
 		}
 	}
 
-	static ArrayList<Trip> extractTripsFromFolder(File folder)
-			throws IOException, ParseException, ProjectSpecificException {
+	static ArrayList<Trip> extractTripsFromFolder(File folder) {
 		return extractTripsFromFolder(folder, Long.MAX_VALUE);
 	}
 
 	static ArrayList<Trip> extractTripsFromFolder(File folder,
-			long untilTimestamp) throws IOException, ParseException {
+			long untilTimestamp) {
 		ArrayList<Trip> trips = new ArrayList<Trip>();
 		File[] files = folder.listFiles();
 		System.out.println("Starting to read " + files.length + " trips.");
@@ -110,22 +108,26 @@ public class Trip {
 			}
 
 			if (trips.size() % 1000 == 0 && trips.size() > 0) {
-				System.out.println(
-						"Succesfully read trip " + trips.size() + " trips.");
+				System.out.println("Succesfully added " + trips.size()
+						+ " trips from " + files.length + " possible.");
 			}
 		}
 		return trips;
 	}
 
 	/* The file to which we output is specified by trips name */
-	void writeToFolder(File folder) throws IOException, ParseException {
-		BufferedWriter writer = new BufferedWriter(
-				new FileWriter(folder + "/" + name));
-		Utils.writeLine(writer, "time,latitude,longitude");
-		for (GpsPoint point : gpsPoints) {
-			point.write(writer);
+	void writeToFolder(File folder) {
+		try {
+			BufferedWriter writer = new BufferedWriter(
+					new FileWriter(folder + "/" + name));
+			Utils.writeLine(writer, "time,latitude,longitude");
+			for (GpsPoint point : gpsPoints) {
+				point.write(writer);
+			}
+			writer.close();
+		} catch (IOException exception) {
+			throw new RuntimeException(exception);
 		}
-		writer.close();
 	}
 
 	GpsPoint lastPoint() {
