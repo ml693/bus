@@ -22,14 +22,16 @@ public class Trip {
 	final ArrayList<GpsPoint> gpsPoints;
 
 	/* Read whole trip from file */
-	Trip(File file)
-			throws IOException, ParseException, ProjectSpecificException {
+	/*
+	 * TODO(ml693): I don't really want to throw ProjectSpecificException.
+	 * Figure out how to remove it.
+	 */
+	Trip(File file) throws ProjectSpecificException {
 		this(file, Long.MAX_VALUE);
 	}
 
 	/* Reads trip only until specific moment of time. */
-	Trip(File file, long untilTimestamp)
-			throws IOException, ParseException, ProjectSpecificException {
+	Trip(File file, long untilTimestamp) throws ProjectSpecificException {
 		this.name = file.getName();
 		this.gpsPoints = new ArrayList<GpsPoint>();
 		Scanner scanner = Utils.csvScanner(file);

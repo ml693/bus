@@ -18,11 +18,15 @@ public class Utils {
 	private static final String SIMPLE_DATE_FORMAT = "yyyy-MM-dd HH:mm:ss";
 	private static final long MILLISECONDS_IN_ONE_SECOND = 1000;
 
-	static long convertDateToTimestamp(String date) throws ParseException {
-		SimpleDateFormat simpleDateFormat = new SimpleDateFormat(
-				SIMPLE_DATE_FORMAT);
-		Date time = simpleDateFormat.parse(date);
-		return time.getTime() / MILLISECONDS_IN_ONE_SECOND;
+	static long convertDateToTimestamp(String date) {
+		try {
+			SimpleDateFormat simpleDateFormat = new SimpleDateFormat(
+					SIMPLE_DATE_FORMAT);
+			Date time = simpleDateFormat.parse(date);
+			return time.getTime() / MILLISECONDS_IN_ONE_SECOND;
+		} catch (Exception exception) {
+			throw new RuntimeException(exception);
+		}
 	}
 
 	static String convertTimestampToDate(Long timestamp) throws ParseException {
@@ -32,9 +36,13 @@ public class Utils {
 		return simpleDateFormat.format(date);
 	}
 
-	static Scanner csvScanner(File file) throws IOException {
-		/* \r is for windows-style line separator */
-		return new Scanner(file).useDelimiter(",|\r?\n");
+	static Scanner csvScanner(File file) {
+		try {
+			/* \r is for windows-style line separator */
+			return new Scanner(file).useDelimiter(",|\r?\n");
+		} catch (Exception exception) {
+			throw new RuntimeException(exception);
+		}
 	}
 
 	static void writeLine(BufferedWriter writer, String line)
