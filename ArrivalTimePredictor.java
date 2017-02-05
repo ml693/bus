@@ -6,10 +6,10 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.function.Function;
 
-public class FuturePredictor {
+public class ArrivalTimePredictor {
 	private static final double DISTANCE_BOUND = 0.00004;
 	private static final long DURATION_DIFFERENCE_LIMIT = 80L;
-	private static final long RECENT_INTERVAL = 2400L;
+	private static final long RECENT_INTERVAL = 3000L;
 
 	private static boolean endPointsMatch(Trip trip, Trip subTrip) {
 		GpsPoint subTripFirstPoint = subTrip.gpsPoints.get(0);
@@ -87,75 +87,102 @@ public class FuturePredictor {
 	 * equally congested trip t, uses its interval as prediction (except for the
 	 * case where t has no further GPS points to be used for prediction).
 	 */
-	private static ArrayList<Trip> generatePredictionsFromEquallyCongestedTrips(
-			Trip recentTrip, ArrayList<Trip> trips) throws IOException,
-					ParseException, ProjectSpecificException {
+	private static ArrayList<Trip> generatePredictions(Trip recentTrip,
+			ArrayList<Trip> trips) throws IOException, ParseException {
 		ArrayList<Trip> predictions = new ArrayList<Trip>();
+
 		for (Trip trip : trips) {
-			Trip subTrip = generateSubtrip(recentTrip, trip);
-			if (equallyCongested(recentTrip, subTrip)) {
+			try {
+				Trip subTrip = generateSubtrip(recentTrip, trip);
 				Trip predictedTrip = generateFuturePrediction(recentTrip, trip);
-				if (predictedTrip != null) {
-					String newName = recentTrip.lastPoint().timestamp
-							- subTrip.lastPoint().timestamp < RECENT_INTERVAL
-									? predictedTrip.name + "_recent"
-									: predictedTrip.name + "_old";
-					predictions.add(predictedTrip.makeCopyWithNewName(newName));
-				}
+
+				String recent = recentTrip.lastPoint().timestamp
+						- subTrip.lastPoint().timestamp < RECENT_INTERVAL
+								? "_recent_" : "_old_";
+				String congested = equallyCongested(recentTrip, subTrip)
+						? "equally_congested" : "differently_congested";
+
+				predictions.add(predictedTrip.makeCopyWithNewName(
+						predictedTrip.name + recent + congested));
+			} catch (ProjectSpecificException exception) {
 			}
 		}
 
-		if (predictions.size() == 0) {
-			throw (new ProjectSpecificException(
-					"Failed to generate predictions for " + recentTrip.name));
-		} else {
-			return predictions;
-		}
+		return predictions;
 	}
 
 	static long calculatePredictionToBusStop(
 			Function<GpsPoint, Boolean> atBusStop, Trip tripToPredict,
 			ArrayList<Trip> historicalTrips) throws IOException, ParseException,
 					ProjectSpecificException {
-		ArrayList<Trip> predictions = generatePredictionsFromEquallyCongestedTrips(
-				tripToPredict, historicalTrips);
+		ArrayList<Trip> predictions = generatePredictions(tripToPredict,
+				historicalTrips);
 		return calculateAverageArrivalTime(tripToPredict.name, predictions,
 				atBusStop);
 	}
 
 	private static long averageArrivalTimestamp(
-			ArrayList<Long> arrivalTimestamps) throws ParseException {
+			ArrayList<Long> arrivalTimestamps) {
 		Collections.sort(arrivalTimestamps);
 		return arrivalTimestamps.get(arrivalTimestamps.size() / 2);
 	}
 
 	private static long calculateAverageArrivalTime(String tripName,
 			ArrayList<Trip> predictions, Function<GpsPoint, Boolean> atBusStop)
-					throws IOException, ParseException,
-					ProjectSpecificException {
-		ArrayList<Long> recentStoppingTimes = new ArrayList<Long>();
-		ArrayList<Long> oldStoppingTimes = new ArrayList<Long>();
+					throws IOException, ProjectSpecificException {
+		ArrayList<Long> oldDifferentlyCongested = new ArrayList<Long>();
+		ArrayList<Long> oldEquallyCongested = new ArrayList<Long>();
+		ArrayList<Long> newDifferentlyCongested = new ArrayList<Long>();
+		ArrayList<Long> newEquallyCongested = new ArrayList<Long>();
+
 		for (Trip prediction : predictions) {
 			for (GpsPoint point : prediction.gpsPoints) {
 				if (atBusStop.apply(point)) {
-					if (prediction.name.contains("recent")) {
-						recentStoppingTimes.add(point.timestamp);
-					} else {
-						oldStoppingTimes.add(point.timestamp);
+					if (prediction.name.contains("old")
+							&& prediction.name.contains("differently")) {
+						oldDifferentlyCongested.add(point.timestamp);
+					}
+					if (prediction.name.contains("old")
+							&& prediction.name.contains("equally")) {
+						oldEquallyCongested.add(point.timestamp);
+					}
+					if (prediction.name.contains("recent")
+							&& prediction.name.contains("differently")) {
+						newDifferentlyCongested.add(point.timestamp);
+					}
+					if (prediction.name.contains("recent")
+							&& prediction.name.contains("equally")) {
+						newEquallyCongested.add(point.timestamp);
 					}
 					break;
 				}
 			}
 		}
 
-		if (recentStoppingTimes.size() + oldStoppingTimes.size() == 0) {
-			throw new ProjectSpecificException("Failed to predict for trip "
-					+ tripName + " despite having " + predictions.size()
-					+ " predictions.");
+		if (tripName.equals("day15_bus14091_subtrip16")) {
+			System.out.println("oldDifferentlyCongested.size() = "
+					+ oldDifferentlyCongested.size());
+			System.out.println("oldEquallyCongested.size() = "
+					+ oldEquallyCongested.size());
+			System.out.println("newDifferentlyCongested.size() = "
+					+ newDifferentlyCongested.size());
+			System.out.println("newEquallyCongested.size() = "
+					+ newEquallyCongested.size());
 		}
 
-		return recentStoppingTimes.size() > 0
-				? averageArrivalTimestamp(recentStoppingTimes)
-				: averageArrivalTimestamp(oldStoppingTimes);
+		if (newEquallyCongested.size() > 0) {
+			return averageArrivalTimestamp(newEquallyCongested);
+		}
+		if (oldEquallyCongested.size() > 0) {
+			return averageArrivalTimestamp(oldEquallyCongested);
+		}
+		if (newDifferentlyCongested.size() > 0) {
+			return averageArrivalTimestamp(newDifferentlyCongested);
+		}
+		if (oldDifferentlyCongested.size() == 0) {
+			throw new ProjectSpecificException(
+					"Failed to generate prediction for " + tripName);
+		}
+		return averageArrivalTimestamp(oldDifferentlyCongested);
 	}
 }

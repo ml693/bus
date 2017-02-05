@@ -63,13 +63,24 @@ class Route {
 		return true;
 	}
 
+	boolean atLastStop(GpsPoint point) {
+		try {
+			BusStop lastStop = busStops.get(busStops.size() - 1);
+			GpsPoint stopPoint = new GpsPoint(0L, lastStop.latitude,
+					lastStop.longitude);
+			return (Utils.distance(point, stopPoint) < 0.00002);
+		} catch (Exception exception) {
+			throw new RuntimeException(exception);
+		}
+	}
+
 	GpsPoint getGpsPoint(int i) {
 		return new GpsPoint(0L, busStops.get(i).latitude,
 				busStops.get(i).longitude);
 	}
 
 	String serialize() {
-		return busStops.stream().map(stop -> stop.serialize())
+		return busStops.stream().map(stop -> stop.serializeToString())
 				.collect(Collectors.joining(", "));
 
 	}

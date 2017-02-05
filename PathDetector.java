@@ -49,7 +49,7 @@ class PathDetector {
 	}
 
 	static boolean tripFollowsPath(Trip trip, Trip path) {
-		final int iMax = trip.gpsPoints.size() - 1;
+		final int iMax = trip.gpsPoints.size();
 		final int jMax = path.gpsPoints.size() - 1;
 
 		double[][] alignmentCost = new double[iMax + 1][jMax + 1];
@@ -63,7 +63,7 @@ class PathDetector {
 		for (int i = 1; i <= iMax; i++) {
 			for (int j = 1; j <= jMax; j++) {
 				alignmentCost[i][j] = Math.min(alignmentCost[i][j - 1],
-						trip.gpsPoints.get(i).ratioToSegmentCorners(
+						trip.gpsPoints.get(i - 1).ratioToSegmentCorners(
 								path.gpsPoints.get(j - 1),
 								path.gpsPoints.get(j))
 								+ alignmentCost[i - 1][j]);
@@ -151,7 +151,7 @@ class PathDetector {
 		ArrayList<Trip> futureRoutes = new ArrayList<Trip>();
 		for (Trip similarTrip : similarTrips) {
 			try {
-				Trip futureRoute = FuturePredictor
+				Trip futureRoute = ArrivalTimePredictor
 						.generateFuturePrediction(tripsInterval, similarTrip);
 				futureRoutes.add(futureRoute);
 			} catch (ProjectSpecificException exception) {

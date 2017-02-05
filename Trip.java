@@ -42,22 +42,22 @@ public class Trip {
 					Utils.convertDateToTimestamp(scanner.next()),
 					scanner.nextDouble(), scanner.nextDouble());
 			if (point.timestamp > untilTimestamp) {
-				scanner.close();
-				return;
+				break;
 			}
 			this.gpsPoints.add(point);
 		}
 		scanner.close();
 
 		if (this.gpsPoints.size() < MINIMUM_NUMBER_OF_GPS_POINTS) {
-			throw ProjectSpecificException.tripDoesNotHaveEnoughPoints();
+			throw ProjectSpecificException
+					.tripDoesNotHaveEnoughPoints(file.getName());
 		}
 	}
 
 	Trip(String name, ArrayList<GpsPoint> gpsPoints)
 			throws ProjectSpecificException {
 		if (gpsPoints.size() < MINIMUM_NUMBER_OF_GPS_POINTS) {
-			throw ProjectSpecificException.tripDoesNotHaveEnoughPoints();
+			throw ProjectSpecificException.tripDoesNotHaveEnoughPoints(name);
 		}
 
 		this.name = name;
@@ -96,15 +96,18 @@ public class Trip {
 	}
 
 	static ArrayList<Trip> extractTripsFromFolder(File folder,
-			long untilTimestamp) throws IOException, ParseException,
-					ProjectSpecificException {
+			long untilTimestamp) throws IOException, ParseException {
 		ArrayList<Trip> trips = new ArrayList<Trip>();
 		File[] files = folder.listFiles();
 		System.out.println("Starting to read " + files.length + " trips.");
 		for (File file : files) {
-			Trip trip = new Trip(file, untilTimestamp);
-			trips.add(trip);
-			if (trips.size() % 1000 == 0) {
+			try {
+				Trip trip = new Trip(file, untilTimestamp);
+				trips.add(trip);
+			} catch (ProjectSpecificException exception) {
+			}
+
+			if (trips.size() % 1000 == 0 && trips.size() > 0) {
 				System.out.println(
 						"Succesfully read trip " + trips.size() + " trips.");
 			}

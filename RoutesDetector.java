@@ -29,8 +29,21 @@ public class RoutesDetector {
 			}
 		}
 
-		return alignmentCost[iMax][jMax]
-				- iMax < PathDetector.SIMILARITY_THRESHOLD;
+		if (alignmentCost[iMax][jMax]
+				- iMax >= PathDetector.SIMILARITY_THRESHOLD) {
+			return false;
+		}
+
+		int point = 0;
+		for (BusStop busStop : route.busStops) {
+			while (point < trip.gpsPoints.size()) {
+				if (busStop.atBusStop(trip.gpsPoints.get(point))) {
+					break;
+				}
+				point++;
+			}
+		}
+		return point < trip.gpsPoints.size();
 	}
 
 	public static void main(String[] args) throws Exception {

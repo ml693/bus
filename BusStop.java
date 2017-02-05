@@ -14,17 +14,22 @@ public class BusStop {
 		this.longitude = longitude;
 	}
 
-	String serialize() {
+	String serializeToString() {
 		return name + "," + String.format("%.5f", latitude) + ","
 				+ String.format("%.5f", longitude);
 	}
 
+	boolean atBusStop(GpsPoint point) {
+		GpsPoint stopPoint = new GpsPoint(0L, this.latitude, this.longitude);
+		return (Utils.distance(point, stopPoint) < 0.00002);
+	}
+
 	void write(BufferedWriter writer) throws IOException {
-		Utils.writeLine(writer, serialize());
+		Utils.writeLine(writer, serializeToString());
 	}
 
 	void println() {
-		System.out.println(serialize());
+		System.out.println(serializeToString());
 	}
 
 }
