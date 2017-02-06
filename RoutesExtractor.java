@@ -23,8 +23,8 @@ public class RoutesExtractor {
 		 * 2nd argument is a folder containing file per route.
 		 * 3rd argument is a folder where to output routes.
 		 */
-		Utils.checkCommandLineArguments(args, "file", "file", "folder");
-		constructRoutesFromOldData(new File(args[0]), new File(args[1]),
+		Utils.checkCommandLineArguments(args, "file", "folder", "folder");
+		constructRoutesFromNaptanData(new File(args[0]), new File(args[1]),
 				new File(args[2]));
 	}
 
