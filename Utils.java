@@ -37,35 +37,6 @@ public class Utils {
 		return simpleDateFormat.format(date);
 	}
 
-	static Scanner csvScanner(File file) {
-		try {
-			/* \r is for windows-style line separator */
-			return new Scanner(file).useDelimiter(",|\r?\n");
-		} catch (Exception exception) {
-			throw new RuntimeException(exception);
-		}
-	}
-
-	static void writeLine(BufferedWriter writer, String line)
-			throws IOException {
-		writer.write(line);
-		writer.newLine();
-	}
-
-	static ArrayList<Trip> extractTripsFromFiles(File[] files)
-			throws Exception {
-		ArrayList<Trip> trips = new ArrayList<Trip>();
-		for (File file : files) {
-			trips.add(new Trip(file));
-		}
-		return trips;
-	}
-
-	static ArrayList<File> filesInFolder(String folderName) {
-		return new ArrayList<File>(
-				Arrays.asList(new File(folderName).listFiles()));
-	}
-
 	/*
 	 * Geometric distance between two GPS points in space, when latitude
 	 * represents y coordinate and longitude represents x coordinate;
@@ -82,17 +53,33 @@ public class Utils {
 				+ cosLatitude1 * cosLatitude2 * cosLongitude);
 	}
 
-	private static boolean fileMatchesExpectation(String fileName,
-			String expectation) throws ProjectSpecificException {
-		switch (expectation) {
-		case "file":
-			return new File(fileName).isFile();
-		case "folder":
-			return new File(fileName).isDirectory();
-		default:
-			throw (new ProjectSpecificException(
-					"Argument expectation is given wrong name"));
+	static Scanner csvScanner(File file) {
+		try {
+			/* \r is for windows-style line separator */
+			return new Scanner(file).useDelimiter(",|\r?\n");
+		} catch (Exception exception) {
+			throw new RuntimeException(exception);
 		}
+	}
+
+	static void writeLine(BufferedWriter writer, String line)
+			throws IOException {
+		writer.write(line);
+		writer.newLine();
+	}
+
+	static ArrayList<File> filesInFolder(String folderName) {
+		return new ArrayList<File>(
+				Arrays.asList(new File(folderName).listFiles()));
+	}
+
+	static ArrayList<Trip> extractTripsFromFiles(File[] files)
+			throws Exception {
+		ArrayList<Trip> trips = new ArrayList<Trip>();
+		for (File file : files) {
+			trips.add(new Trip(file));
+		}
+		return trips;
 	}
 
 	/*
@@ -117,6 +104,19 @@ public class Utils {
 								+ " (counting from 0) is wrong. It has to be a "
 								+ fileOrFolder[i] + " name."));
 			}
+		}
+	}
+	
+	private static boolean fileMatchesExpectation(String fileName,
+			String expectation) throws ProjectSpecificException {
+		switch (expectation) {
+		case "file":
+			return new File(fileName).isFile();
+		case "folder":
+			return new File(fileName).isDirectory();
+		default:
+			throw (new ProjectSpecificException(
+					"Argument expectation is given wrong name"));
 		}
 	}
 }
