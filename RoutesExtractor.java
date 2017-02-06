@@ -1,13 +1,4 @@
-/*
- * A program which is meant to be executed only once. It builds convenient route
- * representation (as a list of bus stops) from the open source input files
- * given.
- * 
- * Program takes stop_times.txt, stops.txt files and extracts all possible
- * routes, each route being saved in a separate file.
- * 
- * TODO(ml693): make code cleaner.
- */
+/* TODO(ml693): make code cleaner. */
 package bus;
 
 import java.io.BufferedReader;
@@ -27,6 +18,25 @@ public class RoutesExtractor {
 	static HashMap<String, BusStop> busStopsFromNaptan = new HashMap<String, BusStop>();
 
 	static Set<String> duplicateRoute = new HashSet<String>();
+
+	/*
+	 * A program which is meant to be executed only once. It builds convenient
+	 * route representation (as a list of bus stops) from the open source input
+	 * files given.
+	 * 
+	 * Program takes stop_times.txt, stops.txt files and extracts all possible
+	 * routes, each route being saved in a separate file.
+	 */
+	public static void main(String args[]) throws Exception {
+		/*
+		 * 1st argument is a file of stop locations.
+		 * 2nd argument is a folder containing file per route.
+		 * 3rd argument is a folder where to output routes.
+		 */
+		Utils.checkCommandLineArguments(args, "file", "folder", "folder");
+		constructRoutesFromNaptanData(new File(args[0]), new File(args[1]),
+				new File(args[2]));
+	}
 
 	static void readBusStopsOld(File stopsFile) throws IOException {
 		Scanner scanner = Utils.csvScanner(stopsFile);
@@ -95,7 +105,7 @@ public class RoutesExtractor {
 		while (line != null) {
 			/*
 			 * TODO(ml693): I forgot what 6, 10, 12, etc means. I suspect these
-			 * spacing numbers. Need to figure that out.
+			 * are spacing numbers. Need to figure that out.
 			 */
 			while (!line.contains("<AtcoCode>")) {
 				line = stopsInput.readLine();
@@ -190,24 +200,11 @@ public class RoutesExtractor {
 		} catch (IOException exception) {
 			throw new RuntimeException(exception);
 		}
-		System.out
-				.println("Extracted " + busStopsFromNaptan.size() + " stops.");
 
 		File[] routesFiles = routesFolder.listFiles();
 		for (File routeFile : routesFiles) {
 			extractRoutesFromNaptanFiles(routeFile, outputRoutesFolder);
 		}
-	}
-
-	public static void main(String args[]) throws Exception {
-		/*
-		 * 1st argument is a file of stop locations.
-		 * 2nd argument is a folder containing file per route.
-		 * 3rd argument is a folder where to output routes.
-		 */
-		Utils.checkCommandLineArguments(args, "file", "folder", "folder");
-		constructRoutesFromNaptanData(new File(args[0]), new File(args[1]),
-				new File(args[2]));
 	}
 
 }
