@@ -1,5 +1,3 @@
-/* TODO(ml693): make code cleaner. */
-
 package bus;
 
 import java.io.File;
@@ -9,12 +7,10 @@ public class RoutesDetector {
 
 	public static void main(String[] args) throws Exception {
 		/*
-		 * 1st argument is a folder containing all trips.
-		 * 2nd argument is a folder containing all routes.
-		 * 3rd argument is a folder where to put good routes
+		 * 1st argument is all trips folder.
+		 * 2nd argument is all routes folder.
+		 * 3rd argument is a folder to put good trips following routes.
 		 */
-		Utils.checkCommandLineArguments(args, "folder", "folder", "folder");
-
 		ArrayList<File> tripFiles = Utils.filesInFolder(args[0]);
 		ArrayList<File> routeFiles = Utils.filesInFolder(args[1]);
 		File pathsFolder = new File(args[2]);
@@ -28,13 +24,14 @@ public class RoutesDetector {
 				if (route.allStopsVisitedInOrder(trip)) {
 					trip.makeCopyWithNewName(route.name)
 							.writeToFolder(pathsFolder);
-					tripFiles.remove(t);
+					routeFiles.get(r).delete();
 					routeFiles.remove(r);
 					System.out.println(routeFiles.size() + " routes left");
 				}
 				trip.writeToFolder(pathsFolder);
 			}
+			tripFiles.get(t).delete();
+			tripFiles.remove(t);
 		}
 	}
-
 }
