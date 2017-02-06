@@ -10,6 +10,7 @@ import java.io.IOException;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Date;
 import java.util.Scanner;
 
@@ -58,6 +59,11 @@ public class Utils {
 			trips.add(new Trip(file));
 		}
 		return trips;
+	}
+
+	static ArrayList<File> filesInFolder(String folderName) {
+		return new ArrayList<File>(
+				Arrays.asList(new File(folderName).listFiles()));
 	}
 
 	/*

@@ -84,7 +84,7 @@ class ArbitraryCodeExecutor {
 			routeFolder.mkdir();
 
 			for (Trip trip : trips) {
-				if (RoutesDetector.routeFollowedByTrip(route, trip)) {
+				if (route.followedByTrip(trip)) {
 					trip.writeToFolder(routeFolder);
 				}
 			}

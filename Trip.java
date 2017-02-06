@@ -99,7 +99,6 @@ public class Trip {
 			long untilTimestamp) {
 		ArrayList<Trip> trips = new ArrayList<Trip>();
 		File[] files = folder.listFiles();
-		System.out.println("Starting to read " + files.length + " trips.");
 		for (File file : files) {
 			try {
 				Trip trip = new Trip(file, untilTimestamp);
