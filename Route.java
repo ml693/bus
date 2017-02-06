@@ -1,5 +1,3 @@
-/* TODO(ml693): make code cleaner. */
-
 package bus;
 
 import java.io.BufferedWriter;
@@ -10,33 +8,9 @@ import java.util.ArrayList;
 import java.util.Scanner;
 import java.util.stream.Collectors;
 
+/* Route is a consecutive list of bus stops. */
 class Route {
-	
-	public static void main(String[] args) throws Exception {
-		/*
-		 * 1st argument is a folder containing all trips.
-		 * 2nd argument is a folder containing all routes.
-		 * 3rd argument is a folder where to put good routes
-		 */
-		Utils.checkCommandLineArguments(args, "folder", "folder", "folder");
 
-		ArrayList<Trip> trips = Trip.extractTripsFromFolder(new File(args[0]));
-		ArrayList<Route> routes = Route
-				.extractRoutesFromFolder(new File(args[1]));
-
-		for (Trip trip : trips) {
-			System.out.println("Processing " + trip.name);
-			for (int r = 0; r < routes.size(); r++) {
-				if (routes.get(r).allStopsVisitedInOrder(trip)) {
-					trip.makeCopyWithNewName(routes.get(r).name)
-							.writeToFolder(new File(args[2]));
-					routes.remove(r);
-					System.out.println(routes.size() + " routes left");
-				}
-			}
-		}
-	}
-	
 	final String name;
 	final ArrayList<BusStop> busStops;
 
@@ -45,7 +19,18 @@ class Route {
 		this.busStops = busStops;
 	}
 
-	Route(File file) throws IOException {
+	/*
+	 * Example file:
+	 * 
+	 * name,latitude,longitude
+	 * Kits Close,52.14931,-0.84826
+	 * Ashton Road,52.14613,-0.85365
+	 * Blacksmiths Way,52.14360,-0.85611
+	 * The Globe,52.12421,-0.84077
+	 * Hanslope School,52.11917,-0.83303
+	 * Gold Street,52.11561,-0.82855
+	 */
+	Route(File file) {
 		name = file.getName();
 		busStops = new ArrayList<BusStop>();
 
@@ -59,8 +44,7 @@ class Route {
 		}
 	}
 
-	static ArrayList<Route> extractRoutesFromFolder(File folder)
-			throws IOException {
+	static ArrayList<Route> extractRoutesFromFolder(File folder) {
 		ArrayList<Route> routes = new ArrayList<Route>();
 		File[] files = folder.listFiles();
 		for (File file : files) {
@@ -69,16 +53,21 @@ class Route {
 		return routes;
 	}
 
-	void writeToFolder(File routesFolder) throws IOException {
-		BufferedWriter writer = new BufferedWriter(
-				new FileWriter(routesFolder.getAbsolutePath() + "/" + name));
-		Utils.writeLine(writer, "name,latitude,longitude");
-		for (BusStop busStop : busStops) {
-			busStop.write(writer);
+	void writeToFolder(File routesFolder) {
+		try {
+			BufferedWriter writer = new BufferedWriter(new FileWriter(
+					routesFolder.getAbsolutePath() + "/" + name));
+			Utils.writeLine(writer, "name,latitude,longitude");
+			for (BusStop busStop : busStops) {
+				busStop.write(writer);
+			}
+			writer.close();
+		} catch (IOException exception) {
+			throw new RuntimeException(exception);
 		}
-		writer.close();
 	}
 
+	/* TODO(ml693): get rid of this method */
 	static boolean visitedInOrder(ArrayList<Integer> visitNumbers) {
 		for (int i = 1; i < visitNumbers.size(); i++) {
 			if (visitNumbers.get(i - 1).intValue() >= visitNumbers.get(i)
