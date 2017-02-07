@@ -42,6 +42,9 @@ class PredictionEvaluator {
 					trip.writeToFolder(routeFolder);
 				}
 			}
+
+			System.out.println("Found " + routeFolder.listFiles().length
+					+ " trips following " + route.name);
 		}
 	}
 
@@ -63,14 +66,13 @@ class PredictionEvaluator {
 					Trip trip = new Trip(tripFile);
 					for (int p = 0; p < trip.gpsPoints.size(); p++) {
 						if (firstStop.atStop(trip.gpsPoints.get(p))) {
-							for (int i = 0; i < p - 1; i++) {
+							for (int i = 0; i < p; i++) {
 								trip.gpsPoints.remove(0);
 							}
 							break;
 						}
 					}
 
-					tripFile.delete();
 					if (trip.gpsPoints
 							.size() >= Trip.MINIMUM_NUMBER_OF_GPS_POINTS) {
 						trip.writeToFolder(compressedTripsFolder);
@@ -156,6 +158,8 @@ class PredictionEvaluator {
 				if (historicalTrips.size() < 10) {
 					continue;
 				}
+				System.out.println("Will evaluate for " + route.name + " with "
+						+ recentTrips.size() + " passing through it");
 
 				long predictedTimestamp = ArrivalTimePredictor
 						.calculatePredictionToBusStop(route::atLastStop,
