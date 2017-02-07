@@ -82,7 +82,7 @@ class Route {
 		int point = 0;
 		for (BusStop busStop : busStops) {
 			while (point < trip.gpsPoints.size()) {
-				if (busStop.atBusStop(trip.gpsPoints.get(point))) {
+				if (busStop.atStop(trip.gpsPoints.get(point))) {
 					break;
 				}
 				point++;
@@ -91,10 +91,7 @@ class Route {
 		return point < trip.gpsPoints.size();
 	}
 
-	/*
-	 * This predicate checks whether a trip visited
-	 * all routes stops in order.
-	 */
+	/* Checks whether a trip visited all route stops in order. */
 	boolean followedByTrip(Trip trip) {
 		final int iMax = busStops.size();
 		final int jMax = trip.gpsPoints.size() - 1;
@@ -121,14 +118,7 @@ class Route {
 	}
 
 	boolean atLastStop(GpsPoint point) {
-		try {
-			BusStop lastStop = busStops.get(busStops.size() - 1);
-			GpsPoint stopPoint = new GpsPoint(0L, lastStop.latitude,
-					lastStop.longitude);
-			return (Utils.distance(point, stopPoint) < 0.00002);
-		} catch (Exception exception) {
-			throw new RuntimeException(exception);
-		}
+		return busStops.get(busStops.size() - 1).atStop(point);
 	}
 
 	GpsPoint getGpsPoint(int i) {

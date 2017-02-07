@@ -30,7 +30,7 @@ public class Utils {
 		}
 	}
 
-	static String convertTimestampToDate(Long timestamp) throws ParseException {
+	static String convertTimestampToDate(Long timestamp) {
 		Date date = new Date(timestamp * MILLISECONDS_IN_ONE_SECOND);
 		SimpleDateFormat simpleDateFormat = new SimpleDateFormat(
 				SIMPLE_DATE_FORMAT);
@@ -106,7 +106,7 @@ public class Utils {
 			}
 		}
 	}
-	
+
 	private static boolean fileMatchesExpectation(String fileName,
 			String expectation) throws ProjectSpecificException {
 		switch (expectation) {

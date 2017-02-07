@@ -88,7 +88,7 @@ public class ArrivalTimePredictor {
 	 * case where t has no further GPS points to be used for prediction).
 	 */
 	private static ArrayList<Trip> generatePredictions(Trip recentTrip,
-			ArrayList<Trip> trips) throws IOException, ParseException {
+			ArrayList<Trip> trips) throws IOException {
 		ArrayList<Trip> predictions = new ArrayList<Trip>();
 
 		for (Trip trip : trips) {
@@ -113,8 +113,8 @@ public class ArrivalTimePredictor {
 
 	static long calculatePredictionToBusStop(
 			Function<GpsPoint, Boolean> atBusStop, Trip tripToPredict,
-			ArrayList<Trip> historicalTrips) throws IOException, ParseException,
-					ProjectSpecificException {
+			ArrayList<Trip> historicalTrips)
+					throws IOException, ProjectSpecificException {
 		ArrayList<Trip> predictions = generatePredictions(tripToPredict,
 				historicalTrips);
 		return calculateAverageArrivalTime(tripToPredict.name, predictions,
@@ -157,17 +157,6 @@ public class ArrivalTimePredictor {
 					break;
 				}
 			}
-		}
-
-		if (tripName.equals("day15_bus14091_subtrip16")) {
-			System.out.println("oldDifferentlyCongested.size() = "
-					+ oldDifferentlyCongested.size());
-			System.out.println("oldEquallyCongested.size() = "
-					+ oldEquallyCongested.size());
-			System.out.println("newDifferentlyCongested.size() = "
-					+ newDifferentlyCongested.size());
-			System.out.println("newEquallyCongested.size() = "
-					+ newEquallyCongested.size());
 		}
 
 		if (newEquallyCongested.size() > 0) {

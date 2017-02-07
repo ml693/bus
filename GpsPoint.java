@@ -52,13 +52,9 @@ class GpsPoint {
 
 	/* For printing */
 	private String serializeToString() {
-		try {
-			String date = Utils.convertTimestampToDate(timestamp);
-			return date + "," + String.format("%.5f", latitude) + ","
-					+ String.format("%.5f", longitude);
-		} catch (ParseException exception) {
-			throw new RuntimeException(exception);
-		}
+		String date = Utils.convertTimestampToDate(timestamp);
+		return date + "," + String.format("%.5f", latitude) + ","
+				+ String.format("%.5f", longitude);
 	}
 
 	void write(BufferedWriter writer) throws IOException {
