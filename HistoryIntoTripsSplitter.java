@@ -9,11 +9,11 @@ import java.util.Scanner;
 class HistoryIntoTripsSplitter {
 
 	/*
-	 * Program takes CSV file showing a GPS history of a single bus. It
-	 * (roughly) splits the GPS history into multiple time intervals and stores
-	 * each time interval as an output CSV file. The expectation is that each
-	 * time interval represents a single trip a bus has made. This behaviour is
-	 * repeated for each file in the input folder.
+	 * Program takes CSV files, each file showing a GPS history of a single bus.
+	 * It (roughly) splits the GPS history into multiple time intervals and
+	 * stores each time interval as an output CSV file. The expectation is that
+	 * each time interval represents a single trip a bus has made. This
+	 * behaviour is repeated for each file in the input folder.
 	 * 
 	 * WARNING: How exactly the content of output files should be generated is
 	 * not specified precisely. Output content generation procedure might change
@@ -24,13 +24,9 @@ class HistoryIntoTripsSplitter {
 	 * 
 	 * // Create files output_folder/trip_subtrip0, output_folder/trip_subtrip1,
 	 * ...
-	 * java bus.RouteExtractor trip output_folder
+	 * java bus.HistoryIntoTripsSplitter trips_folder output_folder
 	 */
 	public static void main(String args[]) throws Exception {
-		GpsPoint p1 = new GpsPoint(0L, 51.9073500, -0.4430700);
-		GpsPoint p2 = new GpsPoint(0L, 51.8862000, -0.4242500);
-		System.out.println(Utils.distance(p1, p2));
-
 		File[] travelHistoryFiles = new File(args[0]).listFiles();
 		File outputFolder = new File(args[1]);
 		for (File travelHistoryFile : travelHistoryFiles) {
