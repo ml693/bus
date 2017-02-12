@@ -59,7 +59,6 @@ public class BusTravelHistoryExtractor {
 		 */
 		Arrays.sort(jsonFiles, (file1, file2) -> file1.compareTo(file2));
 		for (File jsonFile : jsonFiles) {
-			System.out.println("Processing: " + jsonFile.getName());
 			updateBusesTravelHistoryWithFile(jsonFile);
 		}
 		/* At the end we output the processed data into args[1] folder */
@@ -72,6 +71,7 @@ public class BusTravelHistoryExtractor {
 				System.out.println(key + " has too little GPS entries!");
 			}
 		}
+		System.out.println("Done with " + args[0]);
 	}
 
 	static int extractVehicleId(String snapshot) {
