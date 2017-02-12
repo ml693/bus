@@ -28,7 +28,8 @@ class PredictionEvaluator {
 			String outputPath, String dataPurpose) {
 		ArrayList<Trip> trips = Trip.extractTripsFromFolder(inputTripsFolder);
 
-		System.out.println("Extracting trips for route " + route.name);
+		System.out.println(
+				"Extracting " + dataPurpose + " trips for route " + route.name);
 		new File(outputPath + "/" + route.name).mkdir();
 		File outputFolder = new File(
 				outputPath + "/" + route.name + "/" + dataPurpose);
@@ -124,6 +125,8 @@ class PredictionEvaluator {
 		if (recentTrips.size() < 30) {
 			return false;
 		}
+		System.out.println("Will evaluate for " + route.name + " with "
+				+ recentTrips.size() + " passing through it");
 
 		BufferedWriter resultsWriter = new BufferedWriter(
 				new FileWriter(outputPath + "/" + route.name + "/results"));
@@ -136,17 +139,9 @@ class PredictionEvaluator {
 			ArrayList<Trip> historicalTrips = Trip.extractTripsFromFolder(
 					new File(outputPath + "/" + route.name + "/training"),
 					recentTrip.lastPoint().timestamp);
-
-			for (int h = 0; h < historicalTrips.size(); h++) {
-				if (historicalTrips.get(h).name.equals(recentTrip.name)) {
-					historicalTrips.remove(h);
-				}
-			}
 			if (historicalTrips.size() < 10) {
 				continue;
 			}
-			System.out.println("Will evaluate for " + route.name + " with "
-					+ recentTrips.size() + " passing through it");
 
 			long predictedTimestamp = ArrivalTimePredictor
 					.calculatePredictionToBusStop(route::atLastStop, recentTrip,

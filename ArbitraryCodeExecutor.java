@@ -11,6 +11,16 @@ import java.util.function.Function;
  */
 class ArbitraryCodeExecutor {
 
+	public static void main(String args[]) {
+		ArrayList<Route> routes = Route
+				.extractRoutesFromFolder(new File(args[0]));
+		for (Route route : routes) {
+			if (route.busStops.size() >= 10 && route.busStops.size() < 15) {
+				System.out.println(route.name + " is good.");
+			}
+		}
+	}
+
 	public static boolean inCambridge(Trip path) {
 		for (GpsPoint point : path.gpsPoints) {
 			if (point.latitude >= 52.19 && point.latitude <= 52.22
