@@ -12,7 +12,7 @@ import java.util.ArrayList;
  */
 class PredictionEvaluator {
 
-	static long lastStopTimestamp(Route route, Trip trip)
+	private static long lastStopTimestamp(Route route, Trip trip)
 			throws ProjectSpecificException {
 		BusStop lastStop = route.busStops.get(route.busStops.size() - 1);
 		for (GpsPoint point : trip.gpsPoints) {
@@ -24,172 +24,160 @@ class PredictionEvaluator {
 				"No point passed through last stop for " + trip.name);
 	}
 
-	public static void extractEvaluationData(File routesFolder,
-			File inputTripsFolder, String outputPath)
-					throws ProjectSpecificException {
-		ArrayList<Route> routes = Route.extractRoutesFromFolder(routesFolder);
+	private static void extractData(Route route, File inputTripsFolder,
+			String outputPath, String dataPurpose) {
 		ArrayList<Trip> trips = Trip.extractTripsFromFolder(inputTripsFolder);
 
-		for (Route route : routes) {
-			System.out.println("Working with " + route.name);
-			new File(outputPath + "/" + route.name).mkdir();
-			File routeFolder = new File(
-					outputPath + "/" + route.name + "/original");
-			routeFolder.mkdir();
+		System.out.println("Extracting trips for route " + route.name);
+		new File(outputPath + "/" + route.name).mkdir();
+		File outputFolder = new File(
+				outputPath + "/" + route.name + "/" + dataPurpose);
+		outputFolder.mkdir();
 
-			for (Trip trip : trips) {
-				if (route.followedByTrip(trip)) {
-					trip.writeToFolder(routeFolder);
-				}
-			}
-
-			System.out.println("Found " + routeFolder.listFiles().length
-					+ " trips following " + route.name);
-		}
-	}
-
-	static void compressPaths(File routesFolder, String outputPath) {
-		File[] routesFiles = routesFolder.listFiles();
-
-		for (File routeFile : routesFiles) {
-			Route route = new Route(routeFile);
-			BusStop firstStop = route.busStops.get(0);
-			File[] tripFiles = new File(
-					outputPath + "/" + routeFile.getName() + "/original")
-							.listFiles();
-			File compressedTripsFolder = new File(
-					outputPath + "/" + routeFile.getName() + "/compressed");
-			compressedTripsFolder.mkdir();
-
-			for (File tripFile : tripFiles) {
-				try {
-					Trip trip = new Trip(tripFile);
-					for (int p = 0; p < trip.gpsPoints.size(); p++) {
-						if (firstStop.atStop(trip.gpsPoints.get(p))) {
-							for (int i = 0; i < p; i++) {
-								trip.gpsPoints.remove(0);
-							}
-							break;
-						}
-					}
-
-					if (trip.gpsPoints
-							.size() >= Trip.MINIMUM_NUMBER_OF_GPS_POINTS) {
-						trip.writeToFolder(compressedTripsFolder);
-					}
-				} catch (ProjectSpecificException exception) {
-					throw new RuntimeException(exception);
-				}
+		for (Trip trip : trips) {
+			if (route.followedByTrip(trip)) {
+				trip.writeToFolder(outputFolder);
 			}
 		}
+
+		System.out.println("Found " + outputFolder.listFiles().length
+				+ " trips following " + route.name);
 	}
 
-	public static void delimitIntoRecentAndFutureSubtrips(File routesFolder,
+	private static void extractTrainingData(Route route, File inputTripsFolder,
+			String outputPath) throws ProjectSpecificException {
+		extractData(route, inputTripsFolder, outputPath, "training");
+	}
+
+	private static void extractTestData(Route route, File inputTripsFolder,
 			String outputPath) {
-		ArrayList<Route> routes = Route.extractRoutesFromFolder(routesFolder);
+		extractData(route, inputTripsFolder, outputPath, "test");
+	}
 
-		for (Route route : routes) {
-			System.out.println("Dealing with " + route.name + ", which has "
-					+ route.busStops.size() + " stops.");
+	private static void compressPaths(Route route, String outputPath) {
+		BusStop firstStop = route.busStops.get(0);
+		File[] tripFiles = new File(outputPath + "/" + route.name + "/test")
+				.listFiles();
+		File compressedTripsFolder = new File(
+				outputPath + "/" + route.name + "/compressed");
+		compressedTripsFolder.mkdir();
 
-			File recentFolder = new File(
-					outputPath + "/" + route.name + "/recent");
-			File futureFolder = new File(
-					outputPath + "/" + route.name + "/future");
-			recentFolder.mkdir();
-			futureFolder.mkdir();
-
-			ArrayList<Trip> trips = Trip.extractTripsFromFolder(
-					new File(outputPath + "/" + route.name + "/compressed"));
-
-			for (Trip trip : trips) {
+		for (File tripFile : tripFiles) {
+			try {
+				Trip trip = new Trip(tripFile);
 				for (int p = 0; p < trip.gpsPoints.size(); p++) {
-					if (route.busStops.get(route.busStops.size() / 2)
-							.atStop(trip.gpsPoints.get(p))) {
-						try {
-							Trip recent = new Trip(trip.name,
-									new ArrayList<GpsPoint>(
-											trip.gpsPoints.subList(0, p)));
-
-							Trip future = new Trip(trip.name,
-									new ArrayList<GpsPoint>(
-											trip.gpsPoints.subList(p,
-													trip.gpsPoints.size())));
-
-							recent.writeToFolder(recentFolder);
-							future.writeToFolder(futureFolder);
-						} catch (ProjectSpecificException exception) {
+					if (firstStop.atStop(trip.gpsPoints.get(p))) {
+						for (int i = 0; i < p; i++) {
+							trip.gpsPoints.remove(0);
 						}
+						break;
+					}
+				}
+
+				if (trip.gpsPoints
+						.size() >= Trip.MINIMUM_NUMBER_OF_GPS_POINTS) {
+					trip.writeToFolder(compressedTripsFolder);
+				}
+			} catch (ProjectSpecificException exception) {
+				throw new RuntimeException(exception);
+			}
+		}
+	}
+
+	private static void delimitIntoRecentAndFutureSubtrips(Route route,
+			String outputPath) {
+		System.out.println("Dealing with " + route.name + ", which has "
+				+ route.busStops.size() + " stops.");
+
+		File recentFolder = new File(outputPath + "/" + route.name + "/recent");
+		File futureFolder = new File(outputPath + "/" + route.name + "/future");
+		recentFolder.mkdir();
+		futureFolder.mkdir();
+
+		ArrayList<Trip> trips = Trip.extractTripsFromFolder(
+				new File(outputPath + "/" + route.name + "/compressed"));
+		for (Trip trip : trips) {
+			for (int p = 0; p < trip.gpsPoints.size(); p++) {
+				if (route.busStops.get(route.busStops.size() / 2)
+						.atStop(trip.gpsPoints.get(p))) {
+					try {
+						Trip recent = new Trip(trip.name,
+								new ArrayList<GpsPoint>(
+										trip.gpsPoints.subList(0, p)));
+						Trip future = new Trip(trip.name,
+								new ArrayList<GpsPoint>(trip.gpsPoints
+										.subList(p, trip.gpsPoints.size())));
+
+						recent.writeToFolder(recentFolder);
+						future.writeToFolder(futureFolder);
+					} catch (ProjectSpecificException exception) {
 					}
 				}
 			}
 		}
 	}
 
-	public static void outputStatistics(File routesFolder, String outputPath)
+	private static boolean statisticsGenerated(Route route, String outputPath)
 			throws IOException, ProjectSpecificException {
-		ArrayList<Route> routes = Route.extractRoutesFromFolder(routesFolder);
+		ArrayList<Trip> recentTrips = Trip.extractTripsFromFolder(
+				new File(outputPath + "/" + route.name + "/recent"));
+		if (recentTrips.size() < 30) {
+			return false;
+		}
 
-		for (Route route : routes) {
-			ArrayList<Trip> recentTrips = Trip.extractTripsFromFolder(
-					new File(outputPath + "/" + route.name + "/recent"));
-			if (recentTrips.size() < 30) {
+		BufferedWriter resultsWriter = new BufferedWriter(
+				new FileWriter(outputPath + "/" + route.name + "/results"));
+		Utils.writeLine(resultsWriter,
+				"Predicted when the bus will reach last stop of " + route.name);
+		Utils.writeLine(resultsWriter, "");
+
+		long accumulatedAbsoluteError = 0L;
+		for (Trip recentTrip : recentTrips) {
+			ArrayList<Trip> historicalTrips = Trip.extractTripsFromFolder(
+					new File(outputPath + "/" + route.name + "/training"),
+					recentTrip.lastPoint().timestamp);
+
+			for (int h = 0; h < historicalTrips.size(); h++) {
+				if (historicalTrips.get(h).name.equals(recentTrip.name)) {
+					historicalTrips.remove(h);
+				}
+			}
+			if (historicalTrips.size() < 10) {
 				continue;
 			}
+			System.out.println("Will evaluate for " + route.name + " with "
+					+ recentTrips.size() + " passing through it");
 
-			BufferedWriter resultsWriter = new BufferedWriter(
-					new FileWriter(outputPath + "/" + route.name + "/results"));
-			Utils.writeLine(resultsWriter,
-					"Predicted when the bus will reach last stop of "
-							+ route.name);
-			Utils.writeLine(resultsWriter, "");
+			long predictedTimestamp = ArrivalTimePredictor
+					.calculatePredictionToBusStop(route::atLastStop, recentTrip,
+							historicalTrips);
 
-			long accumulatedAbsoluteError = 0L;
-			for (Trip recentTrip : recentTrips) {
-				ArrayList<Trip> historicalTrips = Trip.extractTripsFromFolder(
-						new File(outputPath + "/" + route.name + "/original"),
-						recentTrip.lastPoint().timestamp);
+			Trip futureTrip = new Trip(new File(outputPath + "/" + route.name
+					+ "/future/" + recentTrip.name));
 
-				for (int h = 0; h < historicalTrips.size(); h++) {
-					if (historicalTrips.get(h).name.equals(recentTrip.name)) {
-						historicalTrips.remove(h);
-					}
-				}
-				if (historicalTrips.size() < 10) {
-					continue;
-				}
-				System.out.println("Will evaluate for " + route.name + " with "
-						+ recentTrips.size() + " passing through it");
-
-				long predictedTimestamp = ArrivalTimePredictor
-						.calculatePredictionToBusStop(route::atLastStop,
-								recentTrip, historicalTrips);
-
-				Trip futureTrip = new Trip(new File(outputPath + "/"
-						+ route.name + "/future/" + recentTrip.name));
-
-				long actualTimestamp = lastStopTimestamp(route, futureTrip);
-				long error = actualTimestamp - predictedTimestamp;
-				accumulatedAbsoluteError += Math.abs(error);
-
-				Utils.writeLine(resultsWriter,
-						recentTrip.name + " started at "
-								+ Utils.convertTimestampToDate(
-										recentTrip.lastPoint().timestamp)
-						+ ", was predicted for "
-						+ Utils.convertTimestampToDate(predictedTimestamp)
-						+ ", actually arrived at "
-						+ Utils.convertTimestampToDate(actualTimestamp)
-						+ ", prediction error is " + error);
-			}
+			long actualTimestamp = lastStopTimestamp(route, futureTrip);
+			long error = actualTimestamp - predictedTimestamp;
+			accumulatedAbsoluteError += Math.abs(error);
 
 			Utils.writeLine(resultsWriter,
-					"Mean absolute prediction error is MAE = "
-							+ accumulatedAbsoluteError / recentTrips.size()
-							+ " seconds.");
-
-			resultsWriter.close();
+					recentTrip.name + " started at "
+							+ Utils.convertTimestampToDate(
+									recentTrip.lastPoint().timestamp)
+					+ ", was predicted for "
+					+ Utils.convertTimestampToDate(predictedTimestamp)
+					+ ", actually arrived at "
+					+ Utils.convertTimestampToDate(actualTimestamp)
+					+ ", prediction error is " + error);
 		}
+
+		Utils.writeLine(resultsWriter,
+				"Mean absolute prediction error is MAE = "
+						+ accumulatedAbsoluteError / recentTrips.size()
+						+ " seconds.");
+
+		resultsWriter.close();
+
+		return true;
 	}
 
 	private static void evaluatePrediction(String[] args)
@@ -197,16 +185,24 @@ class PredictionEvaluator {
 		/* 1st argument is a folder routes */
 		/* 2nd argument is a folder containing historical trips */
 		/* 3rd argument is a top directory where to output results */
-		Utils.checkCommandLineArguments(args, "folder", "folder", "folder");
+		Utils.checkCommandLineArguments(args, "folder", "folder", "folder",
+				"folder");
 
-		File routesFolder = new File(args[0]);
-		File tripsFolder = new File(args[1]);
-		String outputPath = args[2];
+		ArrayList<Route> routes = Route
+				.extractRoutesFromFolder(new File(args[0]));
+		File trainingTripsFolder = new File(args[1]);
+		File testTripsFolder = new File(args[2]);
+		String outputPath = args[3];
 
-		extractEvaluationData(routesFolder, tripsFolder, outputPath);
-		compressPaths(routesFolder, outputPath);
-		delimitIntoRecentAndFutureSubtrips(routesFolder, outputPath);
-		outputStatistics(routesFolder, outputPath);
+		for (Route route : routes) {
+			extractTrainingData(route, trainingTripsFolder, outputPath);
+			extractTestData(route, testTripsFolder, outputPath);
+			compressPaths(route, outputPath);
+			delimitIntoRecentAndFutureSubtrips(route, outputPath);
+			if (statisticsGenerated(route, outputPath)) {
+				System.out.println("Generated statistics for " + route.name);
+			}
+		}
 	}
 
 	public static void main(String args[]) throws Exception {
