@@ -10,30 +10,39 @@ import java.nio.file.WatchEvent;
 import java.nio.file.WatchKey;
 import java.nio.file.WatchService;
 
-class GpsInputWatcher {
-
-	public static void main(String[] args) throws Exception {
+class GpsRealTimeInputWatcher {
+	/*
+	 * Real time GPS data is transmitted every 30s. This program sleeps, wakes
+	 * up on every new incomming file, processes it, then goes back to sleep.
+	 * 
+	 * Usage:
+	 * java GpsRealTimeInputWatcher folder_where_gps_file_arrives
+	 */
+	public static void main(String[] args) throws ProjectSpecificException {
+		Utils.checkCommandLineArguments(args, "folder");
 
 		while (true) {
-			FileSystem fileSystem = FileSystems.getDefault();
-			Path directory = Paths.get("/media/tfc/ml693/data_monitor");
-			WatchService watchService = fileSystem.newWatchService();
-			WatchEvent.Kind<?>[] events = {
-					StandardWatchEventKinds.ENTRY_CREATE };
-			directory.register(watchService, events);
+			try {
+				FileSystem fileSystem = FileSystems.getDefault();
+				Path directory = Paths.get(args[0]);
+				WatchService watchService = fileSystem.newWatchService();
+				WatchEvent.Kind<?>[] events = {
+						StandardWatchEventKinds.ENTRY_CREATE };
+				directory.register(watchService, events);
 
-			WatchKey watchKey = watchService.take();
-			if (watchKey.isValid()) {
-				File[] files = new File("/media/tfc/ml693/data_monitor")
-						.listFiles();
-				for (File file : files) {
-					System.out.println(file.getName());
+				WatchKey watchKey = watchService.take();
+				if (watchKey.isValid()) {
+					File[] files = new File("/media/tfc/ml693/data_monitor")
+							.listFiles();
+
+					/* TODO(ml693): replace println with sensible code */
+					for (File file : files) {
+						System.out.println(file.getName());
+					}
 				}
-			} else {
-				throw new ProjectSpecificException(
-						"Problem monitoring the directory");
+			} catch (Exception exception) {
+				throw new RuntimeException(exception);
 			}
 		}
 	}
-
 }
