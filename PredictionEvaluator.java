@@ -24,10 +24,8 @@ class PredictionEvaluator {
 				"No point passed through last stop for " + trip.name);
 	}
 
-	private static void extractData(Route route, File inputTripsFolder,
+	private static void extractData(Route route, ArrayList<Trip> trips,
 			String outputPath, String dataPurpose) {
-		ArrayList<Trip> trips = Trip.extractTripsFromFolder(inputTripsFolder);
-
 		System.out.println(
 				"Extracting " + dataPurpose + " trips for route " + route.name);
 		new File(outputPath + "/" + route.name).mkdir();
@@ -45,14 +43,14 @@ class PredictionEvaluator {
 				+ " trips following " + route.name);
 	}
 
-	private static void extractTrainingData(Route route, File inputTripsFolder,
+	private static void extractTrainingData(Route route, ArrayList<Trip> trips,
 			String outputPath) throws ProjectSpecificException {
-		extractData(route, inputTripsFolder, outputPath, "training");
+		extractData(route, trips, outputPath, "training");
 	}
 
-	private static void extractTestData(Route route, File inputTripsFolder,
+	private static void extractTestData(Route route, ArrayList<Trip> trips,
 			String outputPath) {
-		extractData(route, inputTripsFolder, outputPath, "test");
+		extractData(route, trips, outputPath, "test");
 	}
 
 	private static void compressPaths(Route route, String outputPath) {
@@ -177,21 +175,26 @@ class PredictionEvaluator {
 
 	private static void evaluatePrediction(String[] args)
 			throws IOException, ProjectSpecificException {
-		/* 1st argument is a folder routes */
-		/* 2nd argument is a folder containing historical trips */
-		/* 3rd argument is a top directory where to output results */
+		/* 1st argument is routes folder */
+		/* 2nd argument is a folder containing historical trips for training */
+		/* 3th argument is a folder containing trips for testing */
+		/* 4rd argument is a top directory where to output results */
 		Utils.checkCommandLineArguments(args, "folder", "folder", "folder",
 				"folder");
 
 		ArrayList<Route> routes = Route
 				.extractRoutesFromFolder(new File(args[0]));
-		File trainingTripsFolder = new File(args[1]);
-		File testTripsFolder = new File(args[2]);
+		System.out.println("Extracting training trips");
+		ArrayList<Trip> trainingTrips = Trip
+				.extractTripsFromFolder(new File(args[1]));
+		System.out.println("Extracting testing trips");
+		ArrayList<Trip> testTrips = Trip
+				.extractTripsFromFolder(new File(args[2]));
 		String outputPath = args[3];
 
 		for (Route route : routes) {
-			extractTrainingData(route, trainingTripsFolder, outputPath);
-			extractTestData(route, testTripsFolder, outputPath);
+			extractTrainingData(route, trainingTrips, outputPath);
+			extractTestData(route, testTrips, outputPath);
 			compressPaths(route, outputPath);
 			delimitIntoRecentAndFutureSubtrips(route, outputPath);
 			if (statisticsGenerated(route, outputPath)) {
