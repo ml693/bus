@@ -12,11 +12,12 @@ import java.nio.file.StandardWatchEventKinds;
 import java.nio.file.WatchEvent;
 import java.nio.file.WatchKey;
 import java.nio.file.WatchService;
+import java.util.ArrayList;
 
 class GpsRealTimeInputWatcher {
 	// This is likely to change
 	private static final String INCOMMING_JSON_FOLDER_PATH = "/media/tfc/ml693/data_monitor/";
-	private static final String LOCK_FILE_NAME = "lock_file";
+	private static final String LOCK_FILE_PATH = "/media/tfc/ml693/data_monitor_lock_file";
 
 	/*
 	 * Real time GPS data is transmitted every 30s. This program sleeps, wakes
@@ -46,9 +47,7 @@ class GpsRealTimeInputWatcher {
 
 				// When new file arrives
 				WatchKey watchKey = watchService.take();
-
-				File lockFile = new File(
-						INCOMMING_JSON_FOLDER_PATH + LOCK_FILE_NAME);
+				File lockFile = new File(LOCK_FILE_PATH);
 				FileChannel channel = new RandomAccessFile(lockFile, "rw")
 						.getChannel();
 				FileLock lock = channel.lock();
@@ -57,7 +56,7 @@ class GpsRealTimeInputWatcher {
 					File[] allFiles = new File(INCOMMING_JSON_FOLDER_PATH)
 							.listFiles();
 					File newGpsInputFile = allFiles[0].getName()
-							.equals(LOCK_FILE_NAME) ? allFiles[1] : allFiles[0];
+							.equals(LOCK_FILE_PATH) ? allFiles[1] : allFiles[0];
 
 					// We process it
 					processNewGpsInput(newGpsInputFile, loopCount);
@@ -72,22 +71,20 @@ class GpsRealTimeInputWatcher {
 				throw new RuntimeException(exception);
 			}
 		}
-
 	}
 
 	public static void processNewGpsInput(File jsonFile, int loopCount)
 			throws ProjectSpecificException {
+		System.out.println("Dealing with file " + jsonFile.getName());
 		BusTravelHistoryExtractor.updateBusesTravelHistoryWithFile(jsonFile);
 
 		int max = 0;
-		/*
-		 * for (String key : BusTravelHistoryExtractor.allHistories.keySet()) {
-		 * ArrayList<GpsPoint> points = BusTravelHistoryExtractor.allHistories
-		 * .get(key);
-		 * max = Math.max(max, points.size());
-		 * }
-		 */
-		System.out.println("max = " + max + ", loopCount = " + loopCount
-				+ ", jsonFile = " + jsonFile.getName());
+		for (String key : BusTravelHistoryExtractor.allHistories.keySet()) {
+			ArrayList<GpsPoint> points = BusTravelHistoryExtractor.allHistories
+					.get(key);
+			max = Math.max(max, points.size());
+		}
+
+		System.out.println("max = " + max + ", loopCount = " + loopCount);
 	}
 }
