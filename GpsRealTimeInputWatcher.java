@@ -16,6 +16,7 @@ import java.nio.file.WatchService;
 class GpsRealTimeInputWatcher {
 	// This is likely to change
 	private static final String INCOMMING_JSON_FOLDER_PATH = "/media/tfc/ml693/data_monitor/";
+	private static final String LOCK_FILE_NAME = "lock_file";
 
 	/*
 	 * Real time GPS data is transmitted every 30s. This program sleeps, wakes
@@ -47,14 +48,16 @@ class GpsRealTimeInputWatcher {
 				WatchKey watchKey = watchService.take();
 
 				File lockFile = new File(
-						INCOMMING_JSON_FOLDER_PATH + "/lock_file");
+						INCOMMING_JSON_FOLDER_PATH + LOCK_FILE_NAME);
 				FileChannel channel = new RandomAccessFile(lockFile, "rw")
 						.getChannel();
 				FileLock lock = channel.lock();
 
 				if (watchKey.isValid()) {
-					File newGpsInputFile = new File(INCOMMING_JSON_FOLDER_PATH)
-							.listFiles()[0];
+					File[] allFiles = new File(INCOMMING_JSON_FOLDER_PATH)
+							.listFiles();
+					File newGpsInputFile = allFiles[0].getName()
+							.equals(LOCK_FILE_NAME) ? allFiles[1] : allFiles[0];
 
 					// We process it
 					processNewGpsInput(newGpsInputFile, loopCount);
@@ -78,12 +81,13 @@ class GpsRealTimeInputWatcher {
 
 		int max = 0;
 		/*
-		for (String key : BusTravelHistoryExtractor.allHistories.keySet()) {
-			ArrayList<GpsPoint> points = BusTravelHistoryExtractor.allHistories
-					.get(key);
-			max = Math.max(max, points.size());
-		}
-		*/
-		System.out.println("max = " + max + ", loopCount = " + loopCount + ", jsonFile = " + jsonFile.getName());
+		 * for (String key : BusTravelHistoryExtractor.allHistories.keySet()) {
+		 * ArrayList<GpsPoint> points = BusTravelHistoryExtractor.allHistories
+		 * .get(key);
+		 * max = Math.max(max, points.size());
+		 * }
+		 */
+		System.out.println("max = " + max + ", loopCount = " + loopCount
+				+ ", jsonFile = " + jsonFile.getName());
 	}
 }
