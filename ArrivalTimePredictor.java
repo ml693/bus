@@ -10,9 +10,6 @@ public class ArrivalTimePredictor {
 	private static final long DURATION_DIFFERENCE_LIMIT = 80L;
 	private static final long RECENT_INTERVAL = 3000L;
 
-	// Updated real time.
-	static Trip recentTrip;
-
 	private static boolean endPointsMatch(Trip trip, Trip subTrip) {
 		GpsPoint subTripFirstPoint = subTrip.gpsPoints.get(0);
 		GpsPoint subTripLastPoint = subTrip.lastPoint();
