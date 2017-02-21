@@ -81,33 +81,37 @@ public class BusTravelHistoryExtractor {
 		return Integer.parseInt(matcher.group().substring(13));
 	}
 
-	static void updateBusesTravelHistoryWithFile(File file) throws IOException {
-		BufferedReader jsonInput = new BufferedReader(new FileReader(file));
-		String line = jsonInput.readLine();
-		/* Matches a new bus entry in the file */
-		String openParenthesesRegex = "\\{";
-		String untilClosedParenthesesRegex = "[^}]*";
-		Pattern pattern = Pattern
-				.compile(openParenthesesRegex + untilClosedParenthesesRegex);
-		Matcher matcher = pattern.matcher(line);
+	static void updateBusesTravelHistoryWithFile(File file) {
+		try {
+			BufferedReader jsonInput = new BufferedReader(new FileReader(file));
+			String line = jsonInput.readLine();
+			/* Matches a new bus entry in the file */
+			String openParenthesesRegex = "\\{";
+			String untilClosedParenthesesRegex = "[^}]*";
+			Pattern pattern = Pattern.compile(
+					openParenthesesRegex + untilClosedParenthesesRegex);
+			Matcher matcher = pattern.matcher(line);
 
-		/* For each bus entry */
-		while (matcher.find()) {
-			/* We extract bus info */
-			String busSnapshotTextEntry = matcher.group();
-			String key = "day" + file.getParentFile().getName() + "_bus"
-					+ extractVehicleId(busSnapshotTextEntry);
-			GpsPoint gpsPoint = new GpsPoint(busSnapshotTextEntry);
+			/* For each bus entry */
+			while (matcher.find()) {
+				/* We extract bus info */
+				String busSnapshotTextEntry = matcher.group();
+				String key = "day" + file.getParentFile().getName() + "_bus"
+						+ extractVehicleId(busSnapshotTextEntry);
+				GpsPoint gpsPoint = new GpsPoint(busSnapshotTextEntry);
 
-			/* And store info into the map */
-			if (!allHistories.containsKey(key)) {
-				allHistories.put(key, new ArrayList<GpsPoint>());
+				/* And store info into the map */
+				if (!allHistories.containsKey(key)) {
+					allHistories.put(key, new ArrayList<GpsPoint>());
+				}
+				if (gpsPoint.latitude != 0.0 || gpsPoint.longitude != 0.0) {
+					allHistories.get(key).add(gpsPoint);
+				}
 			}
-			if (gpsPoint.latitude != 0.0 || gpsPoint.longitude != 0.0) {
-				allHistories.get(key).add(gpsPoint);
-			}
+
+			jsonInput.close();
+		} catch (IOException exception) {
+			throw new RuntimeException(exception);
 		}
-
-		jsonInput.close();
 	}
 }
