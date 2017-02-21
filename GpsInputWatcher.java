@@ -1,6 +1,9 @@
 package bus;
 
 import java.io.File;
+import java.io.RandomAccessFile;
+import java.nio.channels.FileChannel;
+import java.nio.channels.FileLock;
 import java.nio.file.FileSystem;
 import java.nio.file.FileSystems;
 import java.nio.file.Path;
@@ -12,6 +15,7 @@ import java.nio.file.WatchService;
 import java.util.ArrayList;
 
 class GpsRealTimeInputWatcher {
+	// This is likely to change
 	private static final String INCOMMING_JSON_FOLDER_PATH = "/media/tfc/ml693/data_monitor/";
 
 	/*
@@ -42,6 +46,13 @@ class GpsRealTimeInputWatcher {
 
 				// When new file arrives
 				WatchKey watchKey = watchService.take();
+
+				File lockFile = new File(
+						INCOMMING_JSON_FOLDER_PATH + "/lock_file");
+				FileChannel channel = new RandomAccessFile(lockFile, "rw")
+						.getChannel();
+				FileLock lock = channel.lock();
+
 				if (watchKey.isValid()) {
 					File newGpsInputFile = new File(INCOMMING_JSON_FOLDER_PATH)
 							.listFiles()[0];
@@ -49,6 +60,12 @@ class GpsRealTimeInputWatcher {
 					// We process it
 					processNewGpsInput(newGpsInputFile, loopCount);
 				}
+
+				if (lock != null) {
+					lock.release();
+				}
+				channel.close();
+
 			} catch (Exception exception) {
 				throw new RuntimeException(exception);
 			}
@@ -61,11 +78,13 @@ class GpsRealTimeInputWatcher {
 		BusTravelHistoryExtractor.updateBusesTravelHistoryWithFile(jsonFile);
 
 		int max = 0;
+		/*
 		for (String key : BusTravelHistoryExtractor.allHistories.keySet()) {
 			ArrayList<GpsPoint> points = BusTravelHistoryExtractor.allHistories
 					.get(key);
 			max = Math.max(max, points.size());
 		}
-		System.out.println("max = " + max + ", loopCount = " + loopCount);
+		*/
+		System.out.println("max = " + max + ", loopCount = " + loopCount + ", jsonFile = " + jsonFile.getName());
 	}
 }

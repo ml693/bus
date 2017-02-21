@@ -83,13 +83,14 @@ public class BusTravelHistoryExtractor {
 
 	static void updateBusesTravelHistoryWithFile(File file) {
 		try {
-			BufferedReader jsonInput = new BufferedReader(new FileReader(file));
-			String line = jsonInput.readLine();
-			/* Matches a new bus entry in the file */
+			/* Will match a new bus entry in the file */
 			String openParenthesesRegex = "\\{";
 			String untilClosedParenthesesRegex = "[^}]*";
 			Pattern pattern = Pattern.compile(
 					openParenthesesRegex + untilClosedParenthesesRegex);
+
+			BufferedReader jsonInput = new BufferedReader(new FileReader(file));
+			String line = jsonInput.readLine();
 			Matcher matcher = pattern.matcher(line);
 
 			/* For each bus entry */
