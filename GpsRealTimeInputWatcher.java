@@ -12,7 +12,6 @@ import java.nio.file.StandardWatchEventKinds;
 import java.nio.file.WatchEvent;
 import java.nio.file.WatchKey;
 import java.nio.file.WatchService;
-import java.util.ArrayList;
 
 class GpsRealTimeInputWatcher {
 	// This is likely to change
