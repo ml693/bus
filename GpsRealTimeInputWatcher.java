@@ -15,7 +15,7 @@ import java.nio.file.WatchService;
 import java.util.ArrayList;
 
 class GpsRealTimeInputWatcher {
-	// This is likely to change
+	// These strings are likely to change
 	private static final String INCOMMING_JSON_FOLDER_PATH = "/media/tfc/ml693/data_monitor/";
 	private static final String LOCK_FILE_PATH = "/media/tfc/ml693/data_monitor_lock_file";
 
@@ -32,18 +32,24 @@ class GpsRealTimeInputWatcher {
 		waitForNewJsonInput();
 	}
 
-	public static void waitForNewJsonInput() throws ProjectSpecificException {
+	public static void waitForNewJsonInput() {
+		WatchService watchService = null;
+		try {
+			// Preparing to listen for new file
+			FileSystem fileSystem = FileSystems.getDefault();
+			Path directory = Paths.get(INCOMMING_JSON_FOLDER_PATH);
+			watchService = fileSystem.newWatchService();
+			WatchEvent.Kind<?>[] events = {
+					StandardWatchEventKinds.ENTRY_CREATE };
+			directory.register(watchService, events);
+		} catch (Exception exception) {
+			throw new RuntimeException(exception);
+		}
+
 		int loopCount = 0;
 		while (true) {
 			loopCount++;
 			try {
-				// Preparing to listen for new file
-				FileSystem fileSystem = FileSystems.getDefault();
-				Path directory = Paths.get(INCOMMING_JSON_FOLDER_PATH);
-				WatchService watchService = fileSystem.newWatchService();
-				WatchEvent.Kind<?>[] events = {
-						StandardWatchEventKinds.ENTRY_CREATE };
-				directory.register(watchService, events);
 
 				// When new file arrives
 				WatchKey watchKey = watchService.take();
@@ -53,19 +59,22 @@ class GpsRealTimeInputWatcher {
 				FileLock lock = channel.lock();
 
 				if (watchKey.isValid()) {
-					File[] allFiles = new File(INCOMMING_JSON_FOLDER_PATH)
-							.listFiles();
-					File newGpsInputFile = allFiles[0].getName()
-							.equals(LOCK_FILE_PATH) ? allFiles[1] : allFiles[0];
-
 					// We process it
-					processNewGpsInput(newGpsInputFile, loopCount);
+					processNewGpsInput(
+							new File(INCOMMING_JSON_FOLDER_PATH).listFiles()[0],
+							loopCount);
 				}
 
 				if (lock != null) {
 					lock.release();
 				}
 				channel.close();
+				if (!watchKey.reset()) {
+					throw new ProjectSpecificException(
+							"Something happened with "
+									+ INCOMMING_JSON_FOLDER_PATH
+									+ " being watched");
+				}
 
 			} catch (Exception exception) {
 				throw new RuntimeException(exception);
