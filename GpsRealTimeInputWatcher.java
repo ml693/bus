@@ -40,7 +40,9 @@ class GpsRealTimeInputWatcher {
 			Path directory = Paths.get(INCOMMING_JSON_FOLDER_PATH);
 			watchService = fileSystem.newWatchService();
 			WatchEvent.Kind<?>[] events = {
-					StandardWatchEventKinds.ENTRY_CREATE };
+					StandardWatchEventKinds.ENTRY_CREATE,
+					StandardWatchEventKinds.ENTRY_DELETE,
+					StandardWatchEventKinds.ENTRY_MODIFY };
 			directory.register(watchService, events);
 		} catch (Exception exception) {
 			throw new RuntimeException(exception);
@@ -53,6 +55,7 @@ class GpsRealTimeInputWatcher {
 
 				// When new file arrives
 				WatchKey watchKey = watchService.take();
+				watchKey.pollEvents();
 				File lockFile = new File(LOCK_FILE_PATH);
 				FileChannel channel = new RandomAccessFile(lockFile, "rw")
 						.getChannel();
