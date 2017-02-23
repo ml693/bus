@@ -110,6 +110,7 @@ class GpsRealTimeInputWatcher {
 						if (PathDetector.tripFollowsPath(recentTrip, path)) {
 							System.out.println(key + " follows " + path.name);
 							tripFollowsPath.put(key, path.name);
+							recentTrip.writeToFolder(new File("trips"));
 							break;
 						}
 					}
