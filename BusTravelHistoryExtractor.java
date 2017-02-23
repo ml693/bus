@@ -4,6 +4,7 @@ import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileReader;
 import java.io.IOException;
+import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
@@ -97,10 +98,15 @@ public class BusTravelHistoryExtractor {
 			while (matcher.find()) {
 				/* We extract bus info */
 				String busSnapshotTextEntry = matcher.group();
-				String key = "day" + file.getParentFile().getName() + "_bus"
-						+ extractVehicleId(busSnapshotTextEntry);
-				GpsPoint gpsPoint = new GpsPoint(busSnapshotTextEntry);
 
+				String day = file.getParentFile().getName();
+				if (!day.matches("[0-9]*")) {
+					day = Integer.toString(LocalDateTime.now().getDayOfMonth());
+				}
+				String key = "day" + day + "_bus"
+						+ extractVehicleId(busSnapshotTextEntry);
+
+				GpsPoint gpsPoint = new GpsPoint(busSnapshotTextEntry);
 				/* And store info into the map */
 				if (!allHistories.containsKey(key)) {
 					allHistories.put(key, new ArrayList<GpsPoint>());

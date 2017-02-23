@@ -1,6 +1,5 @@
 package bus;
 
-import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.function.Function;
@@ -9,6 +8,16 @@ public class ArrivalTimePredictor {
 	private static final double DISTANCE_BOUND = 0.00004;
 	private static final long DURATION_DIFFERENCE_LIMIT = 80L;
 	private static final long RECENT_INTERVAL = 3000L;
+
+	/* Main method which predicts arrival time to bus stop */
+	static long calculatePredictionToBusStop(
+			Function<GpsPoint, Boolean> atBusStop, Trip tripToPredict,
+			ArrayList<Trip> historicalTrips) throws ProjectSpecificException {
+		ArrayList<Trip> predictions = generatePredictions(tripToPredict,
+				historicalTrips);
+		return calculateAverageArrivalTime(tripToPredict.name, predictions,
+				atBusStop);
+	}
 
 	private static boolean endPointsMatch(Trip trip, Trip subTrip) {
 		GpsPoint subTripFirstPoint = subTrip.gpsPoints.get(0);
@@ -87,7 +96,7 @@ public class ArrivalTimePredictor {
 	 * case where t has no further GPS points to be used for prediction).
 	 */
 	private static ArrayList<Trip> generatePredictions(Trip recentTrip,
-			ArrayList<Trip> trips) throws IOException {
+			ArrayList<Trip> trips) {
 		ArrayList<Trip> predictions = new ArrayList<Trip>();
 
 		for (Trip trip : trips) {
@@ -110,16 +119,6 @@ public class ArrivalTimePredictor {
 		return predictions;
 	}
 
-	static long calculatePredictionToBusStop(
-			Function<GpsPoint, Boolean> atBusStop, Trip tripToPredict,
-			ArrayList<Trip> historicalTrips)
-					throws IOException, ProjectSpecificException {
-		ArrayList<Trip> predictions = generatePredictions(tripToPredict,
-				historicalTrips);
-		return calculateAverageArrivalTime(tripToPredict.name, predictions,
-				atBusStop);
-	}
-
 	private static long averageArrivalTimestamp(
 			ArrayList<Long> arrivalTimestamps) {
 		Collections.sort(arrivalTimestamps);
@@ -128,7 +127,7 @@ public class ArrivalTimePredictor {
 
 	private static long calculateAverageArrivalTime(String tripName,
 			ArrayList<Trip> predictions, Function<GpsPoint, Boolean> atBusStop)
-					throws IOException, ProjectSpecificException {
+					throws ProjectSpecificException {
 		ArrayList<Long> oldDifferentlyCongested = new ArrayList<Long>();
 		ArrayList<Long> oldEquallyCongested = new ArrayList<Long>();
 		ArrayList<Long> newDifferentlyCongested = new ArrayList<Long>();

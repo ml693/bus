@@ -20,12 +20,10 @@ class GpsRealTimeInputWatcher {
 	private static final String INCOMMING_JSON_FOLDER_PATH = "/media/tfc/ml693/data_monitor/";
 	private static final String LOCK_FILE_PATH = "/media/tfc/ml693/data_monitor_lock_file";
 
+	private final String tripsFolderPath;
 	private final ArrayList<Trip> paths;
-	private final HashMap<String, String> tripFollowsPath = new HashMap<String, String>();
-
-	GpsRealTimeInputWatcher(File pathsFolder) {
-		paths = Trip.extractTripsFromFolder(pathsFolder);
-	}
+	private final String routesFolderPath;
+	private final HashMap<String, Route> tripFollowsRoute = new HashMap<String, Route>();
 
 	/*
 	 * Real time GPS data is transmitted every 30s. This program sleeps, wakes
@@ -37,11 +35,18 @@ class GpsRealTimeInputWatcher {
 	 * java GpsRealTimeInputWatcher folder_where_gps_file_arrives
 	 */
 	public static void main(String[] args) throws ProjectSpecificException {
-		Utils.checkCommandLineArguments(args, "folder");
+		Utils.checkCommandLineArguments(args, "folder", "folder");
 
-		GpsRealTimeInputWatcher watcher = new GpsRealTimeInputWatcher(
-				new File(args[0]));
+		GpsRealTimeInputWatcher watcher = new GpsRealTimeInputWatcher(args[0],
+				args[1], new File(args[2]));
 		watcher.waitForNewJsonInput();
+	}
+
+	GpsRealTimeInputWatcher(String tripsFolderPath, String routesFolderPath,
+			File pathsFolder) {
+		this.tripsFolderPath = tripsFolderPath;
+		this.routesFolderPath = routesFolderPath;
+		paths = Trip.extractTripsFromFolder(pathsFolder);
 	}
 
 	private void waitForNewJsonInput() {
@@ -91,6 +96,20 @@ class GpsRealTimeInputWatcher {
 		}
 	}
 
+	BusStop getNextStop(Trip recentTrip, Route route) {
+		int p = 0;
+		for (BusStop busStop : route.busStops) {
+			while (p < recentTrip.gpsPoints.size()
+					&& !busStop.atStop(recentTrip.gpsPoints.get(p))) {
+				p++;
+			}
+			if (p == recentTrip.gpsPoints.size()) {
+				return busStop;
+			}
+		}
+		return null;
+	}
+
 	private void processNewGpsInput(File jsonFile)
 			throws ProjectSpecificException {
 		System.out.println("Dealing with file " + jsonFile.getName());
@@ -105,17 +124,37 @@ class GpsRealTimeInputWatcher {
 						points.subList(points.size() - 20, points.size()));
 
 				Trip recentTrip = new Trip(key, latest20Points);
-				if (!tripFollowsPath.containsKey(key)) {
+				if (!tripFollowsRoute.containsKey(key)) {
 					for (Trip path : paths) {
 						if (PathDetector.tripFollowsPath(recentTrip, path)) {
 							System.out.println(key + " follows " + path.name);
-							tripFollowsPath.put(key, path.name);
-							recentTrip.writeToFolder(new File("trips"));
+							tripFollowsRoute.put(key, new Route(new File(
+									routesFolderPath + "/" + path.name)));
 							break;
 						}
 					}
 				}
+
+				BusStop nextStop = getNextStop(recentTrip,
+						tripFollowsRoute.get(key));
+				if (nextStop == null) {
+					System.out.println("No next stop for " + key);
+				} else {
+					ArrayList<Trip> historicalTrips = Trip
+							.extractTripsFromFolder(
+									new File(tripsFolderPath + "/" + key));
+
+					Long prediction = ArrivalTimePredictor
+							.calculatePredictionToBusStop(
+									p -> nextStop.atStop(p), recentTrip,
+									historicalTrips);
+
+					System.out.println("We predict that " + recentTrip
+							+ " will arrive at " + nextStop.name + " at "
+							+ Utils.convertTimestampToDate(prediction));
+				}
 			}
+
 		}
 	}
 
