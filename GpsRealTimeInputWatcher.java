@@ -106,8 +106,7 @@ class GpsRealTimeInputWatcher {
 		ArrayList<GpsPoint> points = BusTravelHistoryExtractor.allHistories
 				.get(vehicleId);
 		if (points.size() < Trip.MINIMUM_NUMBER_OF_GPS_POINTS * 2) {
-			throw (ProjectSpecificException
-					.tripDoesNotHaveEnoughPoints(vehicleId));
+			return null;
 		}
 		return new Trip(vehicleId,
 				new ArrayList<GpsPoint>(points.subList(
@@ -172,6 +171,6 @@ class GpsRealTimeInputWatcher {
 						+ Utils.convertTimestampToDate(prediction));
 			}
 		}
-
 	}
+
 }
