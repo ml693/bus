@@ -152,6 +152,9 @@ class GpsRealTimeInputWatcher {
 		for (String vehicleId : BusTravelHistoryExtractor.allHistories
 				.keySet()) {
 			Trip vehicleTrip = getTrip(vehicleId);
+			if (vehicleTrip == null) {
+				continue;
+			}
 			Route routeFollowed = routeFollowedByTrip(vehicleTrip);
 			BusStop nextStop = getNextStop(vehicleTrip, routeFollowed);
 
