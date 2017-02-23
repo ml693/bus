@@ -156,6 +156,9 @@ class GpsRealTimeInputWatcher {
 				continue;
 			}
 			Route routeFollowed = routeFollowedByTrip(vehicleTrip);
+			if (routeFollowed == null) {
+				vehicleTrip.writeToFolder(new File("debug"));
+			}
 			BusStop nextStop = getNextStop(vehicleTrip, routeFollowed);
 
 			if (nextStop == null) {
