@@ -67,17 +67,6 @@ class Route {
 		}
 	}
 
-	/* TODO(ml693): get rid of this method */
-	static boolean visitedInOrder(ArrayList<Integer> visitNumbers) {
-		for (int i = 1; i < visitNumbers.size(); i++) {
-			if (visitNumbers.get(i - 1).intValue() >= visitNumbers.get(i)
-					.intValue()) {
-				return false;
-			}
-		}
-		return true;
-	}
-
 	boolean allStopsVisitedInOrder(Trip trip) {
 		int point = 0;
 		for (BusStop busStop : busStops) {

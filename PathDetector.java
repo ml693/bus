@@ -31,6 +31,12 @@ class PathDetector {
 
 	static double SIMILARITY_THRESHOLD = 1f;
 
+	private static boolean similarNumberOfPointsUsedToAlign(Trip trip,
+			Trip path, int pointsUsedToAlign) {
+		return pointsUsedToAlign
+				/ trip.gpsPoints.size() <= SIMILARITY_THRESHOLD;
+	}
+
 	/*
 	 * The smaller similarity measure, the more similar tripsInterval to some
 	 * interval of fullTrip is.
@@ -42,12 +48,6 @@ class PathDetector {
 	 * exactly, then point's distance to the "best" segment's corners due to
 	 * triangle inequality will be larger.
 	 */
-	private static boolean similarNumberOfPointsUsedToAlign(Trip trip,
-			Trip path, int pointsUsedToAlign) {
-		return pointsUsedToAlign
-				/ trip.gpsPoints.size() <= SIMILARITY_THRESHOLD;
-	}
-
 	static boolean tripFollowsPath(Trip trip, Trip path) {
 		final int iMax = trip.gpsPoints.size();
 		final int jMax = path.gpsPoints.size() - 1;
@@ -63,9 +63,10 @@ class PathDetector {
 		for (int i = 1; i <= iMax; i++) {
 			for (int j = 1; j <= jMax; j++) {
 				alignmentCost[i][j] = Math.min(alignmentCost[i][j - 1],
-						trip.gpsPoints.get(i - 1).ratioToSegmentCorners(
-								path.gpsPoints.get(j - 1),
-								path.gpsPoints.get(j))
+						trip.gpsPoints.get(i - 1 /* i-th point */)
+								.ratioToSegmentCorners(
+										path.gpsPoints.get(j - 1),
+										path.gpsPoints.get(j))
 								+ alignmentCost[i - 1][j]);
 			}
 		}
@@ -89,53 +90,6 @@ class PathDetector {
 		}
 		return similarNumberOfPointsUsedToAlign(trip, path, last - first + 1)
 				&& (alignmentCost[iMax][jMax] - iMax < SIMILARITY_THRESHOLD);
-	}
-
-	static boolean pathPointsMatchTrip(Trip path, int i, int j, Trip trip) {
-		boolean firstPointMatch = false;
-		for (int k = i - 1; k <= i + 2; k++) {
-			if (k > 0 && k < path.gpsPoints.size()
-					&& trip.gpsPoints.get(0).ratioToSegmentCorners(
-							path.gpsPoints.get(k - 1),
-							path.gpsPoints.get(k)) == 1.0) {
-				firstPointMatch = true;
-			}
-		}
-
-		boolean lastPointMatch = false;
-		for (int k = j - 1; k <= j + 2; k++) {
-			if (k > 0 && k < path.gpsPoints.size()
-					&& trip.lastPoint().ratioToSegmentCorners(
-							path.gpsPoints.get(k - 1),
-							path.gpsPoints.get(k)) == 1.0) {
-				lastPointMatch = true;
-			}
-		}
-		return firstPointMatch && lastPointMatch;
-	}
-
-	static boolean followsPathAccordingToDistance(Trip trip, Trip path) {
-		double tripDistance = trip.totalDistanceTravelled();
-		double currentDistance = 0.0;
-		int i = 1;
-		int j = 1;
-
-		while (j < path.gpsPoints.size()) {
-			if (currentDistance < tripDistance) {
-				currentDistance += Utils.distance(path.gpsPoints.get(j - 1),
-						path.gpsPoints.get(j));
-				j++;
-			} else {
-				if (pathPointsMatchTrip(path, i, j, trip)) {
-					return true;
-				}
-				currentDistance -= Utils.distance(path.gpsPoints.get(i - 1),
-						path.gpsPoints.get(i));
-				i++;
-			}
-		}
-
-		return false;
 	}
 
 	static void determineFuturePath(Trip tripsInterval, File allTripsFolder)

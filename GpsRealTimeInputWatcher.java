@@ -13,11 +13,19 @@ import java.nio.file.WatchEvent;
 import java.nio.file.WatchKey;
 import java.nio.file.WatchService;
 import java.util.ArrayList;
+import java.util.HashMap;
 
 class GpsRealTimeInputWatcher {
 	// These strings are likely to change
 	private static final String INCOMMING_JSON_FOLDER_PATH = "/media/tfc/ml693/data_monitor/";
 	private static final String LOCK_FILE_PATH = "/media/tfc/ml693/data_monitor_lock_file";
+
+	private final ArrayList<Trip> paths;
+	private final HashMap<String, String> tripFollowsPath = new HashMap<String, String>();
+
+	GpsRealTimeInputWatcher(File pathsFolder) {
+		paths = Trip.extractTripsFromFolder(pathsFolder);
+	}
 
 	/*
 	 * Real time GPS data is transmitted every 30s. This program sleeps, wakes
@@ -29,10 +37,14 @@ class GpsRealTimeInputWatcher {
 	 * java GpsRealTimeInputWatcher folder_where_gps_file_arrives
 	 */
 	public static void main(String[] args) throws ProjectSpecificException {
-		waitForNewJsonInput();
+		Utils.checkCommandLineArguments(args, "folder");
+
+		GpsRealTimeInputWatcher watcher = new GpsRealTimeInputWatcher(
+				new File(args[0]));
+		watcher.waitForNewJsonInput();
 	}
 
-	public static void waitForNewJsonInput() {
+	private void waitForNewJsonInput() {
 		WatchService watchService = null;
 		try {
 			// Preparing to listen for new file
@@ -46,9 +58,7 @@ class GpsRealTimeInputWatcher {
 			throw new RuntimeException(exception);
 		}
 
-		int loopCount = 0;
 		while (true) {
-			loopCount++;
 			try {
 				// When new file arrives
 				WatchKey watchKey = watchService.take();
@@ -60,9 +70,8 @@ class GpsRealTimeInputWatcher {
 
 				if (watchKey.isValid()) {
 					// We process it
-					processNewGpsInput(
-							new File(INCOMMING_JSON_FOLDER_PATH).listFiles()[0],
-							loopCount);
+					processNewGpsInput(new File(INCOMMING_JSON_FOLDER_PATH)
+							.listFiles()[0]);
 				}
 
 				if (lock != null) {
@@ -82,18 +91,31 @@ class GpsRealTimeInputWatcher {
 		}
 	}
 
-	public static void processNewGpsInput(File jsonFile, int loopCount)
+	private void processNewGpsInput(File jsonFile)
 			throws ProjectSpecificException {
 		System.out.println("Dealing with file " + jsonFile.getName());
 		BusTravelHistoryExtractor.updateBusesTravelHistoryWithFile(jsonFile);
 
-		int max = 0;
 		for (String key : BusTravelHistoryExtractor.allHistories.keySet()) {
 			ArrayList<GpsPoint> points = BusTravelHistoryExtractor.allHistories
 					.get(key);
-			max = Math.max(max, points.size());
-		}
+			// TODO(ml693): figure out best amount of points;
+			if (points.size() > 20) {
+				ArrayList<GpsPoint> latest20Points = new ArrayList<GpsPoint>(
+						points.subList(points.size() - 20, points.size()));
 
-		System.out.println("max = " + max + ", loopCount = " + loopCount);
+				Trip recentTrip = new Trip(key, latest20Points);
+				if (!tripFollowsPath.containsKey(key)) {
+					for (Trip path : paths) {
+						if (PathDetector.tripFollowsPath(recentTrip, path)) {
+							System.out.println(key + " follows " + path.name);
+							tripFollowsPath.put(key, path.name);
+							break;
+						}
+					}
+				}
+			}
+		}
 	}
+
 }
