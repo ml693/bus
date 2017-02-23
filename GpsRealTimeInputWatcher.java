@@ -20,9 +20,10 @@ class GpsRealTimeInputWatcher {
 	private static final String INCOMMING_JSON_FOLDER_PATH = "/media/tfc/ml693/data_monitor/";
 	private static final String LOCK_FILE_PATH = "/media/tfc/ml693/data_monitor_lock_file";
 
-	private final String tripsFolderPath;
-	private final ArrayList<Trip> paths;
-	private final String routesFolderPath;
+	private final File tripsFolder;
+	private final File routesFolder;
+	/* Path is a trip following route */
+	private final File pathsFolder;
 	private final HashMap<String, Route> tripFollowsRoute = new HashMap<String, Route>();
 
 	/*
@@ -35,50 +36,56 @@ class GpsRealTimeInputWatcher {
 	 * java GpsRealTimeInputWatcher folder_where_gps_file_arrives
 	 */
 	public static void main(String[] args) throws ProjectSpecificException {
-		Utils.checkCommandLineArguments(args, "folder", "folder");
+		Utils.checkCommandLineArguments(args, "folder", "folder", "folder");
 
-		GpsRealTimeInputWatcher watcher = new GpsRealTimeInputWatcher(args[0],
-				args[1], new File(args[2]));
+		GpsRealTimeInputWatcher watcher = new GpsRealTimeInputWatcher(
+				new File(args[0]), new File(args[1]), new File(args[2]));
 		watcher.waitForNewJsonInput();
 	}
 
-	GpsRealTimeInputWatcher(String tripsFolderPath, String routesFolderPath,
+	GpsRealTimeInputWatcher(File tripsFolder, File routesFolder,
 			File pathsFolder) {
-		this.tripsFolderPath = tripsFolderPath;
-		this.routesFolderPath = routesFolderPath;
-		paths = Trip.extractTripsFromFolder(pathsFolder);
+		this.tripsFolder = tripsFolder;
+		this.routesFolder = routesFolder;
+		this.pathsFolder = pathsFolder;
 	}
 
-	private void waitForNewJsonInput() {
-		WatchService watchService = null;
+	WatchService realTimeJsonFolderWatcher() {
 		try {
-			// Preparing to listen for new file
 			FileSystem fileSystem = FileSystems.getDefault();
 			Path directory = Paths.get(INCOMMING_JSON_FOLDER_PATH);
-			watchService = fileSystem.newWatchService();
+			WatchService watchService = fileSystem.newWatchService();
 			WatchEvent.Kind<?>[] events = {
 					StandardWatchEventKinds.ENTRY_CREATE };
 			directory.register(watchService, events);
+			return watchService;
 		} catch (Exception exception) {
 			throw new RuntimeException(exception);
 		}
+	}
+
+	private void waitForNewJsonInput() {
+		WatchService watchService = realTimeJsonFolderWatcher();
 
 		while (true) {
 			try {
 				// When new file arrives
 				WatchKey watchKey = watchService.take();
 				watchKey.pollEvents();
+
+				// First look real time input directory
 				File lockFile = new File(LOCK_FILE_PATH);
 				FileChannel channel = new RandomAccessFile(lockFile, "rw")
 						.getChannel();
 				FileLock lock = channel.lock();
 
+				// Then process new file
 				if (watchKey.isValid()) {
-					// We process it
 					processNewGpsInput(new File(INCOMMING_JSON_FOLDER_PATH)
 							.listFiles()[0]);
 				}
 
+				// Finally unlock real time input directory
 				if (lock != null) {
 					lock.release();
 				}
@@ -89,14 +96,26 @@ class GpsRealTimeInputWatcher {
 									+ INCOMMING_JSON_FOLDER_PATH
 									+ " being watched");
 				}
-
 			} catch (Exception exception) {
 				throw new RuntimeException(exception);
 			}
 		}
 	}
 
-	BusStop getNextStop(Trip recentTrip, Route route) {
+	Trip getTrip(String vehicleId) throws ProjectSpecificException {
+		ArrayList<GpsPoint> points = BusTravelHistoryExtractor.allHistories
+				.get(vehicleId);
+		if (points.size() < Trip.MINIMUM_NUMBER_OF_GPS_POINTS * 2) {
+			throw (ProjectSpecificException
+					.tripDoesNotHaveEnoughPoints(vehicleId));
+		}
+		return new Trip(vehicleId,
+				new ArrayList<GpsPoint>(points.subList(
+						points.size() - Trip.MINIMUM_NUMBER_OF_GPS_POINTS * 2,
+						points.size())));
+	}
+	
+	private BusStop getNextStop(Trip recentTrip, Route route) {
 		int p = 0;
 		for (BusStop busStop : route.busStops) {
 			while (p < recentTrip.gpsPoints.size()
@@ -109,47 +128,50 @@ class GpsRealTimeInputWatcher {
 		}
 		return null;
 	}
+	
+	Route routeFollowedByTrip(Trip trip) {
+		if (!tripFollowsRoute.containsKey(trip.name)) {
+			ArrayList<Trip> paths = Trip
+					.extractTripsFromFolder(pathsFolder);
+			for (Trip path : paths) {
+				if (PathDetector.tripFollowsPath(trip, path)) {
+					System.out.println(
+							trip.name + " follows " + path.name);
+					tripFollowsRoute.put(trip.name, new Route(new File(
+							routesFolder.getName() + "/" + path.name)));
+					break;
+				}
+			}
+		}
+		return tripFollowsRoute.get(trip.name);
+	}
+		
 
 	private void processNewGpsInput(File jsonFile)
 			throws ProjectSpecificException {
 		System.out.println("Dealing with file " + jsonFile.getName());
 		BusTravelHistoryExtractor.updateBusesTravelHistoryWithFile(jsonFile);
 
-		for (String key : BusTravelHistoryExtractor.allHistories.keySet()) {
-			ArrayList<GpsPoint> points = BusTravelHistoryExtractor.allHistories
-					.get(key);
-			// TODO(ml693): figure out best amount of points;
-			if (points.size() > 20) {
-				ArrayList<GpsPoint> latest20Points = new ArrayList<GpsPoint>(
-						points.subList(points.size() - 20, points.size()));
-
-				Trip recentTrip = new Trip(key, latest20Points);
-				if (!tripFollowsRoute.containsKey(key)) {
-					for (Trip path : paths) {
-						if (PathDetector.tripFollowsPath(recentTrip, path)) {
-							System.out.println(key + " follows " + path.name);
-							tripFollowsRoute.put(key, new Route(new File(
-									routesFolderPath + "/" + path.name)));
-							break;
-						}
-					}
-				}
-
-				BusStop nextStop = getNextStop(recentTrip,
-						tripFollowsRoute.get(key));
-				if (nextStop == null) {
-					System.out.println("No next stop for " + key);
-				} else {
+		// For each bus we want to make a prediction
+		for (String vehicleId : BusTravelHistoryExtractor.allHistories
+				.keySet()) {
+			Trip vehicleTrip = getTrip(vehicleId);
+			Route routeFollowed = routeFollowedByTrip(vehicleTrip);
+			BusStop nextStop = getNextStop(vehicleTrip, routeFollowed);
+			
+			if (nextStop == null) {
+				System.out.println("No next stop for " + vehicleId);
+			} else {
 					ArrayList<Trip> historicalTrips = Trip
-							.extractTripsFromFolder(
-									new File(tripsFolderPath + "/" + key));
+							.extractTripsFromFolder(new File(
+									tripsFolder.getName() + "/" + routeFollowed.name));
 
 					Long prediction = ArrivalTimePredictor
 							.calculatePredictionToBusStop(
-									p -> nextStop.atStop(p), recentTrip,
+									p -> nextStop.atStop(p), vehicleTrip,
 									historicalTrips);
 
-					System.out.println("We predict that " + recentTrip
+					System.out.println("We predict that " + vehicleTrip
 							+ " will arrive at " + nextStop.name + " at "
 							+ Utils.convertTimestampToDate(prediction));
 				}
