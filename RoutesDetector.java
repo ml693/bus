@@ -6,14 +6,16 @@ import java.util.ArrayList;
 public class RoutesDetector {
 
 	public static void main(String[] args) throws Exception {
-		/*
-		 * 1st argument is all trips folder.
-		 * 2nd argument is all routes folder.
-		 * 3rd argument is a folder to put good trips following routes.
-		 */
-		ArrayList<File> tripFiles = Utils.filesInFolder(args[0]);
-		ArrayList<File> routeFiles = Utils.filesInFolder(args[1]);
-		File pathsFolder = new File(args[2]);
+		findTripsFollowing(new File("trips"),
+				new Route(new File("routes/1055852-20150607-20150830")),
+				new File("trips_following_route"));
+	}
+
+	static void findPathForRoute(String tripsFolderName,
+			String routesFolderName, File pathsFolder)
+					throws ProjectSpecificException {
+		ArrayList<File> tripFiles = Utils.filesInFolder(tripsFolderName);
+		ArrayList<File> routeFiles = Utils.filesInFolder(routesFolderName);
 
 		for (int t = 0; t < tripFiles.size(); t++) {
 			Trip trip = new Trip(tripFiles.get(t));
@@ -32,6 +34,16 @@ public class RoutesDetector {
 			}
 			tripFiles.get(t).delete();
 			tripFiles.remove(t);
+		}
+	}
+
+	static void findTripsFollowing(File tripsFolder, Route route,
+			File outputFolder) {
+		ArrayList<Trip> trips = Trip.extractTripsFromFolder(tripsFolder);
+		for (Trip trip : trips) {
+			if (route.allStopsVisitedInOrder(trip)) {
+				trip.writeToFolder(outputFolder);
+			}
 		}
 	}
 }
