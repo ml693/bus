@@ -114,7 +114,7 @@ class GpsRealTimeInputWatcher {
 						points.size() - Trip.MINIMUM_NUMBER_OF_GPS_POINTS * 2,
 						points.size())));
 	}
-	
+
 	private BusStop getNextStop(Trip recentTrip, Route route) {
 		int p = 0;
 		for (BusStop busStop : route.busStops) {
@@ -128,15 +128,13 @@ class GpsRealTimeInputWatcher {
 		}
 		return null;
 	}
-	
+
 	Route routeFollowedByTrip(Trip trip) {
 		if (!tripFollowsRoute.containsKey(trip.name)) {
-			ArrayList<Trip> paths = Trip
-					.extractTripsFromFolder(pathsFolder);
+			ArrayList<Trip> paths = Trip.extractTripsFromFolder(pathsFolder);
 			for (Trip path : paths) {
 				if (PathDetector.tripFollowsPath(trip, path)) {
-					System.out.println(
-							trip.name + " follows " + path.name);
+					System.out.println(trip.name + " follows " + path.name);
 					tripFollowsRoute.put(trip.name, new Route(new File(
 							routesFolder.getName() + "/" + path.name)));
 					break;
@@ -145,7 +143,6 @@ class GpsRealTimeInputWatcher {
 		}
 		return tripFollowsRoute.get(trip.name);
 	}
-		
 
 	private void processNewGpsInput(File jsonFile)
 			throws ProjectSpecificException {
@@ -158,26 +155,23 @@ class GpsRealTimeInputWatcher {
 			Trip vehicleTrip = getTrip(vehicleId);
 			Route routeFollowed = routeFollowedByTrip(vehicleTrip);
 			BusStop nextStop = getNextStop(vehicleTrip, routeFollowed);
-			
+
 			if (nextStop == null) {
 				System.out.println("No next stop for " + vehicleId);
 			} else {
-					ArrayList<Trip> historicalTrips = Trip
-							.extractTripsFromFolder(new File(
-									tripsFolder.getName() + "/" + routeFollowed.name));
+				ArrayList<Trip> historicalTrips = Trip
+						.extractTripsFromFolder(new File(tripsFolder.getName()
+								+ "/" + routeFollowed.name));
 
-					Long prediction = ArrivalTimePredictor
-							.calculatePredictionToBusStop(
-									p -> nextStop.atStop(p), vehicleTrip,
-									historicalTrips);
+				Long prediction = ArrivalTimePredictor
+						.calculatePredictionToBusStop(p -> nextStop.atStop(p),
+								vehicleTrip, historicalTrips);
 
-					System.out.println("We predict that " + vehicleTrip
-							+ " will arrive at " + nextStop.name + " at "
-							+ Utils.convertTimestampToDate(prediction));
-				}
+				System.out.println("We predict that " + vehicleTrip
+						+ " will arrive at " + nextStop.name + " at "
+						+ Utils.convertTimestampToDate(prediction));
 			}
-
 		}
-	}
 
+	}
 }
