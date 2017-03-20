@@ -12,7 +12,7 @@ public class RoutesDetector {
 				.extractRoutesFromFolder(new File(args[1]));
 		String pathsFolder = args[2];
 
-		for (int t = 0; t < tripFiles.size(); t++) {
+		for (int t = tripFiles.size() - 1; t >= 0; t--) {
 			Trip trip = new Trip(tripFiles.get(t));
 			System.out.println("Processing " + trip.name);
 
