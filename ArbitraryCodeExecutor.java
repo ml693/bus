@@ -28,6 +28,7 @@ class ArbitraryCodeExecutor {
 				for (int i = 0; i < p - 3; i++) {
 					trip.gpsPoints.remove(0);
 				}
+				break;
 			}
 		}
 		for (int p = trip.gpsPoints.size() - 1; p >= 0; p--) {
