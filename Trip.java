@@ -129,6 +129,12 @@ public class Trip {
 			long untilTimestamp) {
 		ArrayList<Trip> trips = new ArrayList<Trip>();
 		File[] files = folder.listFiles();
+
+		if (files == null) {
+			System.out.println(
+					"Something wrong with " + folder.getAbsolutePath());
+		}
+
 		for (File file : files) {
 			try {
 				Trip trip = new Trip(file, untilTimestamp);
