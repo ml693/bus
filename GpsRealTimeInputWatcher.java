@@ -159,6 +159,7 @@ class GpsRealTimeInputWatcher {
 			if (routeFollowed == null) {
 				System.out.println(vehicleId + " does not follow any route.");
 				vehicleTrip.writeToFolder(new File("debug"));
+				continue;
 			}
 			BusStop nextStop = getNextStop(vehicleTrip, routeFollowed);
 
