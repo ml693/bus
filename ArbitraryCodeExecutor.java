@@ -40,8 +40,8 @@ class ArbitraryCodeExecutor {
 			}
 		}
 
-		throw new RuntimeException(new ProjectSpecificException(
-				trip.name + " does not follow " + route.name));
+		throw new ProjectSpecificException(
+				trip.name + " does not follow " + route.name);
 	}
 
 	public static void constructPaths(String args[]) {
