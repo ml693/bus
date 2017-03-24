@@ -46,16 +46,19 @@ class ArbitraryCodeExecutor {
 				.extractRoutesFromFolder(new File(args[0]));
 
 		for (Route route : routes) {
-			ArrayList<Trip> trips = Trip.extractTripsFromFolder(
-					new File(args[1] + "/" + route.name));
+			File tripsFolder = new File(args[1] + "/" + route.name);
+			if (tripsFolder.exists()) {
+				ArrayList<Trip> trips = Trip.extractTripsFromFolder(
+						new File(args[1] + "/" + route.name));
 
-			for (Trip trip : trips) {
-				try {
-					Trip path = constructPath(trip, route);
-					path.writeToFolder(new File(args[2]));
-					break;
-				} catch (ProjectSpecificException exception) {
+				for (Trip trip : trips) {
+					try {
+						Trip path = constructPath(trip, route);
+						path.writeToFolder(new File(args[2]));
+						break;
+					} catch (ProjectSpecificException exception) {
 
+					}
 				}
 			}
 		}
