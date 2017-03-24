@@ -32,12 +32,10 @@ class ArbitraryCodeExecutor {
 				break;
 			}
 		}
-		for (int p = trip.gpsPoints.size() - 1; p >= 0; p--) {
+		for (int p = trip.gpsPoints.size()
+				- Trip.MINIMUM_NUMBER_OF_GPS_POINTS; p >= 0; p--) {
 			if (route.atLastStop(trip.gpsPoints.get(p))) {
-				return trip
-						.subTrip(0,
-								Math.min(p + Trip.MINIMUM_NUMBER_OF_GPS_POINTS,
-										trip.gpsPoints.size()))
+				return trip.subTrip(0, p + Trip.MINIMUM_NUMBER_OF_GPS_POINTS)
 						.makeCopyWithNewName(route.name);
 			}
 		}
