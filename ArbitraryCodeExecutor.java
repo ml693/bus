@@ -11,12 +11,73 @@ import java.util.function.Function;
  */
 class ArbitraryCodeExecutor {
 
-	public static void main(String args[]) {
+	public static void main(String args[]) throws ProjectSpecificException {
+		constructPaths(args);
+	}
+
+	public static Trip constructPath(Trip trip, Route route)
+			throws ProjectSpecificException {
+		if (!route.allStopsVisitedInOrder(trip)) {
+			throw new ProjectSpecificException(
+					trip.name + " does not follow " + route.name);
+		}
+
+		BusStop firstStop = route.busStops.get(0);
+		for (int p = 0; p < trip.gpsPoints.size(); p++) {
+			if (firstStop.atStop(trip.gpsPoints.get(p))) {
+				for (int i = 0; i < p - 3; i++) {
+					trip.gpsPoints.remove(0);
+				}
+			}
+		}
+		for (int p = trip.gpsPoints.size() - 1; p >= 0; p--) {
+			if (route.atLastStop(trip.gpsPoints.get(p))) {
+				return trip.subTrip(0, Math.min(p + 3, trip.gpsPoints.size()))
+						.makeCopyWithNewName(route.name);
+			}
+		}
+
+		throw new RuntimeException(new ProjectSpecificException(
+				trip.name + " does not follow " + route.name));
+	}
+
+	public static void constructPaths(String args[]) {
 		ArrayList<Route> routes = Route
 				.extractRoutesFromFolder(new File(args[0]));
+
 		for (Route route : routes) {
-			if (route.busStops.size() >= 10 && route.busStops.size() < 15) {
-				System.out.println(route.name + " is good.");
+			ArrayList<Trip> trips = Trip.extractTripsFromFolder(
+					new File(args[1] + "/" + route.name));
+
+			for (Trip trip : trips) {
+				try {
+					Trip path = constructPath(trip, route);
+					path.writeToFolder(new File(args[2]));
+					break;
+				} catch (ProjectSpecificException exception) {
+
+				}
+			}
+		}
+	}
+
+	public static void evaluateFollowsPath(String args[])
+			throws ProjectSpecificException {
+		Utils.checkCommandLineArguments(args, "file", "folder", "file");
+
+		Route route = new Route(new File(args[0]));
+		ArrayList<Trip> trips = Trip.extractTripsFromFolder(new File(args[1]));
+		Trip path = new Trip(new File(args[2]));
+
+		for (Trip trip : trips) {
+			Trip subTrip = trip.subTripOnlyOnRoute(route).subTrip(0, 8);
+			if (!PathDetector.tripFollowsPath(subTrip, path)) {
+				System.out.println(
+						subTrip.name + " does not follow " + path.name);
+				subTrip.writeToFolder(new File("debug"));
+			}
+			if (subTrip.name.equals("day04_bus3793_subtrip10")) {
+				subTrip.writeToFolder(new File("debug"));
 			}
 		}
 	}
