@@ -174,7 +174,7 @@ class GpsRealTimeInputWatcher {
 						.calculatePredictionToBusStop(p -> nextStop.atStop(p),
 								vehicleTrip, historicalTrips);
 
-				System.out.println("We predict that " + vehicleTrip
+				System.out.println("We predict that " + vehicleId
 						+ " will arrive at " + nextStop.name + " at "
 						+ Utils.convertTimestampToDate(prediction));
 			}
