@@ -4,7 +4,7 @@ import java.io.BufferedWriter;
 import java.io.IOException;
 
 public class BusStop {
-	private static final double AT_STOP_RANGE = 0.00002;
+	private static final double AT_STOP_RANGE = 0.00001;
 
 	final String name;
 	final double latitude;
