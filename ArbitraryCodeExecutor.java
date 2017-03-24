@@ -25,7 +25,8 @@ class ArbitraryCodeExecutor {
 		BusStop firstStop = route.busStops.get(0);
 		for (int p = 0; p < trip.gpsPoints.size(); p++) {
 			if (firstStop.atStop(trip.gpsPoints.get(p))) {
-				for (int i = 0; i < p - 3; i++) {
+				for (int i = 0; i < p
+						- Trip.MINIMUM_NUMBER_OF_GPS_POINTS; i++) {
 					trip.gpsPoints.remove(0);
 				}
 				break;
@@ -33,7 +34,10 @@ class ArbitraryCodeExecutor {
 		}
 		for (int p = trip.gpsPoints.size() - 1; p >= 0; p--) {
 			if (route.atLastStop(trip.gpsPoints.get(p))) {
-				return trip.subTrip(0, Math.min(p + 3, trip.gpsPoints.size()))
+				return trip
+						.subTrip(0,
+								Math.min(p + Trip.MINIMUM_NUMBER_OF_GPS_POINTS,
+										trip.gpsPoints.size()))
 						.makeCopyWithNewName(route.name);
 			}
 		}

@@ -97,6 +97,9 @@ public class ArrivalTimePredictor {
 	 */
 	private static ArrayList<Trip> generatePredictions(Trip recentTrip,
 			ArrayList<Trip> trips) {
+		System.out.println("For " + recentTrip.name + " we have " + trips.size()
+				+ " historical trips");
+		
 		ArrayList<Trip> predictions = new ArrayList<Trip>();
 
 		for (Trip trip : trips) {
