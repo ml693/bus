@@ -46,6 +46,8 @@ class ArbitraryCodeExecutor {
 				.extractRoutesFromFolder(new File(args[0]));
 
 		for (Route route : routes) {
+			System.out.println("Dealing with route " + route.name);
+
 			File tripsFolder = new File(args[1] + "/" + route.name);
 			if (tripsFolder.exists()) {
 				ArrayList<Trip> trips = Trip.extractTripsFromFolder(
@@ -55,6 +57,7 @@ class ArbitraryCodeExecutor {
 					try {
 						Trip path = constructPath(trip, route);
 						path.writeToFolder(new File(args[2]));
+						System.out.println("Constructed path for it");
 						break;
 					} catch (ProjectSpecificException exception) {
 
