@@ -4,7 +4,6 @@ import java.io.BufferedWriter;
 import java.io.File;
 import java.io.FileWriter;
 import java.io.IOException;
-import java.text.ParseException;
 import java.util.ArrayList;
 import java.util.Scanner;
 
@@ -65,6 +64,10 @@ public class Trip {
 		this.gpsPoints = gpsPoints;
 	}
 
+	Trip makeCopy() {
+		return makeCopyWithNewName(name);
+	}
+
 	Trip makeCopyWithNewName(String newName) {
 		try {
 			return new Trip(newName, this.gpsPoints);
@@ -89,6 +92,33 @@ public class Trip {
 			/* This code path should never be reached */
 			throw new RuntimeException(exception);
 		}
+	}
+
+	Trip subTrip(int fromIndex, int toIndex) throws ProjectSpecificException {
+		return new Trip(name,
+				new ArrayList<GpsPoint>(gpsPoints.subList(fromIndex, toIndex)));
+	}
+
+	Trip subTripOnlyOnRoute(Route route) throws ProjectSpecificException {
+		BusStop firstStop = route.busStops.get(0);
+		Trip subTrip = makeCopy();
+
+		for (int p = 0; p < subTrip.gpsPoints.size(); p++) {
+			if (firstStop.atStop(subTrip.gpsPoints.get(p))) {
+				for (int i = 0; i < p; i++) {
+					subTrip.gpsPoints.remove(0);
+				}
+
+				if (subTrip.gpsPoints.size() < MINIMUM_NUMBER_OF_GPS_POINTS) {
+					throw ProjectSpecificException
+							.tripDoesNotHaveEnoughPoints(subTrip.name);
+				}
+				return subTrip;
+			}
+		}
+
+		throw ProjectSpecificException
+				.tripDoesNotPassThroughFirstStop(subTrip.name, firstStop.name);
 	}
 
 	static ArrayList<Trip> extractTripsFromFolder(File folder) {

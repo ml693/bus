@@ -2,7 +2,6 @@ package bus;
 
 import java.io.BufferedWriter;
 import java.io.IOException;
-import java.text.ParseException;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
