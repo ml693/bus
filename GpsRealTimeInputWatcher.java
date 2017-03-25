@@ -22,7 +22,7 @@ class GpsRealTimeInputWatcher {
 
 	private final File tripsFolder;
 	private final File routesFolder;
-	/* Path is a trip following route */
+	/* Path is a trip following a route */
 	private final File pathsFolder;
 	private final HashMap<String, Route> tripFollowsRoute = new HashMap<String, Route>();
 

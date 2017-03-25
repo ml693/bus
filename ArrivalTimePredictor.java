@@ -96,13 +96,13 @@ public class ArrivalTimePredictor {
 	 * case where t has no further GPS points to be used for prediction).
 	 */
 	private static ArrayList<Trip> generatePredictions(Trip recentTrip,
-			ArrayList<Trip> trips) {
-		System.out.println("For " + recentTrip.name + " we have " + trips.size()
+			ArrayList<Trip> historicalTrips) {
+		System.out.println("For " + recentTrip.name + " we have " + historicalTrips.size()
 				+ " historical trips");
 		
 		ArrayList<Trip> predictions = new ArrayList<Trip>();
 
-		for (Trip trip : trips) {
+		for (Trip trip : historicalTrips) {
 			try {
 				Trip subTrip = generateSubtrip(recentTrip, trip);
 				Trip predictedTrip = generateFuturePrediction(recentTrip, trip);
