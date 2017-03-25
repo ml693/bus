@@ -19,7 +19,7 @@ public class HistoricalDataBuilder {
 		ArrayList<File> tripFiles = Utils.filesInFolder(args[0]);
 		ArrayList<Route> routes = Route
 				.extractRoutesFromFolder(new File(args[1]));
-		String pathsFolder = args[2];
+		String historicalDataFolder = args[2];
 
 		for (int t = tripFiles.size() - 1; t >= 0; t--) {
 			Trip trip = null;
@@ -35,7 +35,8 @@ public class HistoricalDataBuilder {
 					Trip historicalTrip = buildHistoricalTrip(route, trip);
 					System.out.println(
 							historicalTrip.name + " follows " + route.name);
-					File pathFolder = new File(pathsFolder + "/" + route.name);
+					File pathFolder = new File(
+							historicalDataFolder + "/" + route.name);
 					pathFolder.mkdir();
 					historicalTrip.writeToFolder(pathFolder);
 				} catch (ProjectSpecificException exception) {
@@ -62,7 +63,7 @@ public class HistoricalDataBuilder {
 			fromIndex++;
 		}
 
-		int toIndex = trip.gpsPoints.size() - Trip.MINIMUM_NUMBER_OF_GPS_POINTS;
+		int toIndex = trip.gpsPoints.size() - 1;
 		while (toIndex >= 0 && !route.atLastStop(trip.gpsPoints.get(toIndex))) {
 			toIndex--;
 		}

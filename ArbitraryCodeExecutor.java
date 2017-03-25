@@ -12,62 +12,6 @@ import java.util.function.Function;
 class ArbitraryCodeExecutor {
 
 	public static void main(String args[]) throws ProjectSpecificException {
-		constructPaths(args);
-	}
-
-	public static Trip constructPath(Trip trip, Route route)
-			throws ProjectSpecificException {
-		if (!route.allStopsVisitedInOrder(trip)) {
-			throw new ProjectSpecificException(
-					trip.name + " does not follow " + route.name);
-		}
-
-		BusStop firstStop = route.busStops.get(0);
-		for (int p = 0; p < trip.gpsPoints.size(); p++) {
-			if (firstStop.atStop(trip.gpsPoints.get(p))) {
-				for (int i = 0; i < p
-						- Trip.MINIMUM_NUMBER_OF_GPS_POINTS; i++) {
-					trip.gpsPoints.remove(0);
-				}
-				break;
-			}
-		}
-		for (int p = trip.gpsPoints.size()
-				- Trip.MINIMUM_NUMBER_OF_GPS_POINTS; p >= 0; p--) {
-			if (route.atLastStop(trip.gpsPoints.get(p))) {
-				return trip.subTrip(0, p + Trip.MINIMUM_NUMBER_OF_GPS_POINTS)
-						.makeCopyWithNewName(route.name);
-			}
-		}
-
-		throw new ProjectSpecificException(
-				trip.name + " does not follow " + route.name);
-	}
-
-	public static void constructPaths(String args[]) {
-		ArrayList<Route> routes = Route
-				.extractRoutesFromFolder(new File(args[0]));
-
-		for (Route route : routes) {
-			System.out.println("Dealing with route " + route.name);
-
-			File tripsFolder = new File(args[1] + "/" + route.name);
-			if (tripsFolder.exists()) {
-				ArrayList<Trip> trips = Trip.extractTripsFromFolder(
-						new File(args[1] + "/" + route.name));
-
-				for (Trip trip : trips) {
-					try {
-						Trip path = constructPath(trip, route);
-						path.writeToFolder(new File(args[2]));
-						System.out.println("Constructed path for it");
-						break;
-					} catch (ProjectSpecificException exception) {
-
-					}
-				}
-			}
-		}
 	}
 
 	public static void evaluateFollowsPath(String args[])
