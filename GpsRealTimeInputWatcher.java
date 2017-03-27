@@ -72,6 +72,7 @@ class GpsRealTimeInputWatcher {
 				// When new file arrives
 				WatchKey watchKey = watchService.take();
 				watchKey.pollEvents();
+				Thread.sleep(100);
 
 				// First look real time input directory
 				File lockFile = new File(LOCK_FILE_PATH);
@@ -172,6 +173,8 @@ class GpsRealTimeInputWatcher {
 						.extractTripsFromFolder(new File(tripsFolder.getName()
 								+ "/" + routeFollowed.name));
 
+				System.out.println(
+						"calculating prediction for stop " + nextStop.name);
 				Long prediction = ArrivalTimePredictor
 						.calculatePredictionTimestamp(p -> nextStop.atStop(p),
 								vehicleTrip, historicalTrips);
