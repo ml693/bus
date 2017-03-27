@@ -84,7 +84,7 @@ public class ArrivalTimePredictor {
 			Function<GpsPoint, Boolean> atBusStop) {
 		int closestPointIndex = closestPointIndex(recentTrip.lastPoint(), trip);
 
-		for (int p = closestPointIndex; p < trip.gpsPoints.size(); p++) {
+		for (int p = 0; p < trip.gpsPoints.size(); p++) {
 			if (atBusStop.apply(trip.gpsPoints.get(p))) {
 				return recentTrip.lastPoint().timestamp
 						+ (trip.gpsPoints.get(p).timestamp - trip.gpsPoints
