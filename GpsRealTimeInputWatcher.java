@@ -155,23 +155,25 @@ class GpsRealTimeInputWatcher {
 			if (vehicleTrip == null) {
 				continue;
 			}
+
 			Route routeFollowed = routeFollowedByTrip(vehicleTrip);
 			if (routeFollowed == null) {
 				System.out.println(vehicleId + " does not follow any route.");
-				vehicleTrip.writeToFolder(new File("debug"));
 				continue;
 			}
-			BusStop nextStop = getNextStop(vehicleTrip, routeFollowed);
 
+			BusStop nextStop = getNextStop(vehicleTrip, routeFollowed);
 			if (nextStop == null) {
 				System.out.println("No next stop for " + vehicleId);
+				tripFollowsRoute.remove(vehicleId);
+
 			} else {
 				ArrayList<Trip> historicalTrips = Trip
 						.extractTripsFromFolder(new File(tripsFolder.getName()
 								+ "/" + routeFollowed.name));
 
 				Long prediction = ArrivalTimePredictor
-						.calculatePredictionToBusStop(p -> nextStop.atStop(p),
+						.calculatePredictionTimestamp(p -> nextStop.atStop(p),
 								vehicleTrip, historicalTrips);
 
 				System.out.println("We predict that " + vehicleId

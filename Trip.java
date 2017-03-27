@@ -118,7 +118,7 @@ public class Trip {
 		}
 
 		throw ProjectSpecificException
-				.tripDoesNotPassThroughFirstStop(subTrip.name, firstStop.name);
+				.historicalTripMissingImportantPoints(subTrip.name);
 	}
 
 	static ArrayList<Trip> extractTripsFromFolder(File folder) {
@@ -163,6 +163,10 @@ public class Trip {
 		} catch (IOException exception) {
 			throw new RuntimeException(exception);
 		}
+	}
+
+	GpsPoint firstPoint() {
+		return gpsPoints.get(0);
 	}
 
 	GpsPoint lastPoint() {

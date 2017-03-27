@@ -12,11 +12,10 @@ import java.util.ArrayList;
  */
 class PredictionEvaluator {
 
-	private static long lastStopTimestamp(Route route, Trip trip)
+	static long lastStopTimestamp(Route route, Trip trip)
 			throws ProjectSpecificException {
-		BusStop lastStop = route.busStops.get(route.busStops.size() - 1);
 		for (GpsPoint point : trip.gpsPoints) {
-			if (lastStop.atStop(point)) {
+			if (route.atLastStop(point)) {
 				return point.timestamp;
 			}
 		}
@@ -142,7 +141,7 @@ class PredictionEvaluator {
 			}
 
 			long predictedTimestamp = ArrivalTimePredictor
-					.calculatePredictionToBusStop(route::atLastStop, recentTrip,
+					.calculatePredictionTimestamp(route::atLastStop, recentTrip,
 							historicalTrips);
 
 			Trip futureTrip = new Trip(new File(outputPath + "/" + route.name

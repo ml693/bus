@@ -68,13 +68,15 @@ public class HistoricalDataBuilder {
 			toIndex--;
 		}
 
-		if (fromIndex >= toIndex) {
+		if (fromIndex > toIndex) {
 			throw new ProjectSpecificException(
 					"Can not construct historical trip from " + trip.name
 							+ " for " + route.name);
 		}
+		
+		System.out.println(fromIndex + " " + toIndex);
 
-		return trip.subTrip(fromIndex, toIndex);
+		return trip.subTrip(fromIndex, toIndex + 1);
 	}
 
 }

@@ -24,9 +24,9 @@ class PathDetector {
 	 * java TripDetector trips_folder/trip1 trips_folder
 	 */
 	public static void main(String args[]) throws Exception {
+		// TODO(ml693): finish writing code
 		Utils.checkCommandLineArguments(args, "file", "folder");
 		Trip tripInterval = new Trip(new File(args[0]));
-		determineFuturePath(tripInterval, new File(args[1]));
 	}
 
 	static double SIMILARITY_THRESHOLD = 1f;
@@ -90,80 +90,6 @@ class PathDetector {
 		}
 		return similarNumberOfPointsUsedToAlign(trip, path, last - first + 1)
 				&& (alignmentCost[iMax][jMax] - iMax < SIMILARITY_THRESHOLD);
-	}
-
-	static void determineFuturePath(Trip tripsInterval, File allTripsFolder)
-			throws IOException, ParseException, ProjectSpecificException {
-		// TODO(ml693): finish implementing
-		ArrayList<Trip> similarTrips = detectSimilarTrips(tripsInterval,
-				allTripsFolder);
-		if (similarTrips.size() == 0) {
-			throw new ProjectSpecificException(
-					"No similar trips found for " + tripsInterval.name);
-		}
-
-		ArrayList<Trip> futureRoutes = new ArrayList<Trip>();
-		for (Trip similarTrip : similarTrips) {
-			try {
-				Trip futureRoute = ArrivalTimePredictor
-						.generateFuturePrediction(tripsInterval, similarTrip);
-				futureRoutes.add(futureRoute);
-			} catch (ProjectSpecificException exception) {
-			}
-		}
-		if (futureRoutes.size() == 0) {
-			throw new ProjectSpecificException(
-					"No future found for " + tripsInterval.name);
-		}
-
-		int largestPointsNumber = 100;
-		double largestRatio = 0.0f;
-
-		for (int ratioThreshold = 100; ratioThreshold <= 100; ratioThreshold++) {
-			for (int futurePointsNumber = largestPointsNumber; futurePointsNumber >= Trip.MINIMUM_NUMBER_OF_GPS_POINTS
-					- 1; futurePointsNumber--) {
-				if (futurePointsNumber < Trip.MINIMUM_NUMBER_OF_GPS_POINTS) {
-					return;
-				}
-
-				boolean enough = false;
-				for (int r = 0; r < futureRoutes.size(); r++) {
-					Trip futureRoute = futureRoutes.get(r);
-					if (futureRoute.gpsPoints.size() < futurePointsNumber) {
-						continue;
-					}
-
-					int tripsThatFollowCount = 0;
-					int tripsThatNotFollowCount = 0;
-					Trip potentialFuture = new Trip(futureRoute.name,
-							new ArrayList<GpsPoint>(futureRoute.gpsPoints
-									.subList(0, futurePointsNumber)));
-					for (Trip similarTrip : similarTrips) {
-						if (tripFollowsPath(potentialFuture, similarTrip)) {
-							tripsThatFollowCount++;
-						} else {
-							tripsThatNotFollowCount++;
-						}
-					}
-
-					if (tripsThatNotFollowCount == 0) {
-						enough = true;
-					}
-
-					double ratio = (double) tripsThatFollowCount
-							/ (double) (tripsThatFollowCount
-									+ tripsThatNotFollowCount);
-					if (ratio > largestRatio) {
-						largestRatio = ratio;
-						largestPointsNumber = futurePointsNumber;
-					}
-				}
-
-				System.out.println("Future points " + futurePointsNumber
-						+ " is enough: " + enough);
-			}
-
-		}
 	}
 
 	/* allTripsFolder should only contain CSV files */

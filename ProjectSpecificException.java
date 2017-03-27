@@ -17,9 +17,8 @@ class ProjectSpecificException extends Exception {
 						+ Trip.MINIMUM_NUMBER_OF_GPS_POINTS + " GPS points.");
 	}
 
-	static ProjectSpecificException tripDoesNotPassThroughFirstStop(
-			String tripName, String stopName) {
-		return new ProjectSpecificException(
-				tripName + " trip does not pass through stop " + stopName);
+	static ProjectSpecificException historicalTripMissingImportantPoints(
+			String tripName) {
+		return new ProjectSpecificException(tripName + " missing GPS points");
 	}
 }

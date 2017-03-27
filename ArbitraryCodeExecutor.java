@@ -12,6 +12,43 @@ import java.util.function.Function;
 class ArbitraryCodeExecutor {
 
 	public static void main(String args[]) throws ProjectSpecificException {
+		File[] tripsFolder = new File(args[0]).listFiles();
+		File pathsFolder = new File(args[1]);
+
+		for (File tripFile : tripsFolder) {
+			File[] tripFiles = tripFile.listFiles();
+			Trip path = new Trip(tripFiles[0]);
+			path.makeCopyWithNewName(tripFile.getName())
+					.writeToFolder(pathsFolder);
+		}
+	}
+
+	public static void evaluateOneRoute(String args[])
+			throws ProjectSpecificException {
+		Route route = new Route(new File(args[0]));
+		ArrayList<Trip> trips = Trip.extractTripsFromFolder(new File(args[1]));
+
+		ArrayList<Trip> shortTrips = new ArrayList<Trip>();
+		for (Trip trip : trips) {
+			shortTrips.add(trip.subTrip(0, 8));
+		}
+
+		long difference = 0;
+
+		for (int t = 0; t < trips.size(); t++) {
+			Trip trip = trips.get(t);
+			Trip shortTrip = shortTrips.get(t);
+
+			long predictedTimestamp = ArrivalTimePredictor
+					.calculatePredictionTimestamp(p -> route.atLastStop(p),
+							shortTrip, trips);
+			long actualTimestamp = PredictionEvaluator.lastStopTimestamp(route,
+					trip);
+
+			difference += Math.abs(predictedTimestamp - actualTimestamp);
+		}
+
+		System.out.println("MAE = " + difference / trips.size());
 	}
 
 	public static void evaluateFollowsPath(String args[])

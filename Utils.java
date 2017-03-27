@@ -3,11 +3,9 @@
  */
 package bus;
 
-import bus.ProjectSpecificException;
 import java.io.BufferedWriter;
 import java.io.File;
 import java.io.IOException;
-import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -18,6 +16,7 @@ public class Utils {
 
 	private static final String SIMPLE_DATE_FORMAT = "yyyy-MM-dd HH:mm:ss";
 	private static final long MILLISECONDS_IN_ONE_SECOND = 1000;
+	private static final double SAME_SPOT_DISTANCE_RANGE = 0.000007;
 
 	static long convertDateToTimestamp(String date) {
 		try {
@@ -118,5 +117,9 @@ public class Utils {
 			throw (new ProjectSpecificException(
 					"Argument expectation is given wrong name"));
 		}
+	}
+
+	static boolean samePlace(GpsPoint p1, GpsPoint p2) {
+		return Utils.distance(p1, p2) < SAME_SPOT_DISTANCE_RANGE;
 	}
 }
