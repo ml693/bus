@@ -122,7 +122,7 @@ class GpsRealTimeInputWatcher {
 
 		int closestPointIndex = ArrivalTimePredictor
 				.closestPointIndex(recentTrip.lastPoint(), path);
-		for (int p = closestPointIndex; p < path.gpsPoints.size(); p++) {
+		for (int p = closestPointIndex + 1; p < path.gpsPoints.size(); p++) {
 			for (BusStop stop : route.busStops) {
 				if (stop.atStop(path.gpsPoints.get(p))) {
 					return stop;
