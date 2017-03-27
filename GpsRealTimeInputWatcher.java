@@ -25,6 +25,7 @@ class GpsRealTimeInputWatcher {
 	/* Path is a trip following a route */
 	private final File pathsFolder;
 	private final HashMap<String, Route> tripFollowsRoute = new HashMap<String, Route>();
+	private final HashMap<String, Trip> tripFollowsPath = new HashMap<String, Trip>();
 
 	/*
 	 * Real time GPS data is transmitted every 30s. This program sleeps, wakes
@@ -115,17 +116,20 @@ class GpsRealTimeInputWatcher {
 						points.size())));
 	}
 
-	private BusStop getNextStop(Trip recentTrip, Route route) {
-		int p = 0;
-		for (BusStop busStop : route.busStops) {
-			while (p < recentTrip.gpsPoints.size()
-					&& !busStop.atStop(recentTrip.gpsPoints.get(p))) {
-				p++;
-			}
-			if (p == recentTrip.gpsPoints.size()) {
-				return busStop;
+	private BusStop getNextStop(Trip recentTrip) {
+		Trip path = tripFollowsPath.get(recentTrip.name);
+		Route route = tripFollowsRoute.get(recentTrip.name);
+
+		int closestPointIndex = ArrivalTimePredictor
+				.closestPointIndex(recentTrip.lastPoint(), path);
+		for (int p = closestPointIndex; p < path.gpsPoints.size(); p++) {
+			for (BusStop stop : route.busStops) {
+				if (stop.atStop(path.gpsPoints.get(p))) {
+					return stop;
+				}
 			}
 		}
+
 		return null;
 	}
 
@@ -137,6 +141,7 @@ class GpsRealTimeInputWatcher {
 					System.out.println(trip.name + " follows " + path.name);
 					tripFollowsRoute.put(trip.name, new Route(new File(
 							routesFolder.getName() + "/" + path.name)));
+					tripFollowsPath.put(trip.name, path);
 					break;
 				}
 			}
@@ -163,7 +168,7 @@ class GpsRealTimeInputWatcher {
 				continue;
 			}
 
-			BusStop nextStop = getNextStop(vehicleTrip, routeFollowed);
+			BusStop nextStop = getNextStop(vehicleTrip);
 			if (nextStop == null) {
 				System.out.println("No next stop for " + vehicleId);
 				tripFollowsRoute.remove(vehicleId);

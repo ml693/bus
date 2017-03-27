@@ -66,7 +66,7 @@ public class ArrivalTimePredictor {
 	}
 
 	/* Finds point in trip that was closest to the mostRecentPoint */
-	private static int closestPointIndex(GpsPoint mostRecentPoint, Trip trip) {
+	static int closestPointIndex(GpsPoint mostRecentPoint, Trip trip) {
 		int closestPointIndex = -1;
 		double closestPointDistance = Double.MAX_VALUE;
 		for (int i = 0; i < trip.gpsPoints.size(); i++) {
