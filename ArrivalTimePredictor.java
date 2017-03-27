@@ -1,5 +1,6 @@
 package bus;
 
+import java.io.File;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.function.Function;
@@ -39,7 +40,8 @@ public class ArrivalTimePredictor {
 	private static boolean equallyCongested(Trip trip, Trip historicalTrip) {
 		int closestPointIndex = closestPointIndex(trip.lastPoint(),
 				historicalTrip);
-		long timestamp = historicalTrip.gpsPoints.get(closestPointIndex).timestamp;
+		long timestamp = historicalTrip.gpsPoints
+				.get(closestPointIndex).timestamp;
 		int index = closestPointIndex;
 		while (index > 0 && timestamp
 				- historicalTrip.gpsPoints.get(index).timestamp < trip
@@ -89,6 +91,13 @@ public class ArrivalTimePredictor {
 								.get(closestPointIndex).timestamp);
 			}
 		}
+
+		System.out.println("Debugging: closestPoint = " + closestPointIndex);
+		System.out.println("recentTrip = " + recentTrip.name);
+		System.out.println("trip = " + trip.name);
+
+		recentTrip.writeToFolder(new File("debug"));
+		trip.writeToFolder(new File("debug"));
 
 		throw new RuntimeException(ProjectSpecificException
 				.historicalTripMissingImportantPoints(trip.name));
