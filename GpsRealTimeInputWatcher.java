@@ -172,7 +172,6 @@ class GpsRealTimeInputWatcher {
 			if (nextStop == null) {
 				System.out.println("No next stop for " + vehicleId);
 				tripFollowsRoute.remove(vehicleId);
-
 			} else {
 				ArrayList<Trip> historicalTrips = Trip
 						.extractTripsFromFolder(new File(tripsFolder.getName()
