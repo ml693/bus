@@ -70,7 +70,6 @@ class Route {
 	String serialize() {
 		return busStops.stream().map(stop -> stop.serializeToString())
 				.collect(Collectors.joining(", "));
-
 	}
 
 	boolean atLastStop(GpsPoint point) {
