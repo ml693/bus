@@ -6,6 +6,9 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 class GpsPoint {
+	private static double DISTANCE_TOO_SMALL_TO_CONSIDER = 0.00002f;
+	private static double SIGNIFICANT_RATIO_THRESHOLD = 1.05f;
+
 	final long timestamp;
 	final double latitude;
 	final double longitude;
@@ -63,9 +66,6 @@ class GpsPoint {
 	void println() {
 		System.out.println(serializeToString());
 	}
-
-	private static double DISTANCE_TOO_SMALL_TO_CONSIDER = 0.00002f;
-	private static double SIGNIFICANT_RATIO_THRESHOLD = 1.05f;
 
 	/*
 	 * Returns the ratio (a + b) / c, where a and b are distances to segment's

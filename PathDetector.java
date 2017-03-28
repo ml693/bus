@@ -47,6 +47,11 @@ class PathDetector {
 			}
 		}
 
+		/*
+		 * After the for loop terminates, the alignmentCost[iMax][jMax] contains
+		 * the desired cost value. I now compute what points are used to
+		 * produce this cost.
+		 */
 		int last = jMax;
 		while (last > 0
 				&& alignmentCost[iMax][last] == alignmentCost[iMax][last - 1]) {

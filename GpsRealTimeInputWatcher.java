@@ -75,15 +75,20 @@ class GpsRealTimeInputWatcher {
 				// When new file arrives
 				WatchKey watchKey = watchService.take();
 				watchKey.pollEvents();
+				/*
+				 * Sleeping because of some bug when locking files. The
+				 * String read from file returns null, even if the file is not
+				 * empty. TODO(ml693): solve the bug, then remove the sleep.
+				 */
 				Thread.sleep(100);
 
-				// First look real time input directory
+				// First look the real time input directory
 				File lockFile = new File(LOCK_FILE_PATH);
 				FileChannel channel = new RandomAccessFile(lockFile, "rw")
 						.getChannel();
 				FileLock lock = channel.lock();
 
-				// Then process new file
+				// Then process a new file
 				if (watchKey.isValid()) {
 					processNewGpsInput(new File(INCOMMING_JSON_FOLDER_PATH)
 							.listFiles()[0]);
@@ -176,6 +181,9 @@ class GpsRealTimeInputWatcher {
 
 			Route routeFollowed = routeFollowedByTrip(vehicleTrip);
 			if (routeFollowed == null) {
+				System.out.println(
+						vehicleId + " does not follow a route. Performed "
+								+ numberOfSearchesPerformed + " so far.");
 				continue;
 			}
 
