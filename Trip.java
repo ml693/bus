@@ -98,28 +98,6 @@ public class Trip {
 				new ArrayList<GpsPoint>(gpsPoints.subList(fromIndex, toIndex)));
 	}
 
-	Trip subTripOnlyOnRoute(Route route) throws ProjectSpecificException {
-		BusStop firstStop = route.busStops.get(0);
-		Trip subTrip = makeCopy();
-
-		for (int p = 0; p < subTrip.gpsPoints.size(); p++) {
-			if (firstStop.atStop(subTrip.gpsPoints.get(p))) {
-				for (int i = 0; i < p; i++) {
-					subTrip.gpsPoints.remove(0);
-				}
-
-				if (subTrip.gpsPoints.size() < MINIMUM_NUMBER_OF_GPS_POINTS) {
-					throw ProjectSpecificException
-							.tripDoesNotHaveEnoughPoints(subTrip.name);
-				}
-				return subTrip;
-			}
-		}
-
-		throw ProjectSpecificException
-				.historicalTripMissingImportantPoints(subTrip.name);
-	}
-
 	static ArrayList<Trip> extractTripsFromFolder(File folder) {
 		return extractTripsFromFolder(folder, Long.MAX_VALUE);
 	}
@@ -174,15 +152,7 @@ public class Trip {
 
 	/* Returns the length of this trip in seconds */
 	long duration() {
-		return lastPoint().timestamp - gpsPoints.get(0).timestamp;
-	}
-
-	double totalDistanceTravelled() {
-		double distance = 0.0;
-		for (int i = 1; i < gpsPoints.size(); i++) {
-			distance += Utils.distance(gpsPoints.get(i - 1), gpsPoints.get(i));
-		}
-		return distance;
+		return lastPoint().timestamp - firstPoint().timestamp;
 	}
 
 }

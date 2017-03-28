@@ -51,27 +51,6 @@ class ArbitraryCodeExecutor {
 		System.out.println("MAE = " + difference / trips.size());
 	}
 
-	public static void evaluateFollowsPath(String args[])
-			throws ProjectSpecificException {
-		Utils.checkCommandLineArguments(args, "file", "folder", "file");
-
-		Route route = new Route(new File(args[0]));
-		ArrayList<Trip> trips = Trip.extractTripsFromFolder(new File(args[1]));
-		Trip path = Trip.readFromFile(new File(args[2]));
-
-		for (Trip trip : trips) {
-			Trip subTrip = trip.subTripOnlyOnRoute(route).subTrip(0, 8);
-			if (!PathDetector.tripFollowsPath(subTrip, path)) {
-				System.out.println(
-						subTrip.name + " does not follow " + path.name);
-				subTrip.writeToFolder(new File("debug"));
-			}
-			if (subTrip.name.equals("day04_bus3793_subtrip10")) {
-				subTrip.writeToFolder(new File("debug"));
-			}
-		}
-	}
-
 	public static boolean inCambridge(Trip path) {
 		for (GpsPoint point : path.gpsPoints) {
 			if (point.latitude >= 52.19 && point.latitude <= 52.22
