@@ -5,11 +5,13 @@ package bus;
 
 import java.io.BufferedWriter;
 import java.io.File;
+import java.io.FileWriter;
 import java.io.IOException;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Date;
+import java.util.Random;
 import java.util.Scanner;
 
 public class Utils {
@@ -67,6 +69,16 @@ public class Utils {
 		writer.newLine();
 	}
 
+	static void appendLineToFile(File file, String line) {
+		try {
+			FileWriter writer = new FileWriter(file, true);
+			writer.write(line + "\n");
+			writer.close();
+		} catch (IOException exception) {
+			throw new RuntimeException(exception);
+		}
+	}
+
 	static ArrayList<File> filesInFolder(String folderName) {
 		return new ArrayList<File>(
 				Arrays.asList(new File(folderName).listFiles()));
@@ -121,5 +133,11 @@ public class Utils {
 
 	static boolean samePlace(GpsPoint p1, GpsPoint p2) {
 		return Utils.distance(p1, p2) < SAME_SPOT_DISTANCE_RANGE;
+	}
+
+	private static final Random randomBitGenerator = new Random();
+
+	static boolean randomBit() {
+		return (randomBitGenerator.nextInt(2) == 1);
 	}
 }

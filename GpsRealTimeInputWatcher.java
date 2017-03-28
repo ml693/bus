@@ -1,6 +1,8 @@
 package bus;
 
+import java.io.BufferedWriter;
 import java.io.File;
+import java.io.FileWriter;
 import java.io.RandomAccessFile;
 import java.nio.channels.FileChannel;
 import java.nio.channels.FileLock;
@@ -133,8 +135,15 @@ class GpsRealTimeInputWatcher {
 		return null;
 	}
 
+	private static final int MAX_NUMBER_OF_SEARCHES_IN_ONE_ITERATION = 10;
+	int numberOfSearchesPerformed = 0;
+
 	Route routeFollowedByTrip(Trip trip) {
-		if (!tripFollowsRoute.containsKey(trip.name)) {
+		if (!tripFollowsRoute.containsKey(trip.name)
+				&& numberOfSearchesPerformed < MAX_NUMBER_OF_SEARCHES_IN_ONE_ITERATION
+				&& Utils.randomBit()) {
+			numberOfSearchesPerformed++;
+
 			ArrayList<Trip> paths = Trip.extractTripsFromFolder(pathsFolder);
 			for (Trip path : paths) {
 				if (PathDetector.tripFollowsPath(trip, path)) {
@@ -153,6 +162,7 @@ class GpsRealTimeInputWatcher {
 			throws ProjectSpecificException {
 		System.out.println("Dealing with file " + jsonFile.getName());
 		BusTravelHistoryExtractor.updateBusesTravelHistoryWithFile(jsonFile);
+		numberOfSearchesPerformed = 0;
 
 		// For each bus we want to make a prediction
 		for (String vehicleId : BusTravelHistoryExtractor.allHistories
@@ -182,10 +192,14 @@ class GpsRealTimeInputWatcher {
 				Long prediction = ArrivalTimePredictor
 						.calculatePredictionTimestamp(p -> nextStop.atStop(p),
 								vehicleTrip, historicalTrips);
-
 				System.out.println("We predict that " + vehicleId
 						+ " will arrive at " + nextStop.name + " at "
 						+ Utils.convertTimestampToDate(prediction));
+
+				Utils.appendLineToFile(new File("debug/prediction.txt"),
+						"We predict that " + vehicleId + " will arrive at "
+								+ nextStop.name + " at "
+								+ Utils.convertTimestampToDate(prediction));
 			}
 		}
 	}
