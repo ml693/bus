@@ -135,21 +135,6 @@ class ArbitraryCodeExecutor {
 		}
 	}
 
-	static void extractGoodTripsThroughMadingley(String[] args)
-			throws Exception {
-		Utils.checkCommandLineArguments(args, "file", "folder", "folder");
-
-		Trip profileTripThroughMadingley = Trip.readFromFile(new File(args[0]));
-		File allTripsFolder = new File(args[1]);
-		ArrayList<Trip> goodTrips = PathDetector.detectSimilarTrips(
-				profileTripThroughMadingley, allTripsFolder);
-
-		File outputFolder = new File(args[2]);
-		for (Trip goodTrip : goodTrips) {
-			goodTrip.writeToFolder(outputFolder);
-		}
-	}
-
 	static boolean closeEnough(GpsPoint p1, GpsPoint p2) {
 		return (Utils.distance(p1, p2) < 0.000001);
 	}

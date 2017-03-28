@@ -1,34 +1,10 @@
 package bus;
 
-import java.io.File;
-import java.io.IOException;
-import java.text.ParseException;
-import java.util.ArrayList;
-
+/*
+ * Path is a list of GPS points that follows a route from the first until the
+ * last stop. This class contains code to find what path a trip follows.
+ */
 class PathDetector {
-	/*
-	 * Program determines which trip the bus is following given a file showing
-	 * the most recent bus GPS travel history, and a directory containing all
-	 * possible bus trips. For more details about the format of input files,
-	 * look at the TripsExtractor class documentation.
-	 * 
-	 * EXAMPLE USAGE
-	 * 
-	 * // The following will print "trip2",
-	 * // if "trips_folder" contains files {trip1, trip2, trip3} and
-	 * // "gps_history_file" is most similar to some sub-trip of trip2.
-	 * java TripDetector gps_history_file trips_folder
-	 * 
-	 * // This should always print answer "trip1",
-	 * // because the history of trip1 matches trip1 exactly.
-	 * java TripDetector trips_folder/trip1 trips_folder
-	 */
-	public static void main(String args[]) throws Exception {
-		// TODO(ml693): finish writing code
-		Utils.checkCommandLineArguments(args, "file", "folder");
-		Trip tripInterval = Trip.readFromFile(new File(args[0]));
-	}
-
 	static double SIMILARITY_THRESHOLD = 1f;
 
 	private static boolean similarNumberOfPointsUsedToAlign(Trip trip,
@@ -90,22 +66,6 @@ class PathDetector {
 		}
 		return similarNumberOfPointsUsedToAlign(trip, path, last - first + 1)
 				&& (alignmentCost[iMax][jMax] - iMax < SIMILARITY_THRESHOLD);
-	}
-
-	/* allTripsFolder should only contain CSV files */
-	static ArrayList<Trip> detectSimilarTrips(Trip tripInterval,
-			File allTripsFolder) throws IOException, ParseException,
-					ProjectSpecificException {
-		ArrayList<Trip> similarTrips = new ArrayList<Trip>();
-		ArrayList<Trip> allTrips = Trip.extractTripsFromFolder(allTripsFolder);
-		for (Trip trip : allTrips) {
-			System.out.println("Processing " + trip.name);
-			if (tripFollowsPath(tripInterval, trip)) {
-				System.out.println(trip.name + " is similar!");
-				similarTrips.add(trip);
-			}
-		}
-		return similarTrips;
 	}
 
 }
