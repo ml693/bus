@@ -1,8 +1,6 @@
 package bus;
 
-import java.io.BufferedWriter;
 import java.io.File;
-import java.io.FileWriter;
 import java.io.RandomAccessFile;
 import java.nio.channels.FileChannel;
 import java.nio.channels.FileLock;
@@ -170,7 +168,7 @@ class GpsRealTimeInputWatcher {
 		System.out.println("Dealing with file " + jsonFile.getName());
 		BusTravelHistoryExtractor.updateBusesTravelHistoryWithFile(jsonFile);
 		int routesFound = 0;
-		
+
 		// For each bus we want to make a prediction
 		for (String vehicleId : BusTravelHistoryExtractor.allHistories
 				.keySet()) {
@@ -207,8 +205,9 @@ class GpsRealTimeInputWatcher {
 				File predictionFile = new File("logging/prediction.txt");
 				Utils.appendLineToFile(predictionFile,
 						vehicleId + " follows " + routeFollowed.name);
-				Utils.appendLineToFile(predictionFile, "Time of prediction is "
-						+ vehicleTrip.lastPoint().timestamp);
+				Utils.appendLineToFile(predictionFile,
+						"Time of prediction is " + Utils.convertTimestampToDate(
+								vehicleTrip.lastPoint().timestamp));
 				Utils.appendLineToFile(new File("logging/prediction.txt"),
 						"I predict arrival time at " + nextStop.name + " to be "
 								+ Utils.convertTimestampToDate(prediction));
