@@ -17,7 +17,7 @@ class ArbitraryCodeExecutor {
 
 		for (File tripFile : tripsFolder) {
 			File[] tripFiles = tripFile.listFiles();
-			Trip path = new Trip(tripFiles[0]);
+			Trip path = Trip.readFromFile(tripFiles[0]);
 			path.makeCopyWithNewName(tripFile.getName())
 					.writeToFolder(pathsFolder);
 		}
@@ -57,7 +57,7 @@ class ArbitraryCodeExecutor {
 
 		Route route = new Route(new File(args[0]));
 		ArrayList<Trip> trips = Trip.extractTripsFromFolder(new File(args[1]));
-		Trip path = new Trip(new File(args[2]));
+		Trip path = Trip.readFromFile(new File(args[2]));
 
 		for (Trip trip : trips) {
 			Trip subTrip = trip.subTripOnlyOnRoute(route).subTrip(0, 8);
@@ -143,7 +143,7 @@ class ArbitraryCodeExecutor {
 		File[] tripFiles = inputFolder.listFiles();
 		File outputFolder = new File(args[1]);
 		for (File tripFile : tripFiles) {
-			Trip trip = new Trip(tripFile);
+			Trip trip = Trip.readFromFile(tripFile);
 			System.out.println("Processing trip " + trip.name);
 			for (GpsPoint point : trip.gpsPoints) {
 				if (passedThrough.apply(point)) {
@@ -160,7 +160,7 @@ class ArbitraryCodeExecutor {
 			throws Exception {
 		Utils.checkCommandLineArguments(args, "file", "folder", "folder");
 
-		Trip profileTripThroughMadingley = new Trip(new File(args[0]));
+		Trip profileTripThroughMadingley = Trip.readFromFile(new File(args[0]));
 		File allTripsFolder = new File(args[1]);
 		ArrayList<Trip> goodTrips = PathDetector.detectSimilarTrips(
 				profileTripThroughMadingley, allTripsFolder);

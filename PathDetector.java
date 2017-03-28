@@ -26,7 +26,7 @@ class PathDetector {
 	public static void main(String args[]) throws Exception {
 		// TODO(ml693): finish writing code
 		Utils.checkCommandLineArguments(args, "file", "folder");
-		Trip tripInterval = new Trip(new File(args[0]));
+		Trip tripInterval = Trip.readFromFile(new File(args[0]));
 	}
 
 	static double SIMILARITY_THRESHOLD = 1f;

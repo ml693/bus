@@ -22,12 +22,7 @@ public class HistoricalDataBuilder {
 		String historicalDataFolder = args[2];
 
 		for (int t = tripFiles.size() - 1; t >= 0; t--) {
-			Trip trip = null;
-			try {
-				trip = new Trip(tripFiles.get(t));
-			} catch (ProjectSpecificException exception) {
-				throw new RuntimeException(exception);
-			}
+			Trip trip = Trip.readFromFile(tripFiles.get(t));
 			System.out.println("Processing " + trip.name);
 
 			for (Route route : routes) {
@@ -73,7 +68,7 @@ public class HistoricalDataBuilder {
 					"Can not construct historical trip from " + trip.name
 							+ " for " + route.name);
 		}
-		
+
 		System.out.println(fromIndex + " " + toIndex);
 
 		return trip.subTrip(fromIndex, toIndex + 1);

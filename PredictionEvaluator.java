@@ -61,23 +61,18 @@ class PredictionEvaluator {
 		compressedTripsFolder.mkdir();
 
 		for (File tripFile : tripFiles) {
-			try {
-				Trip trip = new Trip(tripFile);
-				for (int p = 0; p < trip.gpsPoints.size(); p++) {
-					if (firstStop.atStop(trip.gpsPoints.get(p))) {
-						for (int i = 0; i < p; i++) {
-							trip.gpsPoints.remove(0);
-						}
-						break;
+			Trip trip = Trip.readFromFile(tripFile);
+			for (int p = 0; p < trip.gpsPoints.size(); p++) {
+				if (firstStop.atStop(trip.gpsPoints.get(p))) {
+					for (int i = 0; i < p; i++) {
+						trip.gpsPoints.remove(0);
 					}
+					break;
 				}
+			}
 
-				if (trip.gpsPoints
-						.size() >= Trip.MINIMUM_NUMBER_OF_GPS_POINTS) {
-					trip.writeToFolder(compressedTripsFolder);
-				}
-			} catch (ProjectSpecificException exception) {
-				throw new RuntimeException(exception);
+			if (trip.gpsPoints.size() >= Trip.MINIMUM_NUMBER_OF_GPS_POINTS) {
+				trip.writeToFolder(compressedTripsFolder);
 			}
 		}
 	}
@@ -144,8 +139,8 @@ class PredictionEvaluator {
 					.calculatePredictionTimestamp(route::atLastStop, recentTrip,
 							historicalTrips);
 
-			Trip futureTrip = new Trip(new File(outputPath + "/" + route.name
-					+ "/future/" + recentTrip.name));
+			Trip futureTrip = Trip.readFromFile(new File(outputPath + "/"
+					+ route.name + "/future/" + recentTrip.name));
 
 			long actualTimestamp = lastStopTimestamp(route, futureTrip);
 			long error = actualTimestamp - predictedTimestamp;

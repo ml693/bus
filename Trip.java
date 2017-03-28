@@ -20,15 +20,6 @@ public class Trip {
 	final String name;
 	final ArrayList<GpsPoint> gpsPoints;
 
-	/* Read whole trip from file */
-	/*
-	 * TODO(ml693): I don't really want to throw ProjectSpecificException.
-	 * Figure out how to remove it.
-	 */
-	Trip(File file) throws ProjectSpecificException {
-		this(file, Long.MAX_VALUE);
-	}
-
 	/* Reads trip only until specific moment of time. */
 	Trip(File file, long untilTimestamp) throws ProjectSpecificException {
 		this.name = file.getName();
@@ -62,6 +53,14 @@ public class Trip {
 		}
 		this.name = name;
 		this.gpsPoints = gpsPoints;
+	}
+
+	static Trip readFromFile(File file) {
+		try {
+			return new Trip(file, Long.MAX_VALUE);
+		} catch (ProjectSpecificException exception) {
+			throw new RuntimeException(exception);
+		}
 	}
 
 	Trip makeCopy() {
