@@ -142,7 +142,7 @@ class GpsRealTimeInputWatcher {
 		return null;
 	}
 
-	private static final int MAX_NUMBER_OF_SEARCHES_IN_ONE_ITERATION = 10;
+	private static final int MAX_NUMBER_OF_SEARCHES_IN_ONE_ITERATION = 30;
 	int numberOfSearchesPerformed = 0;
 
 	Route routeFollowedByTrip(Trip trip) {
@@ -169,9 +169,8 @@ class GpsRealTimeInputWatcher {
 			throws ProjectSpecificException {
 		System.out.println("Dealing with file " + jsonFile.getName());
 		BusTravelHistoryExtractor.updateBusesTravelHistoryWithFile(jsonFile);
-		numberOfSearchesPerformed = 0;
 		int routesFound = 0;
-
+		
 		// For each bus we want to make a prediction
 		for (String vehicleId : BusTravelHistoryExtractor.allHistories
 				.keySet()) {
@@ -182,9 +181,6 @@ class GpsRealTimeInputWatcher {
 
 			Route routeFollowed = routeFollowedByTrip(vehicleTrip);
 			if (routeFollowed == null) {
-				System.out.println(
-						vehicleId + " does not follow a route. Performed "
-								+ numberOfSearchesPerformed + " so far.");
 				continue;
 			} else {
 				routesFound++;
