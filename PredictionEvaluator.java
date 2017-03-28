@@ -33,7 +33,7 @@ class PredictionEvaluator {
 		outputFolder.mkdir();
 
 		for (Trip trip : trips) {
-			if (route.followedByTrip(trip)) {
+			if (route.allStopsVisitedInOrder(trip)) {
 				trip.writeToFolder(outputFolder);
 			}
 		}
