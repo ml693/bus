@@ -112,6 +112,8 @@ class GpsRealTimeInputWatcher {
 		if (points.size() < Trip.MINIMUM_NUMBER_OF_GPS_POINTS * 2) {
 			return null;
 		}
+		new Trip(vehicleId, points).writeToFolder(new File("logging"));
+
 		return new Trip(vehicleId,
 				new ArrayList<GpsPoint>(points.subList(
 						points.size() - Trip.MINIMUM_NUMBER_OF_GPS_POINTS * 2,
@@ -174,7 +176,6 @@ class GpsRealTimeInputWatcher {
 
 			Route routeFollowed = routeFollowedByTrip(vehicleTrip);
 			if (routeFollowed == null) {
-				System.out.println(vehicleId + " does not follow any route.");
 				continue;
 			}
 
@@ -202,6 +203,10 @@ class GpsRealTimeInputWatcher {
 								+ Utils.convertTimestampToDate(prediction));
 			}
 		}
+
+		System.out.println("Handled new GPS point.");
+		System.out.println(
+				"numberOfSearchesPerformed = " + numberOfSearchesPerformed);
 	}
 
 }
