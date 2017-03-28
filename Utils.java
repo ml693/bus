@@ -16,9 +16,34 @@ import java.util.Scanner;
 
 public class Utils {
 
+	private static final Random randomBitGenerator = new Random();
+
 	private static final String SIMPLE_DATE_FORMAT = "yyyy-MM-dd HH:mm:ss";
 	private static final long MILLISECONDS_IN_ONE_SECOND = 1000;
-	private static final double SAME_SPOT_DISTANCE_RANGE = 0.000007;
+
+	// If two GPS points are within this distance, then I conclude
+	// that they are at the same place.
+	private static final double SAME_PLACE_DISTANCE_RANGE = 0.000007;
+
+	static boolean samePlace(GpsPoint p1, GpsPoint p2) {
+		return Utils.distance(p1, p2) < SAME_PLACE_DISTANCE_RANGE;
+	}
+
+	/*
+	 * Geometric distance between two GPS points in space, when latitude
+	 * represents y coordinate and longitude represents x coordinate;
+	 */
+	static double distance(GpsPoint p1, GpsPoint p2) {
+		double scaleToRadians = Math.PI / 180f;
+		double sinLatitude1 = Math.sin(p1.latitude * scaleToRadians);
+		double sinLatitude2 = Math.sin(p2.latitude * scaleToRadians);
+		double cosLatitude1 = Math.cos(p1.latitude * scaleToRadians);
+		double cosLatitude2 = Math.cos(p2.latitude * scaleToRadians);
+		double cosLongitude = Math
+				.cos((p1.longitude - p2.longitude) * scaleToRadians);
+		return Math.acos(sinLatitude1 * sinLatitude2
+				+ cosLatitude1 * cosLatitude2 * cosLongitude);
+	}
 
 	static long convertDateToTimestamp(String date) {
 		try {
@@ -36,22 +61,6 @@ public class Utils {
 		SimpleDateFormat simpleDateFormat = new SimpleDateFormat(
 				SIMPLE_DATE_FORMAT);
 		return simpleDateFormat.format(date);
-	}
-
-	/*
-	 * Geometric distance between two GPS points in space, when latitude
-	 * represents y coordinate and longitude represents x coordinate;
-	 */
-	static double distance(GpsPoint p1, GpsPoint p2) {
-		double scaleToRadians = Math.PI / 180f;
-		double sinLatitude1 = Math.sin(p1.latitude * scaleToRadians);
-		double sinLatitude2 = Math.sin(p2.latitude * scaleToRadians);
-		double cosLatitude1 = Math.cos(p1.latitude * scaleToRadians);
-		double cosLatitude2 = Math.cos(p2.latitude * scaleToRadians);
-		double cosLongitude = Math
-				.cos((p1.longitude - p2.longitude) * scaleToRadians);
-		return Math.acos(sinLatitude1 * sinLatitude2
-				+ cosLatitude1 * cosLatitude2 * cosLongitude);
 	}
 
 	static Scanner csvScanner(File file) {
@@ -82,15 +91,6 @@ public class Utils {
 	static ArrayList<File> filesInFolder(String folderName) {
 		return new ArrayList<File>(
 				Arrays.asList(new File(folderName).listFiles()));
-	}
-
-	static ArrayList<Trip> extractTripsFromFiles(File[] files)
-			throws Exception {
-		ArrayList<Trip> trips = new ArrayList<Trip>();
-		for (File file : files) {
-			trips.add(new Trip(file));
-		}
-		return trips;
 	}
 
 	/*
@@ -130,12 +130,6 @@ public class Utils {
 					"Argument expectation is given wrong name"));
 		}
 	}
-
-	static boolean samePlace(GpsPoint p1, GpsPoint p2) {
-		return Utils.distance(p1, p2) < SAME_SPOT_DISTANCE_RANGE;
-	}
-
-	private static final Random randomBitGenerator = new Random();
 
 	static boolean randomBit() {
 		return (randomBitGenerator.nextInt(2) == 1);

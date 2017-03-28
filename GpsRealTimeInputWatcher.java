@@ -197,7 +197,7 @@ class GpsRealTimeInputWatcher {
 						+ " will arrive at " + nextStop.name + " at "
 						+ Utils.convertTimestampToDate(prediction));
 
-				Utils.appendLineToFile(new File("debug/prediction.txt"),
+				Utils.appendLineToFile(new File("logging/prediction.txt"),
 						"We predict that " + vehicleId + " will arrive at "
 								+ nextStop.name + " at "
 								+ Utils.convertTimestampToDate(prediction));
