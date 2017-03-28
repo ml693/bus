@@ -170,6 +170,7 @@ class GpsRealTimeInputWatcher {
 		System.out.println("Dealing with file " + jsonFile.getName());
 		BusTravelHistoryExtractor.updateBusesTravelHistoryWithFile(jsonFile);
 		numberOfSearchesPerformed = 0;
+		int routesFound = 0;
 
 		// For each bus we want to make a prediction
 		for (String vehicleId : BusTravelHistoryExtractor.allHistories
@@ -185,6 +186,8 @@ class GpsRealTimeInputWatcher {
 						vehicleId + " does not follow a route. Performed "
 								+ numberOfSearchesPerformed + " so far.");
 				continue;
+			} else {
+				routesFound++;
 			}
 
 			BusStop nextStop = getNextStop(vehicleTrip);
@@ -220,6 +223,7 @@ class GpsRealTimeInputWatcher {
 		System.out.println("Handled new GPS point.");
 		System.out.println(
 				"numberOfSearchesPerformed = " + numberOfSearchesPerformed);
+		System.out.println("new routes found = " + routesFound);
 	}
 
 }
