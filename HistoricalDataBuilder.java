@@ -12,7 +12,7 @@ public class HistoricalDataBuilder {
 	public static void buildHistoricalData(String[] args) {
 		try {
 			Utils.checkCommandLineArguments(args, "folder", "folder", "folder");
-		} catch (Exception exception) {
+		} catch (ProjectSpecificException exception) {
 			throw new RuntimeException(exception);
 		}
 
@@ -58,18 +58,21 @@ public class HistoricalDataBuilder {
 			fromIndex++;
 		}
 
+		// Finding the first point that reached the last stop
 		int toIndex = trip.gpsPoints.size() - 1;
 		while (toIndex >= 0 && !route.atLastStop(trip.gpsPoints.get(toIndex))) {
 			toIndex--;
 		}
+		while (toIndex >= 0 && route.atLastStop(trip.gpsPoints.get(toIndex))) {
+			toIndex--;
+		}
+		toIndex++;
 
 		if (fromIndex > toIndex) {
 			throw new ProjectSpecificException(
 					"Can not construct historical trip from " + trip.name
 							+ " for " + route.name);
 		}
-
-		System.out.println(fromIndex + " " + toIndex);
 
 		return trip.subTrip(fromIndex, toIndex + 1);
 	}

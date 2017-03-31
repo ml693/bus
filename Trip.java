@@ -76,23 +76,6 @@ public class Trip {
 		}
 	}
 
-	/* Adds an offset to each trip's timestamp */
-	Trip shiftTimeTo(long startingTimestamp) {
-		long timeShift = startingTimestamp - gpsPoints.get(0).timestamp;
-		ArrayList<GpsPoint> shiftedGpsPoints = new ArrayList<GpsPoint>();
-		for (GpsPoint point : gpsPoints) {
-			shiftedGpsPoints.add(new GpsPoint(point.timestamp + timeShift,
-					point.latitude, point.longitude));
-		}
-
-		try {
-			return new Trip(this.name, shiftedGpsPoints);
-		} catch (ProjectSpecificException exception) {
-			/* This code path should never be reached */
-			throw new RuntimeException(exception);
-		}
-	}
-
 	Trip subTrip(int fromIndex, int toIndex) throws ProjectSpecificException {
 		return new Trip(name,
 				new ArrayList<GpsPoint>(gpsPoints.subList(fromIndex, toIndex)));

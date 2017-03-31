@@ -16,8 +16,6 @@ import java.util.Scanner;
 
 public class Utils {
 
-	private static final Random randomBitGenerator = new Random();
-
 	private static final String SIMPLE_DATE_FORMAT = "yyyy-MM-dd HH:mm:ss";
 	private static final long MILLISECONDS_IN_ONE_SECOND = 1000;
 
@@ -72,10 +70,21 @@ public class Utils {
 		}
 	}
 
-	static void writeLine(BufferedWriter writer, String line)
-			throws IOException {
-		writer.write(line);
-		writer.newLine();
+	static BufferedWriter writer(String fileName) {
+		try {
+			return new BufferedWriter(new FileWriter(fileName));
+		} catch (Exception exception) {
+			throw new RuntimeException(exception);
+		}
+	}
+
+	static void writeLine(BufferedWriter writer, String line) {
+		try {
+			writer.write(line);
+			writer.newLine();
+		} catch (Exception exception) {
+			throw new RuntimeException(exception);
+		}
 	}
 
 	static void appendLineToFile(File file, String line) {
@@ -130,6 +139,8 @@ public class Utils {
 					"Argument expectation is given wrong name"));
 		}
 	}
+
+	private static final Random randomBitGenerator = new Random();
 
 	static boolean randomBit() {
 		return (randomBitGenerator.nextInt(2) == 1);

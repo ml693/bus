@@ -35,9 +35,10 @@ class HistoryIntoTripsSplitter {
 
 	}
 
-	private static final double DISTANCE_SHOWING_THAT_BUS_IS_MOVING = 0.00002;
+	// TODO(ml693): use Utils.SAME_PLACE field instead
+	private static final double DISTANCE_SHOWING_THAT_BUS_IS_MOVING = 0.000018;
 	private static final int POINTS_THAT_ARE_TURNING_AROUND = 2;
-	private static final long ONE_TRIP_TIME_RATIO = 600L;
+	private static final long CONSECUTIVE_POINTS_TIME_DIFFERENCE_LIMIT = 600L;
 
 	/*
 	 * We want to delimit the trip if the bus has turned around.
@@ -208,6 +209,7 @@ class HistoryIntoTripsSplitter {
 		GpsPoint currentPoint = new GpsPoint(
 				Utils.convertDateToTimestamp(gpsInput.next()),
 				gpsInput.nextDouble(), gpsInput.nextDouble());
+		long currentTimestamp = currentPoint.timestamp;
 
 		/* Main loop reading GPS data from bus history input file */
 		while (gpsInput.hasNext()) {
@@ -215,8 +217,7 @@ class HistoryIntoTripsSplitter {
 					Utils.convertDateToTimestamp(gpsInput.next()),
 					gpsInput.nextDouble(), gpsInput.nextDouble());
 
-			if (newPoint.timestamp
-					- currentPoint.timestamp > ONE_TRIP_TIME_RATIO
+			if (newPoint.timestamp - currentTimestamp > CONSECUTIVE_POINTS_TIME_DIFFERENCE_LIMIT
 					|| busJumpedUnrealisticDistance(currentPoint, newPoint)) {
 				if (flushGpsPoints(points, travelHistoryFile,
 						extractedTripsCount, outputFolder)) {
@@ -227,8 +228,8 @@ class HistoryIntoTripsSplitter {
 
 			if (busMovedSignificantDistance(points, currentPoint, newPoint)) {
 				points.add(currentPoint);
+				currentTimestamp = newPoint.timestamp;
 			}
-
 			currentPoint = newPoint;
 
 			if (busIsTurningAround(points)) {

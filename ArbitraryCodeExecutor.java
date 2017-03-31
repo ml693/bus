@@ -2,6 +2,7 @@ package bus;
 
 import java.io.File;
 import java.util.ArrayList;
+import java.util.Scanner;
 import java.util.function.Function;
 
 /*
@@ -12,43 +13,115 @@ import java.util.function.Function;
 class ArbitraryCodeExecutor {
 
 	public static void main(String args[]) throws ProjectSpecificException {
-		File[] tripsFolder = new File(args[0]).listFiles();
-		File pathsFolder = new File(args[1]);
+		// evaluateRoute(args);
+	}
 
-		for (File tripFile : tripsFolder) {
-			File[] tripFiles = tripFile.listFiles();
-			Trip path = Trip.readFromFile(tripFiles[0]);
-			path.makeCopyWithNewName(tripFile.getName())
-					.writeToFolder(pathsFolder);
+	public static void produceCsvForPlotting(String args[])
+			throws ProjectSpecificException {
+		Scanner scanner = Utils.csvScanner(new File("results.csv"));
+		scanner.nextLine();
+
+		int[][] errorCount = new int[7][2000];
+		while (scanner.hasNext()) {
+			errorCount[scanner.nextInt()][scanner.nextInt()]++;
+		}
+
+		File outputFile = new File("counts.txt");
+		Utils.appendLineToFile(outputFile, "stop_number,error,count");
+		for (int i = 0; i < 7; i++) {
+			for (int error = 0; error < 2000; error++) {
+				if (errorCount[i][error] > 0) {
+					Utils.appendLineToFile(outputFile,
+							i + "," + error + "," + errorCount[i][error]);
+				}
+			}
 		}
 	}
 
-	public static void evaluateOneRoute(String args[])
+	public static void evaluateRoute(String[] args)
 			throws ProjectSpecificException {
+		Utils.checkCommandLineArguments(args, "file", "folder", "file");
 		Route route = new Route(new File(args[0]));
-		ArrayList<Trip> trips = Trip.extractTripsFromFolder(new File(args[1]));
+		File tripsFolder = new File(args[1]);
+		File evaluationFile = new File(args[2]);
 
+		for (int stop = 1; stop < route.busStops.size() - 1; stop++) {
+			System.out.println("For stop number " + stop + " results are:");
+			evaluateRoute(route, tripsFolder, stop, evaluationFile);
+		}
+	}
+
+	public static Trip upToStop(int upToNumber, Trip trip, Route route) {
+		for (int p = 0; p < trip.gpsPoints.size(); p++) {
+			if (route.busStops.get(upToNumber).atStop(trip.gpsPoints.get(p))) {
+				ArrayList<GpsPoint> points = new ArrayList<GpsPoint>(
+						trip.gpsPoints.subList(0, p));
+				for (int i = 0; i < Trip.MINIMUM_NUMBER_OF_GPS_POINTS
+						- p; i++) {
+					points.add(0, trip.gpsPoints.get(0));
+				}
+				try {
+					return new Trip(trip.name, points);
+				} catch (ProjectSpecificException exception) {
+					throw new RuntimeException(exception);
+				}
+			}
+		}
+		throw new RuntimeException("No GPS point passes through "
+				+ route.busStops.get(upToNumber).name + " for " + trip.name);
+	}
+
+	/* Computes various statistics for the arrival time to last stop */
+	public static void evaluateRoute(Route route, File tripsFolder,
+			int fromStopNumber, File evaluationFile)
+					throws ProjectSpecificException {
+		Utils.appendLineToFile(evaluationFile,
+				"Predicting when trips will reach " + route.lastStop().name
+						+ " (nr. " + route.busStops.size() + ") from "
+						+ route.busStops.get(fromStopNumber).name + " (nr. "
+						+ fromStopNumber + ")");
+
+		ArrayList<Trip> trips = Trip.extractTripsFromFolder(tripsFolder);
 		ArrayList<Trip> shortTrips = new ArrayList<Trip>();
 		for (Trip trip : trips) {
-			shortTrips.add(trip.subTrip(0, 8));
+			shortTrips.add(upToStop(fromStopNumber, trip, route));
 		}
 
 		long difference = 0;
-
-		for (int t = 0; t < trips.size(); t++) {
-			Trip trip = trips.get(t);
-			Trip shortTrip = shortTrips.get(t);
+		long delaysSum = 0;
+		for (int t = trips.size() - 1; t >= 0; t--) {
+			Trip historicalTrip = trips.get(t);
+			trips.remove(t);
 
 			long predictedTimestamp = ArrivalTimePredictor
 					.calculatePredictionTimestamp(p -> route.atLastStop(p),
-							shortTrip, trips);
+							shortTrips.get(t), trips);
 			long actualTimestamp = PredictionEvaluator.lastStopTimestamp(route,
-					trip);
+					historicalTrip);
+			long predictionError = Math
+					.abs(actualTimestamp - predictedTimestamp);
 
-			difference += Math.abs(predictedTimestamp - actualTimestamp);
+			Utils.appendLineToFile(evaluationFile,
+					historicalTrip.name + " started at "
+							+ Utils.convertTimestampToDate(
+									shortTrips.get(t).lastPoint().timestamp)
+					+ ", was predicted for "
+					+ Utils.convertTimestampToDate(predictedTimestamp)
+					+ ", actually arrived at "
+					+ Utils.convertTimestampToDate(actualTimestamp)
+					+ ", prediction error is "
+					+ (actualTimestamp - predictedTimestamp));
+
+			difference += predictionError;
+			delaysSum += actualTimestamp
+					- shortTrips.get(t).lastPoint().timestamp;
+			trips.add(historicalTrip);
 		}
 
 		System.out.println("MAE = " + difference / trips.size());
+		System.out.println("Delay = " + delaysSum / trips.size());
+		System.out.println("Prediction count = " + trips.size());
+		System.out.println();
 	}
 
 	public static boolean inCambridge(Trip path) {

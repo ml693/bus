@@ -42,16 +42,25 @@ public class ArrivalTimePredictor {
 				historicalTrip);
 		long timestamp = historicalTrip.gpsPoints
 				.get(closestPointIndex).timestamp;
+
+		Trip recentSubtrip = null;
+		try {
+			recentSubtrip = trip.subTrip(
+					trip.gpsPoints.size() - Trip.MINIMUM_NUMBER_OF_GPS_POINTS,
+					trip.gpsPoints.size());
+		} catch (ProjectSpecificException exception) {
+			throw new RuntimeException(exception);
+		}
+
 		int index = closestPointIndex;
 		while (index > 0 && timestamp
-				- historicalTrip.gpsPoints.get(index).timestamp < trip
+				- historicalTrip.gpsPoints.get(index).timestamp < recentSubtrip
 						.duration()) {
 			index--;
 		}
 
-		long durationDifference = trip.duration()
+		long durationDifference = recentSubtrip.duration()
 				- (timestamp - historicalTrip.gpsPoints.get(index).timestamp);
-
 		return (durationDifference < DURATION_DIFFERENCE_LIMIT
 				&& Utils.samePlace(trip.lastPoint(),
 						historicalTrip.gpsPoints.get(closestPointIndex))
@@ -61,8 +70,9 @@ public class ArrivalTimePredictor {
 
 	private static boolean historicalTripIsRecent(Trip trip,
 			Trip historicalTrip) {
-		return trip.lastPoint().timestamp
-				- historicalTrip.lastPoint().timestamp < RECENT_INTERVAL;
+		// TODO(ml693): remove modulus when proper testing is done.
+		return Math.abs(trip.lastPoint().timestamp
+				- historicalTrip.lastPoint().timestamp) < RECENT_INTERVAL;
 	}
 
 	/* Finds point in trip that was closest to the mostRecentPoint */
@@ -112,9 +122,6 @@ public class ArrivalTimePredictor {
 	private static ArrayList<Prediction> generatePredictions(Trip trip,
 			ArrayList<Trip> historicalTrips,
 			Function<GpsPoint, Boolean> atBusStop) {
-		System.out.println("For " + trip.name + " we have "
-				+ historicalTrips.size() + " historical trips");
-
 		ArrayList<Prediction> predictions = new ArrayList<Prediction>();
 
 		for (Trip historicalTrip : historicalTrips) {
@@ -155,7 +162,6 @@ public class ArrivalTimePredictor {
 			if (prediction.recent && prediction.equallyCongested) {
 				newEquallyCongested.add(prediction.timestamp);
 			}
-			break;
 		}
 
 		if (newEquallyCongested.size() > 0) {

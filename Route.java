@@ -72,8 +72,12 @@ class Route {
 				.collect(Collectors.joining(", "));
 	}
 
+	BusStop lastStop() {
+		return busStops.get(busStops.size() - 1);
+	}
+
 	boolean atLastStop(GpsPoint point) {
-		return busStops.get(busStops.size() - 1).atStop(point);
+		return lastStop().atStop(point);
 	}
 
 	boolean allStopsVisitedInOrder(Trip trip) {

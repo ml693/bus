@@ -4,8 +4,6 @@ import java.io.BufferedWriter;
 import java.io.IOException;
 
 public class BusStop {
-	private static final double AT_STOP_RANGE = 0.000007;
-
 	final String name;
 	final double latitude;
 	final double longitude;
@@ -31,6 +29,6 @@ public class BusStop {
 
 	boolean atStop(GpsPoint point) {
 		GpsPoint stopPoint = new GpsPoint(0L, this.latitude, this.longitude);
-		return (Utils.distance(point, stopPoint) < AT_STOP_RANGE);
+		return (Utils.samePlace(point, stopPoint));
 	}
 }
