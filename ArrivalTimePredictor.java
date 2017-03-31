@@ -3,34 +3,21 @@ package bus;
 import java.io.File;
 import java.util.ArrayList;
 import java.util.Collections;
-import java.util.function.Function;
 
 public class ArrivalTimePredictor {
 	private static final long DURATION_DIFFERENCE_LIMIT = 80L;
 	private static final long RECENT_INTERVAL = 3000L;
 
-	static private class Prediction {
-		final Long timestamp;
-		final boolean recent;
-		final boolean equallyCongested;
-		final String name;
-
-		Prediction(Long arrivalTimestamp, boolean recent,
-				boolean equallyCongested, String name) {
-			this.timestamp = arrivalTimestamp;
-			this.recent = recent;
-			this.equallyCongested = equallyCongested;
-			this.name = name;
-		}
-	}
-
-	/* Main method which predicts arrival time to bus stop */
-	static long calculatePredictionTimestamp(
-			Function<GpsPoint, Boolean> atBusStop, Trip tripToPredict,
+	/* Main method which predicts arrival time to the busStop */
+	static Prediction makePrediction(BusStop busStop, Trip tripToPredict,
 			ArrayList<Trip> historicalTrips) throws ProjectSpecificException {
 		ArrayList<Prediction> predictions = generatePredictions(tripToPredict,
-				historicalTrips, atBusStop);
-		return calculateAverageArrivalTime(tripToPredict.name, predictions);
+				historicalTrips, busStop);
+		long predictedTimestamp = calculateAverageArrivalTime(
+				tripToPredict.name, predictions);
+		return new Prediction(predictedTimestamp,
+				tripToPredict.lastPoint().timestamp, false, false, busStop,
+				tripToPredict.name);
 	}
 
 	/*
@@ -91,11 +78,11 @@ public class ArrivalTimePredictor {
 	}
 
 	static long generateFuturePrediction(Trip recentTrip, Trip trip,
-			Function<GpsPoint, Boolean> atBusStop) {
+			BusStop busStop) {
 		int closestPointIndex = closestPointIndex(recentTrip.lastPoint(), trip);
 
 		for (int p = 0; p < trip.gpsPoints.size(); p++) {
-			if (atBusStop.apply(trip.gpsPoints.get(p))) {
+			if (busStop.atStop(trip.gpsPoints.get(p))) {
 				return recentTrip.lastPoint().timestamp
 						+ (trip.gpsPoints.get(p).timestamp - trip.gpsPoints
 								.get(closestPointIndex).timestamp);
@@ -116,21 +103,20 @@ public class ArrivalTimePredictor {
 	/*
 	 * Finds all equally congested trips with the recentTrip, and for each
 	 * equally congested trip t, uses its interval as prediction (except for
-	 * the
-	 * case where t has no further GPS points to be used for prediction).
+	 * the case where t has no further GPS points to be used for prediction).
 	 */
 	private static ArrayList<Prediction> generatePredictions(Trip trip,
-			ArrayList<Trip> historicalTrips,
-			Function<GpsPoint, Boolean> atBusStop) {
+			ArrayList<Trip> historicalTrips, BusStop busStop) {
 		ArrayList<Prediction> predictions = new ArrayList<Prediction>();
 
 		for (Trip historicalTrip : historicalTrips) {
 			boolean recent = historicalTripIsRecent(trip, historicalTrip);
 			boolean equallyCongested = equallyCongested(trip, historicalTrip);
 			long predictedTimestamp = generateFuturePrediction(trip,
-					historicalTrip, atBusStop);
-			predictions.add(new Prediction(predictedTimestamp, recent,
-					equallyCongested, historicalTrip.name));
+					historicalTrip, busStop);
+			predictions.add(new Prediction(predictedTimestamp,
+					trip.lastPoint().timestamp, recent, equallyCongested,
+					busStop, historicalTrip.name));
 		}
 
 		return predictions;
@@ -151,16 +137,16 @@ public class ArrivalTimePredictor {
 
 		for (Prediction prediction : predictions) {
 			if (!prediction.recent && !prediction.equallyCongested) {
-				oldDifferentlyCongested.add(prediction.timestamp);
+				oldDifferentlyCongested.add(prediction.predictedTimestamp);
 			}
 			if (!prediction.recent && prediction.equallyCongested) {
-				oldEquallyCongested.add(prediction.timestamp);
+				oldEquallyCongested.add(prediction.predictedTimestamp);
 			}
 			if (prediction.recent && !prediction.equallyCongested) {
-				newDifferentlyCongested.add(prediction.timestamp);
+				newDifferentlyCongested.add(prediction.predictedTimestamp);
 			}
 			if (prediction.recent && prediction.equallyCongested) {
-				newEquallyCongested.add(prediction.timestamp);
+				newEquallyCongested.add(prediction.predictedTimestamp);
 			}
 		}
 

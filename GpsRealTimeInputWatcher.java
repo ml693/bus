@@ -24,8 +24,12 @@ class GpsRealTimeInputWatcher {
 	private final File routesFolder;
 	/* Path is a trip following a route */
 	private final File pathsFolder;
-	private final HashMap<String, Route> tripFollowsRoute = new HashMap<String, Route>();
-	private final HashMap<String, Trip> tripFollowsPath = new HashMap<String, Trip>();
+	/* All predictions are recorded to this file */
+	private final File loggingFile;
+
+	private final HashMap<String /* vehicleId */, Route> vehicleFollowsRoute = new HashMap<String, Route>();
+	private final HashMap<String /* vehicleId */, Trip /* path */> vehicleFollowsPath = new HashMap<String, Trip>();
+	private final HashMap<String /* vehicleId */, Prediction> currentPredictions = new HashMap<String, Prediction>();
 
 	/*
 	 * Real time GPS data is transmitted every 30s. This program sleeps, wakes
@@ -37,18 +41,21 @@ class GpsRealTimeInputWatcher {
 	 * java GpsRealTimeInputWatcher folder_where_gps_file_arrives
 	 */
 	public static void main(String[] args) throws ProjectSpecificException {
-		Utils.checkCommandLineArguments(args, "folder", "folder", "folder");
+		Utils.checkCommandLineArguments(args, "folder", "folder", "folder",
+				"file");
 
 		GpsRealTimeInputWatcher watcher = new GpsRealTimeInputWatcher(
-				new File(args[0]), new File(args[1]), new File(args[2]));
+				new File(args[0]), new File(args[1]), new File(args[2]),
+				new File(args[3]));
 		watcher.waitForNewJsonInput();
 	}
 
 	GpsRealTimeInputWatcher(File tripsFolder, File routesFolder,
-			File pathsFolder) {
+			File pathsFolder, File loggingFile) {
 		this.tripsFolder = tripsFolder;
 		this.routesFolder = routesFolder;
 		this.pathsFolder = pathsFolder;
+		this.loggingFile = loggingFile;
 	}
 
 	WatchService realTimeJsonFolderWatcher() {
@@ -75,7 +82,7 @@ class GpsRealTimeInputWatcher {
 				watchKey.pollEvents();
 				/*
 				 * Sleeping because of some bug when locking files. The
-				 * String read from file returns null, even if the file is not
+				 * String from file is null, although the file should not be
 				 * empty. TODO(ml693): solve the bug, then remove the sleep.
 				 */
 				Thread.sleep(100);
@@ -124,8 +131,8 @@ class GpsRealTimeInputWatcher {
 	}
 
 	private BusStop getNextStop(Trip recentTrip) {
-		Trip path = tripFollowsPath.get(recentTrip.name);
-		Route route = tripFollowsRoute.get(recentTrip.name);
+		Trip path = vehicleFollowsPath.get(recentTrip.name);
+		Route route = vehicleFollowsRoute.get(recentTrip.name);
 
 		int closestPointIndex = ArrivalTimePredictor
 				.closestPointIndex(recentTrip.lastPoint(), path);
@@ -141,33 +148,57 @@ class GpsRealTimeInputWatcher {
 	}
 
 	private static final int MAX_NUMBER_OF_SEARCHES_IN_ONE_ITERATION = 30;
-	int numberOfSearchesPerformed = 0;
+	int searchesPerformed = 0;
 
 	Route routeFollowedByTrip(Trip trip) {
-		if (!tripFollowsRoute.containsKey(trip.name)
-				&& numberOfSearchesPerformed < MAX_NUMBER_OF_SEARCHES_IN_ONE_ITERATION
+		if (!vehicleFollowsRoute.containsKey(trip.name)
+				&& searchesPerformed < MAX_NUMBER_OF_SEARCHES_IN_ONE_ITERATION
 				&& Utils.randomBit()) {
-			numberOfSearchesPerformed++;
+			searchesPerformed++;
 
 			ArrayList<Trip> paths = Trip.extractTripsFromFolder(pathsFolder);
 			for (Trip path : paths) {
 				if (PathDetector.tripFollowsPath(trip, path)) {
 					System.out.println(trip.name + " follows " + path.name);
-					tripFollowsRoute.put(trip.name, new Route(new File(
+					vehicleFollowsRoute.put(trip.name, new Route(new File(
 							routesFolder.getName() + "/" + path.name)));
-					tripFollowsPath.put(trip.name, path);
+					vehicleFollowsPath.put(trip.name, path);
 					break;
 				}
 			}
 		}
-		return tripFollowsRoute.get(trip.name);
+		return vehicleFollowsRoute.get(trip.name);
+	}
+
+	private boolean needNewPrediction(Trip trip) {
+		if (currentPredictions.containsKey(trip.name)) {
+			Prediction prediction = currentPredictions.get(trip.name);
+
+			if (prediction.busStop.atStop(trip.lastPoint())) {
+				prediction.appendToFile(loggingFile,
+						trip.lastPoint().timestamp);
+				currentPredictions.remove(trip.name);
+				return true;
+			}
+
+			long allowedErrorDifference = trip.lastPoint().timestamp
+					- prediction.predictionTimestamp;
+			if ((trip.lastPoint().timestamp - prediction.predictedTimestamp)
+					* 4 > allowedErrorDifference) {
+				currentPredictions.remove(trip.name);
+				System.err.println("Prediction " + prediction.name + " failed");
+				return true;
+			}
+
+			return false;
+		}
+		return true;
 	}
 
 	private void processNewGpsInput(File jsonFile)
 			throws ProjectSpecificException {
 		System.out.println("Dealing with file " + jsonFile.getName());
 		BusTravelHistoryExtractor.updateBusesTravelHistoryWithFile(jsonFile);
-		int routesFound = 0;
 
 		// For each bus we want to make a prediction
 		for (String vehicleId : BusTravelHistoryExtractor.allHistories
@@ -177,48 +208,38 @@ class GpsRealTimeInputWatcher {
 				continue;
 			}
 
+			if (!needNewPrediction(vehicleTrip)) {
+				continue;
+			}
+
 			Route routeFollowed = routeFollowedByTrip(vehicleTrip);
 			if (routeFollowed == null) {
 				continue;
-			} else {
-				routesFound++;
 			}
 
 			BusStop nextStop = getNextStop(vehicleTrip);
 			if (nextStop == null) {
 				System.out.println("No next stop for " + vehicleId);
-				tripFollowsRoute.remove(vehicleId);
-			} else {
-				ArrayList<Trip> historicalTrips = Trip
-						.extractTripsFromFolder(new File(tripsFolder.getName()
-								+ "/" + routeFollowed.name));
-
-				System.out.println(
-						"calculating prediction for stop " + nextStop.name);
-				Long prediction = ArrivalTimePredictor
-						.calculatePredictionTimestamp(p -> nextStop.atStop(p),
-								vehicleTrip, historicalTrips);
-				System.out.println("We predict that " + vehicleId
-						+ " will arrive at " + nextStop.name + " at "
-						+ Utils.convertTimestampToDate(prediction));
-
-				File predictionFile = new File("logging/prediction.txt");
-				Utils.appendLineToFile(predictionFile,
-						vehicleId + " follows " + routeFollowed.name);
-				Utils.appendLineToFile(predictionFile,
-						"Time of prediction is " + Utils.convertTimestampToDate(
-								vehicleTrip.lastPoint().timestamp));
-				Utils.appendLineToFile(new File("logging/prediction.txt"),
-						"I predict arrival time at " + nextStop.name + " to be "
-								+ Utils.convertTimestampToDate(prediction));
-				Utils.appendLineToFile(predictionFile, "");
+				vehicleFollowsRoute.remove(vehicleId);
+				continue;
 			}
+
+			ArrayList<Trip> historicalTrips = Trip.extractTripsFromFolder(
+					new File(tripsFolder.getName() + "/" + routeFollowed.name));
+			System.out.println(
+					"calculating prediction for stop " + nextStop.name);
+			Prediction prediction = ArrivalTimePredictor
+					.makePrediction(nextStop, vehicleTrip, historicalTrips);
+			currentPredictions.put(vehicleId, prediction);
+			System.out.println("We predict that " + vehicleId
+					+ " will arrive at " + nextStop.name + " at "
+					+ Utils.convertTimestampToDate(
+							prediction.predictedTimestamp));
+
 		}
 
 		System.out.println("Handled new GPS point.");
-		System.out.println(
-				"numberOfSearchesPerformed = " + numberOfSearchesPerformed);
-		System.out.println("new routes found = " + routesFound);
+		System.out.println("searchesPerformed = " + searchesPerformed);
 	}
 
 }

@@ -93,9 +93,9 @@ class ArbitraryCodeExecutor {
 			Trip historicalTrip = trips.get(t);
 			trips.remove(t);
 
-			long predictedTimestamp = ArrivalTimePredictor
-					.calculatePredictionTimestamp(p -> route.atLastStop(p),
-							shortTrips.get(t), trips);
+			long predictedTimestamp = ArrivalTimePredictor.makePrediction(
+					route.lastStop(), shortTrips.get(t),
+					trips).predictedTimestamp;
 			long actualTimestamp = PredictionEvaluator.lastStopTimestamp(route,
 					historicalTrip);
 			long predictionError = Math
