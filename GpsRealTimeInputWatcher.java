@@ -154,8 +154,6 @@ class GpsRealTimeInputWatcher {
 		if (!vehicleFollowsRoute.containsKey(trip.name)
 				&& searchesPerformed < MAX_NUMBER_OF_SEARCHES_IN_ONE_ITERATION
 				&& Utils.randomBit()) {
-			searchesPerformed++;
-
 			ArrayList<Trip> paths = Trip.extractTripsFromFolder(pathsFolder);
 			for (Trip path : paths) {
 				if (PathDetector.tripFollowsPath(trip, path)) {
@@ -167,6 +165,8 @@ class GpsRealTimeInputWatcher {
 				}
 			}
 		}
+
+		searchesPerformed++;
 		return vehicleFollowsRoute.get(trip.name);
 	}
 
@@ -183,10 +183,9 @@ class GpsRealTimeInputWatcher {
 
 			long allowedErrorDifference = trip.lastPoint().timestamp
 					- prediction.predictionTimestamp;
-			if ((trip.lastPoint().timestamp - prediction.predictedTimestamp)
-					* 4 > allowedErrorDifference) {
+			if ((trip.lastPoint().timestamp
+					- prediction.predictedTimestamp) > allowedErrorDifference) {
 				currentPredictions.remove(trip.name);
-				System.err.println("Prediction " + prediction.name + " failed");
 				return true;
 			}
 
@@ -200,6 +199,7 @@ class GpsRealTimeInputWatcher {
 		System.out.println("Dealing with file " + jsonFile.getName());
 		BusTravelHistoryExtractor.updateBusesTravelHistoryWithFile(jsonFile);
 
+		int routeFoundFor = 0;
 		// For each bus we want to make a prediction
 		for (String vehicleId : BusTravelHistoryExtractor.allHistories
 				.keySet()) {
@@ -216,13 +216,13 @@ class GpsRealTimeInputWatcher {
 			if (routeFollowed == null) {
 				continue;
 			}
-
 			BusStop nextStop = getNextStop(vehicleTrip);
 			if (nextStop == null) {
 				System.out.println("No next stop for " + vehicleId);
 				vehicleFollowsRoute.remove(vehicleId);
 				continue;
 			}
+			routeFoundFor++;
 
 			ArrayList<Trip> historicalTrips = Trip.extractTripsFromFolder(
 					new File(tripsFolder.getName() + "/" + routeFollowed.name));
@@ -240,6 +240,7 @@ class GpsRealTimeInputWatcher {
 
 		System.out.println("Handled new GPS point.");
 		System.out.println("searchesPerformed = " + searchesPerformed);
+		System.out.println("routeFound = " + routeFoundFor);
 	}
 
 }

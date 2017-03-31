@@ -33,19 +33,12 @@ class Prediction {
 	 * 2016-01-18 13:52:06, prediction error is -100
 	 */
 	void appendToFile(File file, long actualArrivalTimestamp) {
-		int width = 25;
-		char fill = ' ';
-		String toPad = name;
-		String formattedPredictionName = new String(
-				new char[width - toPad.length()]).replace('\0', fill) + toPad;
-
-		String predictionLine = formattedPredictionName + " started at "
+		String predictionLine = name + " started at "
 				+ Utils.convertTimestampToDate(predictionTimestamp)
 				+ ", arrived at "
 				+ Utils.convertTimestampToDate(actualArrivalTimestamp)
 				+ ", prediction error is "
 				+ (actualArrivalTimestamp - predictedTimestamp);
-
 		Utils.appendLineToFile(file, predictionLine);
 	}
 
