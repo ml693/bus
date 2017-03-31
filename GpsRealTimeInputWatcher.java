@@ -240,6 +240,7 @@ class GpsRealTimeInputWatcher {
 
 		System.out.println("Handled new GPS point.");
 		System.out.println("searchesPerformed = " + searchesPerformed);
+		searchesPerformed = 0;
 		System.out.println("routeFound = " + routeFoundFor);
 	}
 
