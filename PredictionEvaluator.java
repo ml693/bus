@@ -3,8 +3,10 @@ package bus;
 
 import java.io.BufferedWriter;
 import java.io.File;
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Scanner;
+import java.util.function.Function;
 
 /*
  * A class which contains methods to evaluate (i.e. calculate statistics)
@@ -12,43 +14,77 @@ import java.util.Scanner;
  */
 class PredictionEvaluator {
 
-	public static void main(String[] args) throws ProjectSpecificException {
-		evaluateRoute(args);
-		produceCsvForPlotting();
+	public static void main(String[] args) throws Exception {
+		Utils.checkCommandLineArguments(args, "folder", "folder", "folder");
+		ArrayList<Route> routes = Route
+				.extractRoutesFromFolder(new File(args[0]));
+
+		for (Route route : routes) {
+			File tripsFolder = new File(args[1] + "/" + route.name);
+			if (!tripsFolder.exists()) {
+				continue;
+			}
+
+			BufferedWriter writer = Utils.writer(args[2] + "/" + route.name);
+
+			Utils.writeLine(writer, "The morning rush hour");
+			evaluateRouteForCertainTime(t -> correctMorningTime(t), route,
+					tripsFolder, writer);
+			Utils.writeLine(writer, "");
+			Utils.writeLine(writer, "The working hours");
+			evaluateRouteForCertainTime(t -> correctDayTime(t), route,
+					tripsFolder, writer);
+			Utils.writeLine(writer, "");
+			Utils.writeLine(writer, "The evening rush hour");
+			evaluateRouteForCertainTime(t -> correctEveningTime(t), route,
+					tripsFolder, writer);
+			Utils.writeLine(writer, "");
+			Utils.writeLine(writer, "The night time");
+			evaluateRouteForCertainTime(t -> correctNightTime(t), route,
+					tripsFolder, writer);
+
+			writer.close();
+		}
 	}
 
-	public static void produceCsvForPlotting() throws ProjectSpecificException {
-		Scanner scanner = Utils.csvScanner(new File("counts.txt"));
-		scanner.nextLine();
+	static boolean correctMorningTime(long timestamp) {
+		return correctTime("08", timestamp) || correctTime("09", timestamp);
+	}
 
-		int[][] errorCount = new int[7][2000];
-		while (scanner.hasNext()) {
-			errorCount[scanner.nextInt()][scanner.nextInt()]++;
-		}
+	static boolean correctDayTime(long timestamp) {
+		return correctTime("10", timestamp) || correctTime("11", timestamp)
+				|| correctTime("12", timestamp) || correctTime("13", timestamp)
+				|| correctTime("14", timestamp) || correctTime("15", timestamp)
+				|| correctTime("16", timestamp);
+	}
 
-		BufferedWriter writer = Utils.writer("plot.txt");
-		Utils.writeLine(writer, "stop_number,error,count");
-		for (int i = 0; i < 7; i++) {
-			for (int error = 0; error < 2000; error++) {
-				if (errorCount[i][error] > 0) {
-					Utils.writeLine(writer,
-							i + "," + error + "," + errorCount[i][error]);
-				}
+	static boolean correctEveningTime(long timestamp) {
+		return correctTime("17", timestamp) || correctTime("18", timestamp)
+				|| correctTime("19", timestamp);
+	}
+
+	static boolean correctNightTime(long timestamp) {
+		return !correctMorningTime(timestamp) && !correctDayTime(timestamp)
+				&& !correctEveningTime(timestamp);
+	}
+
+	private static boolean correctTime(String time, long timestamp) {
+		return Utils.convertTimestampToDate(timestamp).substring(11, 13)
+				.equals(time);
+	}
+
+	public static ArrayList<Trip> getTripsOfCertainTime(
+			Function<Long, Boolean> correctTime, File tripsFolder) {
+		ArrayList<Trip> trips = Trip.extractTripsFromFolder(tripsFolder);
+		ArrayList<Trip> tripsOfCertainTime = new ArrayList<Trip>();
+
+		for (Trip trip : trips) {
+			if (correctTime.apply(trip.firstPoint().timestamp)) {
+				tripsOfCertainTime.add(trip);
 			}
 		}
-	}
 
-	public static void evaluateRoute(String[] args)
-			throws ProjectSpecificException {
-		Utils.checkCommandLineArguments(args, "file", "folder", "file");
-		Route route = new Route(new File(args[0]));
-		File tripsFolder = new File(args[1]);
-		BufferedWriter writer = Utils.writer(args[2]);
-
-		for (int stop = 0; stop < route.busStops.size() - 1; stop++) {
-			System.out.println("For stop number " + stop + " results are:");
-			evaluateRoute(route, tripsFolder, stop, writer);
-		}
+		return tripsOfCertainTime;
 	}
 
 	public static Trip upToStop(int upToNumber, Trip trip, Route route) {
@@ -71,60 +107,18 @@ class PredictionEvaluator {
 				+ route.busStops.get(upToNumber).name + " for " + trip.name);
 	}
 
-	/* Computes various statistics for the arrival time to last stop */
-	public static void evaluateRoute(Route route, File tripsFolder,
-			int fromStopNumber, BufferedWriter writer)
-					throws ProjectSpecificException {
-		Utils.writeLine(writer,
-				"Predicting when trips will reach " + route.lastStop().name
-						+ " (nr. " + route.busStops.size() + ") from "
-						+ route.busStops.get(fromStopNumber).name + " (nr. "
-						+ (fromStopNumber + 1) + ")");
+	static void removeTrip(ArrayList<Trip> trips, int removeIndex) {
+		trips.set(removeIndex, trips.get(trips.size() - 1));
+		trips.remove(trips.size() - 1);
+	}
 
-		ArrayList<Trip> trips = Trip.extractTripsFromFolder(tripsFolder);
-		ArrayList<Trip> shortTrips = new ArrayList<Trip>();
-		for (Trip trip : trips) {
-			shortTrips.add(upToStop(fromStopNumber, trip, route));
+	static void addTripBack(ArrayList<Trip> trips, Trip trip, int setIndex) {
+		if (setIndex == trips.size()) {
+			trips.add(trip);
+		} else {
+			trips.add(trips.get(setIndex));
+			trips.set(setIndex, trip);
 		}
-
-		long difference = 0;
-		long delaysSum = 0;
-		for (int t = trips.size() - 1; t >= 0; t--) {
-			Trip historicalTrip = trips.get(t);
-			trips.remove(t);
-
-			long predictedTimestamp = ArrivalTimePredictor.makePrediction(
-					route.lastStop(), shortTrips.get(t),
-					trips).predictedTimestamp;
-			long actualTimestamp = PredictionEvaluator.lastStopTimestamp(route,
-					historicalTrip);
-			long predictionError = Math
-					.abs(actualTimestamp - predictedTimestamp);
-
-			Utils.writeLine(writer,
-					historicalTrip.name + " started at "
-							+ Utils.convertTimestampToDate(
-									shortTrips.get(t).lastPoint().timestamp)
-					+ ", was predicted for "
-					+ Utils.convertTimestampToDate(predictedTimestamp)
-					+ ", actually arrived at "
-					+ Utils.convertTimestampToDate(actualTimestamp)
-					+ ", prediction error is "
-					+ (actualTimestamp - predictedTimestamp));
-
-			difference += predictionError;
-			delaysSum += actualTimestamp
-					- shortTrips.get(t).lastPoint().timestamp;
-			trips.add(historicalTrip);
-		}
-
-		Utils.writeLine(writer, "MAE = " + difference / trips.size());
-		Utils.writeLine(writer, "");
-
-		System.out.println("MAE = " + difference / trips.size());
-		System.out.println("Delay = " + delaysSum / trips.size());
-		System.out.println("Prediction count = " + trips.size());
-		System.out.println();
 	}
 
 	static long lastStopTimestamp(Route route, Trip trip)
@@ -136,6 +130,86 @@ class PredictionEvaluator {
 		}
 		throw new ProjectSpecificException(
 				"No point passed through last stop for " + trip.name);
+	}
+
+	public static void evaluateRouteForCertainTime(
+			Function<Long, Boolean> correctTime, Route route, File tripsFolder,
+			BufferedWriter writer) throws ProjectSpecificException {
+		ArrayList<Trip> trips = getTripsOfCertainTime(correctTime, tripsFolder);
+		System.out.println("Will evaluate for route " + route.name + " using "
+				+ trips.size() + " trips.");
+
+		for (int stop = 0; stop < route.busStops.size() - 1; stop++) {
+			System.out.println("Evaluating for stop nr. " + stop);
+			Utils.writeLine(writer, "From stop nr. " + stop);
+			Utils.writeLine(writer, route.busStops.get(stop).name);
+			if (trips.size() < 30) {
+				Utils.writeLine(writer, "not enough trips");
+				Utils.writeLine(writer, "");
+			} else {
+				evaluateRoute(route, trips, stop, writer);
+			}
+		}
+	}
+
+	/* Computes various statistics for the arrival time to the last stop */
+	public static void evaluateRoute(Route route, ArrayList<Trip> trips,
+			int stop, BufferedWriter writer) throws ProjectSpecificException {
+		ArrayList<Trip> shortTrips = new ArrayList<Trip>();
+		for (Trip trip : trips) {
+			shortTrips.add(upToStop(stop, trip, route));
+		}
+
+		long difference = 0;
+		long delaysSum = 0;
+		for (int t = trips.size() - 1; t >= 0; t--) {
+			Trip trip = trips.get(t);
+			removeTrip(trips, t);
+
+			long predictedTimestamp = ArrivalTimePredictor.makePrediction(
+					route.lastStop(), shortTrips.get(t),
+					trips).predictedTimestamp;
+			long actualTimestamp = PredictionEvaluator.lastStopTimestamp(route,
+					trip);
+			long predictionError = Math
+					.abs(actualTimestamp - predictedTimestamp);
+			difference += predictionError;
+			delaysSum += actualTimestamp
+					- shortTrips.get(t).lastPoint().timestamp;
+
+			addTripBack(trips, trip, t);
+		}
+
+		Utils.writeLine(writer, "MAE = " + difference / trips.size());
+		Utils.writeLine(writer, "ATT = " + delaysSum / trips.size());
+		Utils.writeLine(writer, "");
+	}
+
+	public static void produceCsvForPlotting() throws ProjectSpecificException {
+		Scanner scanner = Utils.csvScanner(new File("uk/counts.csv"));
+		scanner.nextLine();
+
+		int[][] errorCount = new int[7][2000];
+		while (scanner.hasNext()) {
+			errorCount[scanner.nextInt()][scanner.nextInt()]++;
+		}
+
+		BufferedWriter writer = Utils.writer("uk/plot.csv");
+		Utils.writeLine(writer, "stop_number,error,count");
+		for (int i = 0; i < 7; i++) {
+			for (int error = 0; error < 2000; error++) {
+				if (errorCount[i][error] > 0) {
+					Utils.writeLine(writer,
+							i + "," + error + "," + errorCount[i][error]);
+				}
+			}
+		}
+
+		try {
+			writer.close();
+		} catch (IOException exception) {
+			throw new RuntimeException(exception);
+		}
 	}
 
 }

@@ -32,7 +32,6 @@ class HistoryIntoTripsSplitter {
 		for (File travelHistoryFile : travelHistoryFiles) {
 			extractTripsFromTravelHistoryFile(travelHistoryFile, outputFolder);
 		}
-
 	}
 
 	// TODO(ml693): use Utils.SAME_PLACE field instead
@@ -217,13 +216,15 @@ class HistoryIntoTripsSplitter {
 					Utils.convertDateToTimestamp(gpsInput.next()),
 					gpsInput.nextDouble(), gpsInput.nextDouble());
 
-			if (newPoint.timestamp - currentTimestamp > CONSECUTIVE_POINTS_TIME_DIFFERENCE_LIMIT
+			if (newPoint.timestamp
+					- currentTimestamp > CONSECUTIVE_POINTS_TIME_DIFFERENCE_LIMIT
 					|| busJumpedUnrealisticDistance(currentPoint, newPoint)) {
 				if (flushGpsPoints(points, travelHistoryFile,
 						extractedTripsCount, outputFolder)) {
 					extractedTripsCount++;
 				}
 				points = new ArrayList<GpsPoint>();
+				currentPoint = newPoint;
 			}
 
 			if (busMovedSignificantDistance(points, currentPoint, newPoint)) {
@@ -255,5 +256,4 @@ class HistoryIntoTripsSplitter {
 		}
 		System.out.println("Extracted " + extractedTripsCount + " trips.");
 	}
-
 }

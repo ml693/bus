@@ -102,53 +102,52 @@ public class RoutesExtractor {
 		stopsInput.close();
 	}
 
-	static void readRouteFromNaptanFile(File routeFile, File folderToSaveRoute)
-			throws IOException {
-		final String stopPointRef = "<StopPointRef>";
-		final String annotatedRefOpen = "<AnnotatedStopPointRef>";
-		final String annotatedRefClose = "</AnnotatedStopPointRef>";
+	static String constructNewRoute(BufferedReader stopsInput,
+			File folderToSaveRoute) throws IOException {
+		final String stopPointRefOpen = "<StopPointRef>";
+		final String stopPointRefClose = "</StopPointRef>";
 
-		BufferedReader stopsInput = new BufferedReader(
-				new FileReader(routeFile));
 		String line = stopsInput.readLine();
-		String fileName = routeFile.getName();
-		Route route = new Route(
-				fileName.substring(0,
-						fileName.length() - 4 /* to remove .xml part */),
-				new ArrayList<BusStop>());
+		while (!line.contains("<JourneyPatternSection ")) {
+			line = stopsInput.readLine();
+		}
 
-		while (line != null) {
-			/* Searching for next stop */
-			while (!line.contains(stopPointRef)) {
-				line = stopsInput.readLine();
-			}
-			/* 6 and 15 is the length of spaces in that line */
-			String code = line.substring(6 + stopPointRef.length(),
-					line.length() - 15);
-			route.busStops.add(busStopsFromNaptanData.get(code));
+		Route route = new Route(line, new ArrayList<BusStop>());
+		boolean add = true;
 
-			/* Checking whether route has a new stop */
-			while (!line.contains(annotatedRefClose)) {
-				line = stopsInput.readLine();
-			}
-			if (!stopsInput.readLine().contains(annotatedRefOpen)) {
-				/* Case when route has no new stops */
-				break;
+		while (!line.contains("</JourneyPatternSection>")) {
+			line = stopsInput.readLine();
+			if (line.contains(stopPointRefOpen)) {
+				String code = line.substring(10 + stopPointRefOpen.length(),
+						line.length() - stopPointRefClose.length());
+				System.out.println(code);
+				if (add) {
+					route.busStops.add(busStopsFromNaptanData.get(code));
+				}
+				add = !add;
 			}
 		}
-		stopsInput.close();
 
 		System.out.println("Route " + route.name + " consists of "
 				+ route.busStops.size() + " stops.");
+		route.writeToFolder(folderToSaveRoute);
+		return stopsInput.readLine();
+	}
 
-		String serializedRoute = route.serialize();
-		if (!duplicateRoute.contains(serializedRoute)) {
-			duplicateRoute.add(serializedRoute);
-			route.writeToFolder(folderToSaveRoute);
-		} else {
-			System.out.println("Duplicate " + route.name + " found!");
+	static void readRouteFromNaptanFile(File routeFile, File folderToSaveRoute)
+			throws IOException {
+		BufferedReader stopsInput = new BufferedReader(
+				new FileReader(routeFile));
+		String line = stopsInput.readLine();
+
+		while (!line.contains("<JourneyPatternSections>")) {
+			line = stopsInput.readLine();
 		}
 
+		while (!line.contains("</JourneyPatternSections>")) {
+			line = constructNewRoute(stopsInput, folderToSaveRoute);
+		}
+		stopsInput.close();
 	}
 
 	static void readBusStopsFromOldFile(File stopsFile) throws IOException {
