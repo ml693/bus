@@ -34,8 +34,8 @@ class Prediction {
 	void appendToFile(File file, long actualArrivalTimestamp) {
 		String predictionLine = name + ","
 				+ Utils.convertTimestampToDate(predictionTimestamp) + ","
-				+ Utils.convertTimestampToDate(actualArrivalTimestamp) + ","
-				+ (actualArrivalTimestamp - predictedTimestamp);
+				+ Utils.convertTimestampToDate(predictedTimestamp) + ","
+				+ Utils.convertTimestampToDate(actualArrivalTimestamp);
 		Utils.appendLineToFile(file, predictionLine);
 	}
 

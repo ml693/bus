@@ -57,7 +57,7 @@ class GpsRealTimeInputWatcher {
 		this.pathsFolder = pathsFolder;
 		this.loggingFile = loggingFile;
 		Utils.appendLineToFile(loggingFile,
-				"name,prediction_timestamp,actual_arrival_timestamp,prediction_error");
+				"name,prediction_timestamp,predicted_timestamp,actual_arrival_timestamp");
 	}
 
 	WatchService realTimeJsonFolderWatcher() {
@@ -156,6 +156,7 @@ class GpsRealTimeInputWatcher {
 		if (!vehicleFollowsRoute.containsKey(trip.name)
 				&& searchesPerformed < MAX_NUMBER_OF_SEARCHES_IN_ONE_ITERATION
 				&& Utils.randomBit()) {
+			searchesPerformed++;
 			ArrayList<Trip> paths = Trip.extractTripsFromFolder(pathsFolder);
 			for (Trip path : paths) {
 				if (PathDetector.tripFollowsPath(trip, path)) {
@@ -168,7 +169,6 @@ class GpsRealTimeInputWatcher {
 			}
 		}
 
-		searchesPerformed++;
 		return vehicleFollowsRoute.get(trip.name);
 	}
 
@@ -248,7 +248,7 @@ class GpsRealTimeInputWatcher {
 		System.out.println("Handled new GPS point.");
 		System.out.println("searchesPerformed = " + searchesPerformed);
 		searchesPerformed = 0;
-		System.out.println("routeFound = " + routeFoundFor);
+		System.out.println("routeFoundFor = " + routeFoundFor);
 	}
 
 }
