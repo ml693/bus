@@ -32,7 +32,7 @@ class Prediction {
 	 * day18_bus14365_subtrip0,2016-01-18 13:45:46,2016-01-18 13:52:06,-100
 	 */
 	void appendToFile(File file, long actualArrivalTimestamp) {
-		String predictionLine = name + ","
+		String predictionLine = name + "," + busStop.name + ","
 				+ Utils.convertTimestampToDate(predictionTimestamp) + ","
 				+ Utils.convertTimestampToDate(predictedTimestamp) + ","
 				+ Utils.convertTimestampToDate(actualArrivalTimestamp);

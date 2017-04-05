@@ -57,7 +57,7 @@ class GpsRealTimeInputWatcher {
 		this.pathsFolder = pathsFolder;
 		this.loggingFile = loggingFile;
 		Utils.appendLineToFile(loggingFile,
-				"name,prediction_timestamp,predicted_timestamp,actual_arrival_timestamp");
+				"trip_name,from_stop_name,prediction_timestamp,predicted_timestamp,actual_arrival_timestamp");
 	}
 
 	WatchService realTimeJsonFolderWatcher() {
