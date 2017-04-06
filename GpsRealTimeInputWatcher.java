@@ -234,10 +234,12 @@ class GpsRealTimeInputWatcher {
 
 	private void flushPredictions(Trip trip) {
 		Prediction[] predictions = lastStopPredictions.get(trip.name);
-		for (Prediction prediction : predictions) {
-			if (prediction != null) {
-				prediction.appendToFile(loggingFile,
-						trip.lastPoint().timestamp);
+		if (predictions != null) {
+			for (Prediction prediction : predictions) {
+				if (prediction != null) {
+					prediction.appendToFile(loggingFile,
+							trip.lastPoint().timestamp);
+				}
 			}
 		}
 	}
@@ -260,7 +262,7 @@ class GpsRealTimeInputWatcher {
 			if (route == null) {
 				continue;
 			}
-			
+
 			if (endOfRouteReached(trip, route)) {
 				flushPredictions(trip);
 				removeVehicle(vehicleId);
@@ -271,6 +273,7 @@ class GpsRealTimeInputWatcher {
 				removeVehicle(vehicleId);
 				continue;
 			}
+			routeFoundFor++;
 
 			int recentStopIndex = nextStopIndex(trip) - 1;
 			if (route.busStops.get(recentStopIndex).atStop(trip.lastPoint())) {
@@ -284,6 +287,10 @@ class GpsRealTimeInputWatcher {
 				prediction.fromStopIndex = recentStopIndex;
 				prediction.toStopIndex = route.busStops.size() - 1;
 
+				if (!lastStopPredictions.containsKey(vehicleId)) {
+					lastStopPredictions.put(vehicleId,
+							new Prediction[route.busStops.size()]);
+				}
 				lastStopPredictions
 						.get(vehicleId)[recentStopIndex] = prediction;
 			}
