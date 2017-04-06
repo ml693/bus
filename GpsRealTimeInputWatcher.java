@@ -122,14 +122,14 @@ class GpsRealTimeInputWatcher {
 	Trip getTrip(String vehicleId) throws ProjectSpecificException {
 		ArrayList<GpsPoint> points = BusTravelHistoryExtractor.allHistories
 				.get(vehicleId);
-		if (points.size() < Trip.MINIMUM_NUMBER_OF_GPS_POINTS) {
+		if (points.size() < 2 * Trip.MINIMUM_NUMBER_OF_GPS_POINTS) {
 			return null;
 		}
 		new Trip(vehicleId, points).writeToFolder(new File("logging"));
 
 		return new Trip(vehicleId,
 				new ArrayList<GpsPoint>(points.subList(
-						points.size() - Trip.MINIMUM_NUMBER_OF_GPS_POINTS,
+						points.size() - 2 * Trip.MINIMUM_NUMBER_OF_GPS_POINTS,
 						points.size())));
 	}
 
