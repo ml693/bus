@@ -80,11 +80,11 @@ class GpsRealTimeInputWatcher {
 
 		while (true) {
 			try {
-				// When new file arrives
+				// When the new file arrives
 				WatchKey watchKey = watchService.take();
 				watchKey.pollEvents();
 				/*
-				 * Sleeping because of some bug when locking files. The
+				 * Sleeping because of some bug when locking the files. The
 				 * String from file is null, although the file should not be
 				 * empty. TODO(ml693): solve the bug, then remove the sleep.
 				 */
@@ -102,7 +102,7 @@ class GpsRealTimeInputWatcher {
 							.listFiles()[0]);
 				}
 
-				// Finally unlock real time input directory
+				// Finally unlock the real time input directory
 				if (lock != null) {
 					lock.release();
 				}
@@ -122,14 +122,14 @@ class GpsRealTimeInputWatcher {
 	Trip getTrip(String vehicleId) throws ProjectSpecificException {
 		ArrayList<GpsPoint> points = BusTravelHistoryExtractor.allHistories
 				.get(vehicleId);
-		if (points.size() < Trip.MINIMUM_NUMBER_OF_GPS_POINTS * 2) {
+		if (points.size() < Trip.MINIMUM_NUMBER_OF_GPS_POINTS) {
 			return null;
 		}
 		new Trip(vehicleId, points).writeToFolder(new File("logging"));
 
 		return new Trip(vehicleId,
 				new ArrayList<GpsPoint>(points.subList(
-						points.size() - Trip.MINIMUM_NUMBER_OF_GPS_POINTS * 2,
+						points.size() - Trip.MINIMUM_NUMBER_OF_GPS_POINTS,
 						points.size())));
 	}
 
@@ -263,6 +263,9 @@ class GpsRealTimeInputWatcher {
 				continue;
 			}
 
+			System.out.println(trip.name + " follows " + route.name);
+			trip.writeToFolder(new File("debug"));
+
 			if (endOfRouteReached(trip, route)) {
 				flushPredictions(trip);
 				removeVehicle(vehicleId);
@@ -270,6 +273,7 @@ class GpsRealTimeInputWatcher {
 			}
 
 			if (tripDeviatedFromRoute(trip, route)) {
+				System.out.println(trip.name + " deviated from " + route.name);
 				removeVehicle(vehicleId);
 				continue;
 			}
@@ -284,6 +288,7 @@ class GpsRealTimeInputWatcher {
 				Prediction prediction = ArrivalTimePredictor.makePrediction(
 						route.lastStop(), trip, historicalTrips);
 				prediction.predictionTimestamp = trip.lastPoint().timestamp;
+				prediction.route = route;
 				prediction.fromStopIndex = recentStopIndex;
 				prediction.toStopIndex = route.busStops.size() - 1;
 
