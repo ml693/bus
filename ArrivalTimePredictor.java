@@ -13,11 +13,8 @@ public class ArrivalTimePredictor {
 			ArrayList<Trip> historicalTrips) throws ProjectSpecificException {
 		ArrayList<Prediction> predictions = generatePredictions(tripToPredict,
 				historicalTrips, busStop);
-		long predictedTimestamp = calculateAverageArrivalTime(
-				tripToPredict.name, predictions);
-		return new Prediction(predictedTimestamp,
-				tripToPredict.lastPoint().timestamp, false, false, busStop,
-				tripToPredict.name);
+		long predictedTimestamp = calculateAverageArrivalTime(predictions);
+		return new Prediction(predictedTimestamp);
 	}
 
 	/*
@@ -114,9 +111,10 @@ public class ArrivalTimePredictor {
 			boolean equallyCongested = equallyCongested(trip, historicalTrip);
 			long predictedTimestamp = generateFuturePrediction(trip,
 					historicalTrip, busStop);
-			predictions.add(new Prediction(predictedTimestamp,
-					trip.lastPoint().timestamp, recent, equallyCongested,
-					busStop, historicalTrip.name));
+			Prediction prediction = new Prediction(predictedTimestamp);
+			prediction.equallyCongested = equallyCongested;
+			prediction.recent = recent;
+			predictions.add(prediction);
 		}
 
 		return predictions;
@@ -128,7 +126,7 @@ public class ArrivalTimePredictor {
 		return arrivalTimestamps.get(arrivalTimestamps.size() / 2);
 	}
 
-	private static long calculateAverageArrivalTime(String tripName,
+	private static long calculateAverageArrivalTime(
 			ArrayList<Prediction> predictions) throws ProjectSpecificException {
 		ArrayList<Long> oldDifferentlyCongested = new ArrayList<Long>();
 		ArrayList<Long> oldEquallyCongested = new ArrayList<Long>();

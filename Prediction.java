@@ -3,27 +3,29 @@ package bus;
 import java.io.File;
 
 class Prediction {
+	/*
+	 * The time we predict the bus will arrive at the stop. This is the most
+	 * important class field, hence I am making it final and enforcing
+	 * constructor to accept it. All other fields are optional.
+	 */
 	final long predictedTimestamp;
+
 	/* The timestamp at which the prediction is made */
-	final long predictionTimestamp;
+	long predictionTimestamp;
 
 	/* Boolean fields are used only to calculate the average prediction. */
-	final boolean recent;
-	final boolean equallyCongested;
+	boolean recent;
+	boolean equallyCongested;
 
-	/* The stop for which I am predicting */
-	final BusStop busStop;
-	final String name;
+	/* The route for which I am predicting */
+	Route route;
+	/* From which stop I am predicting the arrival time */
+	int fromStopIndex;
+	/* To which stop I am predicting the arrival time */
+	int toStopIndex;
 
-	Prediction(long predictedTimestamp, long predictionTimestamp,
-			boolean recent, boolean equallyCongested, BusStop busStop,
-			String predictionName) {
+	Prediction(long predictedTimestamp) {
 		this.predictedTimestamp = predictedTimestamp;
-		this.predictionTimestamp = predictionTimestamp;
-		this.recent = recent;
-		this.equallyCongested = equallyCongested;
-		this.busStop = busStop;
-		this.name = predictionName;
 	}
 
 	/*
@@ -32,7 +34,8 @@ class Prediction {
 	 * day18_bus14365_subtrip0,2016-01-18 13:45:46,2016-01-18 13:52:06,-100
 	 */
 	void appendToFile(File file, long actualArrivalTimestamp) {
-		String predictionLine = name + "," + busStop.name + ","
+		String predictionLine = route.name + "," + fromStopIndex + ","
+				+ toStopIndex + ","
 				+ Utils.convertTimestampToDate(predictionTimestamp) + ","
 				+ Utils.convertTimestampToDate(predictedTimestamp) + ","
 				+ Utils.convertTimestampToDate(actualArrivalTimestamp);

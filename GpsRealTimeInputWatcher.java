@@ -29,7 +29,9 @@ class GpsRealTimeInputWatcher {
 
 	private final HashMap<String /* vehicleId */, Route> vehicleFollowsRoute = new HashMap<String, Route>();
 	private final HashMap<String /* vehicleId */, Trip /* path */> vehicleFollowsPath = new HashMap<String, Trip>();
-	private final HashMap<String /* vehicleId */, Prediction[]> currentPredictions = new HashMap<String, Prediction[]>();
+	private final HashMap<String /* vehicleId */, Prediction[]> lastStopPredictions = new HashMap<String, Prediction[]>();
+
+	private final HashMap<String /* vehicleId */, Prediction> nextStopPrediction = new HashMap<String, Prediction>();
 
 	/*
 	 * Real time GPS data is transmitted every 30s. This program sleeps, wakes
@@ -57,7 +59,7 @@ class GpsRealTimeInputWatcher {
 		this.pathsFolder = pathsFolder;
 		this.loggingFile = loggingFile;
 		Utils.appendLineToFile(loggingFile,
-				"trip_name,from_stop_name,prediction_timestamp,predicted_timestamp,actual_arrival_timestamp");
+				"route_name,from_stop_index,to_stop_index,prediction_timestamp,predicted_timestamp,actual_arrival_timestamp");
 	}
 
 	WatchService realTimeJsonFolderWatcher() {
@@ -139,7 +141,7 @@ class GpsRealTimeInputWatcher {
 		int closestPointIndex = ArrivalTimePredictor
 				.closestPointIndex(recentTrip.lastPoint(), path);
 		for (int p = closestPointIndex + 1; p < path.gpsPoints.size(); p++) {
-			for (int stopIndex = 0; stopIndex < route.busStops
+			for (int stopIndex = 1; stopIndex < route.busStops
 					.size(); stopIndex++) {
 				BusStop busStop = route.busStops.get(stopIndex);
 				if (busStop.atStop(path.gpsPoints.get(p))
@@ -163,11 +165,14 @@ class GpsRealTimeInputWatcher {
 			ArrayList<Trip> paths = Trip.extractTripsFromFolder(pathsFolder);
 			for (Trip path : paths) {
 				if (PathDetector.tripFollowsPath(trip, path)) {
-					System.out.println(trip.name + " follows " + path.name);
-					vehicleFollowsRoute.put(trip.name, new Route(new File(
-							routesFolder.getName() + "/" + path.name)));
-					vehicleFollowsPath.put(trip.name, path);
-					break;
+					Route route = new Route(
+							new File(routesFolder.getName() + "/" + path.name));
+					if (route.lastStop().atStop(trip.lastPoint())) {
+						System.out.println(trip.name + " on " + route.name);
+						vehicleFollowsRoute.put(trip.name, route);
+						vehicleFollowsPath.put(trip.name, path);
+						break;
+					}
 				}
 			}
 		}
@@ -175,34 +180,64 @@ class GpsRealTimeInputWatcher {
 		return vehicleFollowsRoute.get(trip.name);
 	}
 
-	private boolean needNewPrediction(Trip trip, Route route, int stopIndex) {
-		if (currentPredictions.containsKey(trip.name)) {
-			Prediction[] predictions = currentPredictions.get(trip.name);
-			if (predictions[stopIndex] == null) {
-				return true;
-			}
+	private void removeVehicle(String vehicleId) {
+		vehicleFollowsRoute.remove(vehicleId);
+		vehicleFollowsPath.remove(vehicleId);
+		lastStopPredictions.remove(vehicleId);
+		nextStopPrediction.remove(vehicleId);
+	}
 
-			if (predictions[stopIndex].busStop.atStop(trip.lastPoint())) {
-				predictions[stopIndex].appendToFile(loggingFile,
-						trip.lastPoint().timestamp);
-				predictions[stopIndex] = null;
-				return true;
-			}
+	private boolean tripDeviatedFromRoute(Trip trip, Route route) {
+		Prediction currentPrediction = nextStopPrediction.get(trip.name);
 
-			long allowedErrorDifference = trip.lastPoint().timestamp
-					- predictions[stopIndex].predictionTimestamp;
-			if ((trip.lastPoint().timestamp
-					- predictions[stopIndex].predictedTimestamp) > allowedErrorDifference) {
-				predictions[stopIndex].appendToFile(loggingFile, -1);
-				predictions[stopIndex] = null;
-				return true;
+		/* If there is no prediction, I first make one. */
+		if (currentPrediction == null) {
+			int nextStopIndex = nextStopIndex(trip);
+
+			ArrayList<Trip> historicalTrips = Trip.extractTripsFromFolder(
+					new File(tripsFolder.getName() + "/" + route.name));
+			try {
+				Prediction newPrediction = ArrivalTimePredictor.makePrediction(
+						route.busStops.get(nextStopIndex), trip,
+						historicalTrips);
+				newPrediction.route = route;
+				newPrediction.fromStopIndex = -1;
+				newPrediction.toStopIndex = nextStopIndex;
+				newPrediction.predictionTimestamp = trip.lastPoint().timestamp;
+				nextStopPrediction.put(trip.name, newPrediction);
+			} catch (ProjectSpecificException exception) {
+				throw new RuntimeException(exception);
 			}
 
 			return false;
 		}
-		currentPredictions.put(trip.name,
-				new Prediction[route.busStops.size()]);
-		return true;
+
+		if (currentPrediction.route.busStops.get(currentPrediction.toStopIndex)
+				.atStop(trip.lastPoint())) {
+			currentPrediction.appendToFile(loggingFile,
+					trip.lastPoint().timestamp);
+			nextStopPrediction.remove(trip.name);
+			return false;
+		}
+
+		return Math.abs(trip.lastPoint().timestamp
+				- currentPrediction.predictionTimestamp) < 4
+						* Math.abs(currentPrediction.predictedTimestamp
+								- currentPrediction.predictionTimestamp);
+	}
+
+	private boolean endOfRouteReached(Trip trip, Route route) {
+		return route.lastStop().atStop(trip.lastPoint());
+	}
+
+	private void flushPredictions(Trip trip) {
+		Prediction[] predictions = lastStopPredictions.get(trip.name);
+		for (Prediction prediction : predictions) {
+			if (prediction != null) {
+				prediction.appendToFile(loggingFile,
+						trip.lastPoint().timestamp);
+			}
+		}
 	}
 
 	private void processNewGpsInput(File jsonFile)
@@ -214,37 +249,41 @@ class GpsRealTimeInputWatcher {
 		// For each bus we want to make a prediction
 		for (String vehicleId : BusTravelHistoryExtractor.allHistories
 				.keySet()) {
-			Trip vehicleTrip = getTrip(vehicleId);
-			if (vehicleTrip == null) {
+			Trip trip = getTrip(vehicleId);
+			if (trip == null) {
 				continue;
 			}
 
-			Route routeFollowed = routeFollowedByTrip(vehicleTrip);
-			if (routeFollowed == null) {
+			Route route = routeFollowedByTrip(trip);
+			if (route == null) {
 				continue;
 			}
 
-			int nextStopIndex = nextStopIndex(vehicleTrip);
-			if (nextStopIndex == routeFollowed.busStops.size()) {
-				System.out.println(vehicleId + " arrived at the last stop.");
-				vehicleFollowsRoute.remove(vehicleId);
-				vehicleFollowsPath.remove(vehicleId);
-				currentPredictions.remove(vehicleId);
+			if (tripDeviatedFromRoute(trip, route)) {
+				removeVehicle(vehicleId);
 				continue;
 			}
-			routeFoundFor++;
 
-			System.out.println("Predicting for " + vehicleTrip.name);
-			ArrayList<Trip> historicalTrips = Trip.extractTripsFromFolder(
-					new File(tripsFolder.getName() + "/" + routeFollowed.name));
-			for (int stopIndex = nextStopIndex; stopIndex < routeFollowed.busStops
-					.size(); stopIndex++) {
-				if (needNewPrediction(vehicleTrip, routeFollowed, stopIndex)) {
-					Prediction prediction = ArrivalTimePredictor.makePrediction(
-							routeFollowed.busStops.get(stopIndex), vehicleTrip,
-							historicalTrips);
-					currentPredictions.get(vehicleId)[stopIndex] = prediction;
-				}
+			if (endOfRouteReached(trip, route)) {
+				flushPredictions(trip);
+				removeVehicle(vehicleId);
+				continue;
+			}
+
+			int recentStopIndex = nextStopIndex(trip) - 1;
+			if (route.busStops.get(recentStopIndex).atStop(trip.lastPoint())) {
+				System.out.println("Predicting for " + trip.name);
+				ArrayList<Trip> historicalTrips = Trip.extractTripsFromFolder(
+						new File(tripsFolder.getName() + "/" + route.name));
+
+				Prediction prediction = ArrivalTimePredictor.makePrediction(
+						route.lastStop(), trip, historicalTrips);
+				prediction.predictionTimestamp = trip.lastPoint().timestamp;
+				prediction.fromStopIndex = recentStopIndex;
+				prediction.toStopIndex = route.busStops.size() - 1;
+
+				lastStopPredictions
+						.get(vehicleId)[recentStopIndex] = prediction;
 			}
 		}
 
@@ -253,5 +292,4 @@ class GpsRealTimeInputWatcher {
 		searchesPerformed = 0;
 		System.out.println("routeFoundFor = " + routeFoundFor);
 	}
-
 }
