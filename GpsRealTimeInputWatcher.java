@@ -30,7 +30,6 @@ class GpsRealTimeInputWatcher {
 	private final HashMap<String /* vehicleId */, Route> vehicleFollowsRoute = new HashMap<String, Route>();
 	private final HashMap<String /* vehicleId */, Trip /* path */> vehicleFollowsPath = new HashMap<String, Trip>();
 	private final HashMap<String /* vehicleId */, Prediction[]> lastStopPredictions = new HashMap<String, Prediction[]>();
-
 	private final HashMap<String /* vehicleId */, Prediction> nextStopPrediction = new HashMap<String, Prediction>();
 
 	/*
@@ -193,6 +192,9 @@ class GpsRealTimeInputWatcher {
 		/* If there is no prediction, I first make one. */
 		if (currentPrediction == null) {
 			int nextStopIndex = nextStopIndex(trip);
+			if (nextStopIndex == route.busStops.size()) {
+				return true;
+			}
 
 			ArrayList<Trip> historicalTrips = Trip.extractTripsFromFolder(
 					new File(tripsFolder.getName() + "/" + route.name));
@@ -258,14 +260,14 @@ class GpsRealTimeInputWatcher {
 			if (route == null) {
 				continue;
 			}
-
-			if (tripDeviatedFromRoute(trip, route)) {
+			
+			if (endOfRouteReached(trip, route)) {
+				flushPredictions(trip);
 				removeVehicle(vehicleId);
 				continue;
 			}
 
-			if (endOfRouteReached(trip, route)) {
-				flushPredictions(trip);
+			if (tripDeviatedFromRoute(trip, route)) {
 				removeVehicle(vehicleId);
 				continue;
 			}
