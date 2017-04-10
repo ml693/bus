@@ -125,7 +125,6 @@ class GpsRealTimeInputWatcher {
 		if (points.size() < 2 * Trip.MINIMUM_NUMBER_OF_GPS_POINTS) {
 			return null;
 		}
-		new Trip(vehicleId, points).writeToFolder(new File("logging"));
 
 		return new Trip(vehicleId,
 				new ArrayList<GpsPoint>(points.subList(
