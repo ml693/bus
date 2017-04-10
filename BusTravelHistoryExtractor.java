@@ -107,12 +107,18 @@ public class BusTravelHistoryExtractor {
 						+ extractVehicleId(busSnapshotTextEntry);
 
 				GpsPoint gpsPoint = new GpsPoint(busSnapshotTextEntry);
-				/* And store info into the map */
-				if (!allHistories.containsKey(key)) {
-					allHistories.put(key, new ArrayList<GpsPoint>());
-				}
+				/* And store info to the map */
 				if (gpsPoint.latitude != 0.0 || gpsPoint.longitude != 0.0) {
-					allHistories.get(key).add(gpsPoint);
+					if (!allHistories.containsKey(key)) {
+						allHistories.put(key, new ArrayList<GpsPoint>());
+						allHistories.get(key).add(gpsPoint);
+					} else {
+						ArrayList<GpsPoint> points = allHistories.get(key);
+						GpsPoint lastPoint = points.get(points.size());
+						if (!Utils.samePlace(lastPoint, gpsPoint)) {
+							points.add(gpsPoint);
+						}
+					}
 				}
 			}
 
