@@ -27,24 +27,33 @@ class PredictionEvaluator {
 
 			BufferedWriter writer = Utils.writer(args[2] + "/" + route.name);
 
-			Utils.writeLine(writer, "The morning rush hour");
-			evaluateRouteForCertainTime(t -> correctMorningTime(t), route,
-					tripsFolder, writer);
+			Utils.writeLine(writer, "All times");
+			evaluateRouteForCertainTime(t -> true, route, tripsFolder, writer);
 			Utils.writeLine(writer, "");
-			Utils.writeLine(writer, "The working hours");
-			evaluateRouteForCertainTime(t -> correctDayTime(t), route,
-					tripsFolder, writer);
-			Utils.writeLine(writer, "");
-			Utils.writeLine(writer, "The evening rush hour");
-			evaluateRouteForCertainTime(t -> correctEveningTime(t), route,
-					tripsFolder, writer);
-			Utils.writeLine(writer, "");
-			Utils.writeLine(writer, "The night time");
-			evaluateRouteForCertainTime(t -> correctNightTime(t), route,
-					tripsFolder, writer);
-
+			/*
+			 * Utils.writeLine(writer, "The morning rush hour");
+			 * evaluateRouteForCertainTime(t -> correctMorningTime(t), route,
+			 * tripsFolder, writer);
+			 * Utils.writeLine(writer, "");
+			 * 
+			 * Utils.writeLine(writer, "The working hours");
+			 * evaluateRouteForCertainTime(t -> correctDayTime(t), route,
+			 * tripsFolder, writer);
+			 * Utils.writeLine(writer, "");
+			 * 
+			 * Utils.writeLine(writer, "The evening rush hour");
+			 * evaluateRouteForCertainTime(t -> correctEveningTime(t), route,
+			 * tripsFolder, writer);
+			 * Utils.writeLine(writer, "");
+			 * 
+			 * Utils.writeLine(writer, "The night time");
+			 * evaluateRouteForCertainTime(t -> correctNightTime(t), route,
+			 * tripsFolder, writer);
+			 */
 			writer.close();
 		}
+
+		System.out.println("Terminated.");
 	}
 
 	static boolean correctMorningTime(long timestamp) {
@@ -138,13 +147,16 @@ class PredictionEvaluator {
 		ArrayList<Trip> trips = getTripsOfCertainTime(correctTime, tripsFolder);
 		System.out.println("Will evaluate for route " + route.name + " using "
 				+ trips.size() + " trips.");
+		Utils.writeLine(writer, "Will evaluate for route " + route.name
+				+ " using " + trips.size() + " trips.");
 
 		for (int stop = 0; stop < route.busStops.size() - 1; stop++) {
 			System.out.println("Evaluating for stop nr. " + stop);
 			Utils.writeLine(writer, "From stop nr. " + stop);
 			Utils.writeLine(writer, route.busStops.get(stop).name);
-			if (trips.size() < 30) {
-				Utils.writeLine(writer, "not enough trips");
+			if (trips.size() < 5) {
+				Utils.writeLine(writer,
+						"not enough trips, have only " + trips.size());
 				Utils.writeLine(writer, "");
 			} else {
 				evaluateRoute(route, trips, stop, writer);

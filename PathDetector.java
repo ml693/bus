@@ -5,7 +5,7 @@ package bus;
  * last stop. This class contains code to find what path a trip follows.
  */
 class PathDetector {
-	static double SIMILARITY_THRESHOLD = 1f;
+	static double SIMILARITY_THRESHOLD = 1.0f;
 
 	private static boolean similarNumberOfPointsUsedToAlign(Trip trip,
 			Trip path, int pointsUsedToAlign) {

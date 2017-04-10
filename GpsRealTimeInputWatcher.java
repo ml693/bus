@@ -90,7 +90,7 @@ class GpsRealTimeInputWatcher {
 				 */
 				Thread.sleep(100);
 
-				// First look the real time input directory
+				// First lock the real time input directory
 				File lockFile = new File(LOCK_FILE_PATH);
 				FileChannel channel = new RandomAccessFile(lockFile, "rw")
 						.getChannel();
@@ -263,10 +263,10 @@ class GpsRealTimeInputWatcher {
 				continue;
 			}
 
-			System.out.println(trip.name + " follows " + route.name);
 			trip.writeToFolder(new File("debug"));
 
 			if (endOfRouteReached(trip, route)) {
+				System.out.println(trip.name + " at the end of " + route.name);
 				flushPredictions(trip);
 				removeVehicle(vehicleId);
 				continue;
