@@ -165,7 +165,7 @@ class GpsRealTimeInputWatcher {
 				if (PathDetector.tripFollowsPath(trip, path)) {
 					Route route = new Route(
 							new File(routesFolder.getName() + "/" + path.name));
-					if (route.lastStop().atStop(trip.lastPoint())) {
+					if (!route.lastStop().atStop(trip.lastPoint())) {
 						vehicleFollowsRoute.put(trip.name, route);
 						vehicleFollowsPath.put(trip.name, path);
 						break;
