@@ -57,13 +57,14 @@ class PathDetector {
 				&& alignmentCost[iMax][last] == alignmentCost[iMax][last - 1]) {
 			last--;
 		}
-		int first = last - 1;
+		int first = last;
 		int i = iMax - 1;
-		while (i > 0 && first > 0) {
-			if (alignmentCost[i][first - 1] <= trip.gpsPoints.get(i)
+		while (i > 0) {
+			if (alignmentCost[i][first - 1] < trip.gpsPoints
+					.get(i - 1 /* i-th point */)
 					.ratioToSegmentCorners(path.gpsPoints.get(first - 1),
 							path.gpsPoints.get(first))
-					+ alignmentCost[i - 1][first]) {
+					+ alignmentCost[i - 1][first - 1]) {
 				first--;
 			} else {
 				i--;

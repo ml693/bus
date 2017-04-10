@@ -13,6 +13,10 @@ import java.util.function.Function;
 class ArbitraryCodeExecutor {
 
 	public static void main(String args[]) throws ProjectSpecificException {
+		Trip trip = Trip.readFromFile(new File("uk/debug/day10_bus14284"));
+		Trip path = Trip
+				.readFromFile(new File("uk/paths/1042102-20150524-20150530"));
+		System.out.println(PathDetector.tripFollowsPath(trip, path));
 	}
 
 	public static void produceCsvForPlotting(String args[])
