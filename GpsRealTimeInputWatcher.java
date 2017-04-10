@@ -114,6 +114,7 @@ class GpsRealTimeInputWatcher {
 									+ " being watched");
 				}
 			} catch (Exception exception) {
+				exception.printStackTrace();
 				throw new RuntimeException(exception);
 			}
 		}
@@ -259,9 +260,8 @@ class GpsRealTimeInputWatcher {
 			if (route == null) {
 				continue;
 			}
+
 			System.out.println(trip.name + " follows " + route.name);
-			trip.writeToFolder(new File("debug"));
-			route.writeToFolder(new File("debug"));
 
 			if (endOfRouteReached(trip, route)) {
 				System.out.println(trip.name + " at the end of " + route.name);
@@ -272,6 +272,8 @@ class GpsRealTimeInputWatcher {
 
 			if (tripDeviatedFromRoute(trip, route)) {
 				System.out.println(trip.name + " deviated from " + route.name);
+				trip.writeToFolder(new File("debug"));
+				route.writeToFolder(new File("debug"));
 				removeVehicle(vehicleId);
 				continue;
 			}
