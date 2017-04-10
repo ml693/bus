@@ -114,7 +114,7 @@ public class BusTravelHistoryExtractor {
 						allHistories.get(key).add(gpsPoint);
 					} else {
 						ArrayList<GpsPoint> points = allHistories.get(key);
-						GpsPoint lastPoint = points.get(points.size());
+						GpsPoint lastPoint = points.get(points.size() - 1);
 						if (!Utils.samePlace(lastPoint, gpsPoint)) {
 							points.add(gpsPoint);
 						}
