@@ -64,7 +64,7 @@ class GpsRealTimeInputWatcher {
 
 		for (Trip path : paths) {
 			System.out.println(Utils
-					.filesInFolder(tripsFolder.getName() + "/" + path.name));
+					.filesInFolder(tripsFolder.getName() + "/" + path.name).size());
 		}
 		
 		this.loggingFile = loggingFile;
