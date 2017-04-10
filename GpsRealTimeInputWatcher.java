@@ -188,7 +188,7 @@ class GpsRealTimeInputWatcher {
 	private boolean tripDeviatedFromRoute(Trip trip, Route route) {
 		for (Trip path : paths) {
 			if (path.name.equals(route.name)) {
-				return PathDetector.tripFollowsPath(trip, path);
+				return !PathDetector.tripFollowsPath(trip, path);
 			}
 		}
 
