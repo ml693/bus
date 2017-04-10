@@ -14,6 +14,7 @@ import java.nio.file.WatchKey;
 import java.nio.file.WatchService;
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.TreeMap;
 
 class GpsRealTimeInputWatcher {
 	// These strings are likely to change
@@ -22,8 +23,6 @@ class GpsRealTimeInputWatcher {
 
 	private final File tripsFolder;
 	private final File routesFolder;
-	/* Path is a trip following a route */
-	private final File pathsFolder;
 	/* All predictions are recorded to this file */
 	private final File loggingFile;
 
@@ -31,6 +30,8 @@ class GpsRealTimeInputWatcher {
 	private final HashMap<String /* vehicleId */, Trip /* path */> vehicleFollowsPath = new HashMap<String, Trip>();
 	private final HashMap<String /* vehicleId */, Prediction[]> lastStopPredictions = new HashMap<String, Prediction[]>();
 	private final HashMap<String /* vehicleId */, Prediction> nextStopPrediction = new HashMap<String, Prediction>();
+
+	private final ArrayList<Trip> paths;
 
 	/*
 	 * Real time GPS data is transmitted every 30s. This program sleeps, wakes
@@ -55,7 +56,7 @@ class GpsRealTimeInputWatcher {
 			File pathsFolder, File loggingFile) {
 		this.tripsFolder = tripsFolder;
 		this.routesFolder = routesFolder;
-		this.pathsFolder = pathsFolder;
+		this.paths = Trip.extractTripsFromFolder(pathsFolder);
 		this.loggingFile = loggingFile;
 		Utils.appendLineToFile(loggingFile,
 				"name,route,from,to,made_at,predicted,actual,error");
@@ -161,7 +162,6 @@ class GpsRealTimeInputWatcher {
 				&& searchesPerformed < MAX_NUMBER_OF_SEARCHES_IN_ONE_ITERATION
 				&& Utils.randomBit()) {
 			searchesPerformed++;
-			ArrayList<Trip> paths = Trip.extractTripsFromFolder(pathsFolder);
 			for (Trip path : paths) {
 				if (PathDetector.tripFollowsPath(trip, path)) {
 					Route route = new Route(
@@ -186,6 +186,18 @@ class GpsRealTimeInputWatcher {
 	}
 
 	private boolean tripDeviatedFromRoute(Trip trip, Route route) {
+		for (Trip path : paths) {
+			if (path.name.equals(route.name)) {
+				return PathDetector.tripFollowsPath(trip, path);
+			}
+		}
+
+		throw new RuntimeException(
+				"I do not have " + route.name + " in my path set");
+	}
+
+	// Most likely will be deleted
+	boolean tripDeviatedFromRouteOld(Trip trip, Route route) {
 		Prediction currentPrediction = nextStopPrediction.get(trip.name);
 
 		/* If there is no prediction, I first make one. */
@@ -242,6 +254,25 @@ class GpsRealTimeInputWatcher {
 				}
 			}
 		}
+
+		nextStopPrediction.remove(trip.name);
+	}
+
+	private void demoteRoute(String name) {
+		int pathIndex = 0;
+		while (!paths.get(pathIndex).name.equals(name)) {
+			pathIndex++;
+		}
+		for (int i = 0; i < 3 && pathIndex < paths.size() - 1; i++) {
+			/* if demote */
+			if (Utils.randomBit()) {
+				/* demote */
+				Trip tempPath = paths.get(pathIndex);
+				paths.set(pathIndex, paths.get(pathIndex + 1));
+				paths.set(pathIndex + 1, tempPath);
+				pathIndex++;
+			}
+		}
 	}
 
 	private void processNewGpsInput(File jsonFile)
@@ -276,6 +307,7 @@ class GpsRealTimeInputWatcher {
 				trip.writeToFolder(new File("debug"));
 				route.writeToFolder(new File("debug"));
 				removeVehicle(vehicleId);
+				demoteRoute(route.name);
 				continue;
 			}
 
@@ -301,7 +333,7 @@ class GpsRealTimeInputWatcher {
 			}
 		}
 
-		System.out.println("Handled new GPS point.");
+		System.out.println("Handled the new GPS point.");
 		searchesPerformed = 0;
 		System.out.println();
 	}
