@@ -56,17 +56,13 @@ class GpsRealTimeInputWatcher {
 			File pathsFolder, File loggingFile) {
 		this.tripsFolder = tripsFolder;
 		this.routesFolder = routesFolder;
+
 		this.paths = Trip.extractTripsFromFolder(pathsFolder);
 		Collections.sort(paths, (p1, p2) -> Utils
 				.filesInFolder(tripsFolder.getName() + "/" + p2.name).size()
 				- Utils.filesInFolder(tripsFolder.getName() + "/" + p1.name)
 						.size());
 
-		for (Trip path : paths) {
-			System.out.println(Utils
-					.filesInFolder(tripsFolder.getName() + "/" + path.name).size());
-		}
-		
 		this.loggingFile = loggingFile;
 		Utils.appendLineToFile(loggingFile,
 				"name,route,from,to,made_at,predicted,actual,error");
