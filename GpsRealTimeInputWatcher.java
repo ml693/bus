@@ -167,7 +167,6 @@ class GpsRealTimeInputWatcher {
 					Route route = new Route(
 							new File(routesFolder.getName() + "/" + path.name));
 					if (route.lastStop().atStop(trip.lastPoint())) {
-						System.out.println(trip.name + " on " + route.name);
 						vehicleFollowsRoute.put(trip.name, route);
 						vehicleFollowsPath.put(trip.name, path);
 						break;
@@ -249,7 +248,6 @@ class GpsRealTimeInputWatcher {
 		System.out.println("Dealing with file " + jsonFile.getName());
 		BusTravelHistoryExtractor.updateBusesTravelHistoryWithFile(jsonFile);
 
-		int routeFoundFor = 0;
 		// For each bus we want to make a prediction
 		for (String vehicleId : BusTravelHistoryExtractor.allHistories
 				.keySet()) {
@@ -262,7 +260,7 @@ class GpsRealTimeInputWatcher {
 			if (route == null) {
 				continue;
 			}
-
+			System.out.println(trip.name + " follows " + route.name);
 			trip.writeToFolder(new File("debug"));
 
 			if (endOfRouteReached(trip, route)) {
@@ -277,7 +275,6 @@ class GpsRealTimeInputWatcher {
 				removeVehicle(vehicleId);
 				continue;
 			}
-			routeFoundFor++;
 
 			int recentStopIndex = nextStopIndex(trip) - 1;
 			if (route.busStops.get(recentStopIndex).atStop(trip.lastPoint())) {
@@ -302,8 +299,7 @@ class GpsRealTimeInputWatcher {
 		}
 
 		System.out.println("Handled new GPS point.");
-		System.out.println("searchesPerformed = " + searchesPerformed);
 		searchesPerformed = 0;
-		System.out.println("routeFoundFor = " + routeFoundFor);
+		System.out.println();
 	}
 }
