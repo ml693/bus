@@ -261,6 +261,7 @@ class GpsRealTimeInputWatcher {
 			}
 			System.out.println(trip.name + " follows " + route.name);
 			trip.writeToFolder(new File("debug"));
+			route.writeToFolder(new File("debug"));
 
 			if (endOfRouteReached(trip, route)) {
 				System.out.println(trip.name + " at the end of " + route.name);
