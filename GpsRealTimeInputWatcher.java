@@ -58,7 +58,7 @@ class GpsRealTimeInputWatcher {
 		this.pathsFolder = pathsFolder;
 		this.loggingFile = loggingFile;
 		Utils.appendLineToFile(loggingFile,
-				"route,from,to,made_at,predicted,actual,error");
+				"name,route,from,to,made_at,predicted,actual,error");
 	}
 
 	WatchService realTimeJsonFolderWatcher() {
@@ -201,6 +201,7 @@ class GpsRealTimeInputWatcher {
 				Prediction newPrediction = ArrivalTimePredictor.makePrediction(
 						route.busStops.get(nextStopIndex), trip,
 						historicalTrips);
+				newPrediction.name = trip.name;
 				newPrediction.route = route;
 				newPrediction.fromStopIndex = -1;
 				newPrediction.toStopIndex = nextStopIndex;

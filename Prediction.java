@@ -17,6 +17,9 @@ class Prediction {
 	boolean recent;
 	boolean equallyCongested;
 
+	/* Name of the trip for which I am predicting */
+	String name;
+
 	/* The route for which I am predicting */
 	Route route;
 	/* From which stop I am predicting the arrival time */
@@ -34,8 +37,8 @@ class Prediction {
 	 * day18_bus14365_subtrip0,2016-01-18 13:45:46,2016-01-18 13:52:06,-100
 	 */
 	void appendToFile(File file, long actualArrivalTimestamp) {
-		String predictionLine = route.name + "," + fromStopIndex + ","
-				+ toStopIndex + ","
+		String predictionLine = name + "," + route.name + "," + fromStopIndex
+				+ "," + toStopIndex + ","
 				+ Utils.convertTimestampToDate(predictionTimestamp) + ","
 				+ Utils.convertTimestampToDate(predictedTimestamp) + ","
 				+ Utils.convertTimestampToDate(actualArrivalTimestamp) + ","

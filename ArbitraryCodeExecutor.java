@@ -13,7 +13,13 @@ import java.util.function.Function;
 class ArbitraryCodeExecutor {
 
 	public static void main(String args[]) throws ProjectSpecificException {
-
+		ArrayList<File> files = Utils.filesInFolder("uk/trips");
+		for (File file : files) {
+			File[] tripFiles = file.listFiles();
+			Trip trip = Trip.readFromFile(tripFiles[0]);
+			trip.makeCopyWithNewName(file.getName())
+					.writeToFolder(new File("uk/new_paths"));
+		}
 	}
 
 	public static void produceCsvForPlotting(String args[])
