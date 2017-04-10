@@ -80,6 +80,6 @@ class GpsPoint {
 		}
 		double ratioError = distanceToCorners
 				/ Utils.distance(corner1, corner2);
-		return ratioError < SIGNIFICANT_RATIO_THRESHOLD ? 1.0 : ratioError;
+		return ratioError < SIGNIFICANT_RATIO_THRESHOLD ? 1 : ratioError;
 	}
 }

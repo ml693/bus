@@ -8,9 +8,9 @@ class PathDetector {
 	static double SIMILARITY_THRESHOLD = 1.0f;
 
 	private static boolean similarNumberOfPointsUsedToAlign(Trip trip,
-			Trip path, int pointsUsedToAlign) {
-		return pointsUsedToAlign
-				/ trip.gpsPoints.size() <= SIMILARITY_THRESHOLD;
+			int pointsUsedToAlign) {
+		return (double) pointsUsedToAlign / (double) trip.gpsPoints.size() <= 2
+				* SIMILARITY_THRESHOLD;
 	}
 
 	/*
@@ -69,7 +69,8 @@ class PathDetector {
 				i--;
 			}
 		}
-		return similarNumberOfPointsUsedToAlign(trip, path, last - first + 1)
+
+		return similarNumberOfPointsUsedToAlign(trip, last - first + 1)
 				&& (alignmentCost[iMax][jMax] - iMax < SIMILARITY_THRESHOLD);
 	}
 

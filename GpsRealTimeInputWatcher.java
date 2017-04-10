@@ -14,7 +14,6 @@ import java.nio.file.WatchKey;
 import java.nio.file.WatchService;
 import java.util.ArrayList;
 import java.util.HashMap;
-import java.util.TreeMap;
 
 class GpsRealTimeInputWatcher {
 	// These strings are likely to change
