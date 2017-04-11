@@ -11,9 +11,10 @@ public class HistoricalDataBuilder {
 	private static int lastDayProcessed = 0;
 
 	private static File jsonFolder(LocalDateTime date) {
+		String year = date.getYear() + "/";
 		String month = String.format("%02d", date.getMonthValue()) + "/";
 		String day = String.format("%02d", date.getDayOfMonth()) + "/";
-		String jsonFolderPath = INCOMMING_JSON_FOLDER_PATH + month + day;
+		String jsonFolderPath = INCOMMING_JSON_FOLDER_PATH + year + month + day;
 		System.out.println(jsonFolderPath);
 		return new File(jsonFolderPath);
 	}
