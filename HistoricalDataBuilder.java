@@ -25,6 +25,13 @@ public class HistoricalDataBuilder {
 		File tripsFolder = new File("trips");
 		HistoryIntoTripsSplitter.splitHistoryIntoTrips(historiesFolder,
 				tripsFolder);
+		System.out.println("Extracted all trips, deleting histories:");
+
+		File[] histories = historiesFolder.listFiles();
+		for (File history : histories) {
+			history.delete();
+		}
+		System.out.println("Deleted all histories");
 	}
 
 	public static void main(String[] args) {
