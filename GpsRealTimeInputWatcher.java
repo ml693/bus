@@ -299,8 +299,6 @@ class GpsRealTimeInputWatcher {
 				continue;
 			}
 
-			System.out.println(trip.name + " follows " + route.name);
-
 			if (endOfRouteReached(trip, route)) {
 				System.out.println(trip.name + " at the end of " + route.name);
 				flushPredictions(trip);
