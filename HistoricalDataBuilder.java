@@ -18,7 +18,7 @@ public class HistoricalDataBuilder {
 		return new File(jsonFolderPath);
 	}
 
-	public static void processDay(LocalDateTime date) {
+	public static void extractTripsFromDay(LocalDateTime date) {
 		File jsonFolder = jsonFolder(date);
 		File historiesFolder = new File("histories");
 		BusTravelHistoryExtractor.extractHistory(jsonFolder, historiesFolder);
@@ -37,9 +37,11 @@ public class HistoricalDataBuilder {
 	public static void main(String[] args) {
 		while (true) {
 			LocalDateTime lastDay = LocalDateTime.now().minusDays(1);
+
 			if (lastDayProcessed != lastDay.getDayOfMonth()) {
 				System.out.println("The new day: " + lastDay.getDayOfMonth());
-				processDay(lastDay);
+				extractTripsFromDay(lastDay);
+				buildHistoricalData(args);
 				lastDayProcessed = lastDay.getDayOfMonth();
 			} else {
 				try {
