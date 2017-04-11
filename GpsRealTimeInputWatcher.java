@@ -64,8 +64,6 @@ class GpsRealTimeInputWatcher {
 						.size());
 
 		this.loggingFile = loggingFile;
-		Utils.appendLineToFile(loggingFile,
-				"name,route,from,to,made_at,predicted,actual,error");
 	}
 
 	WatchService realTimeJsonFolderWatcher() {
