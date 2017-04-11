@@ -1,12 +1,35 @@
 package bus;
 
 import java.io.File;
+import java.time.LocalDateTime;
 import java.util.ArrayList;
 
 public class HistoricalDataBuilder {
 
+	private static final String INCOMMING_JSON_FOLDER_PATH = "/media/tfc/ml693/data_json/";
+
+	private static int lastDayProcessed = 0;
+
+	public static void processDay(LocalDateTime day) {
+		String jsonFolderPath = INCOMMING_JSON_FOLDER_PATH + day.getYear() + "/"
+				+ day.getMonth() + "/" + day.getDayOfMonth();
+		System.out.println(jsonFolderPath);
+	}
+
 	public static void main(String[] args) {
-		buildHistoricalData(args);
+		while (true) {
+			LocalDateTime lastDay = LocalDateTime.now().minusDays(1);
+			if (lastDayProcessed != lastDay.getDayOfMonth()) {
+				processDay(lastDay);
+				lastDayProcessed = lastDay.getDayOfMonth();
+			} else {
+				try {
+					Thread.sleep(3600000);
+				} catch (InterruptedException exception) {
+					throw new RuntimeException(exception);
+				}
+			}
+		}
 	}
 
 	public static void buildHistoricalData(String[] args) {

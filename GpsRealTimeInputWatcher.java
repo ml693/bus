@@ -160,7 +160,7 @@ class GpsRealTimeInputWatcher {
 		return route.busStops.size();
 	}
 
-	private static final int MAX_NUMBER_OF_SEARCHES_IN_ONE_ITERATION = 30;
+	private static final int MAX_NUMBER_OF_SEARCHES_IN_ONE_ITERATION = 50;
 	int searchesPerformed = 0;
 
 	Route routeFollowedByTrip(Trip trip) {
