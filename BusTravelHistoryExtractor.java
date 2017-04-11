@@ -46,6 +46,7 @@ public class BusTravelHistoryExtractor {
 
 	public static void extractHistory(File jsonHistoryFolder,
 			File outputFolder) {
+		System.out.println("I am here");
 		/* We first extract all JSON files from the args[0] folder. */
 		File[] jsonFiles = jsonHistoryFolder.listFiles();
 		/*

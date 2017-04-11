@@ -28,6 +28,7 @@ public class HistoricalDataBuilder {
 		while (true) {
 			LocalDateTime lastDay = LocalDateTime.now().minusDays(1);
 			if (lastDayProcessed != lastDay.getDayOfMonth()) {
+				System.out.println("The new day: " + lastDay.getDayOfMonth());
 				processDay(lastDay);
 				lastDayProcessed = lastDay.getDayOfMonth();
 			} else {
