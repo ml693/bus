@@ -1,6 +1,5 @@
 package bus;
 
-import java.io.File;
 import java.util.ArrayList;
 import java.util.Collections;
 
@@ -13,8 +12,7 @@ public class ArrivalTimePredictor {
 			ArrayList<Trip> historicalTrips) throws ProjectSpecificException {
 		ArrayList<Prediction> predictions = generatePredictions(tripToPredict,
 				historicalTrips, busStop);
-		long predictedTimestamp = calculateAverageArrivalTime(predictions);
-		return new Prediction(predictedTimestamp);
+		return medianPrediction(predictions);
 	}
 
 	/*
@@ -46,9 +44,9 @@ public class ArrivalTimePredictor {
 		long durationDifference = recentSubtrip.duration()
 				- (timestamp - historicalTrip.gpsPoints.get(index).timestamp);
 		return (durationDifference < DURATION_DIFFERENCE_LIMIT
-				&& Utils.samePlace(trip.lastPoint(),
+				&& Utils.samePlace(recentSubtrip.lastPoint(),
 						historicalTrip.gpsPoints.get(closestPointIndex))
-				&& Utils.samePlace(trip.firstPoint(),
+				&& Utils.samePlace(recentSubtrip.firstPoint(),
 						historicalTrip.gpsPoints.get(index)));
 	}
 
@@ -86,13 +84,6 @@ public class ArrivalTimePredictor {
 			}
 		}
 
-		System.out.println("Debugging: closestPoint = " + closestPointIndex);
-		System.out.println("recentTrip = " + recentTrip.name);
-		System.out.println("trip = " + trip.name);
-
-		recentTrip.writeToFolder(new File("debug"));
-		trip.writeToFolder(new File("debug"));
-
 		throw new RuntimeException(ProjectSpecificException
 				.historicalTripMissingImportantPoints(trip.name));
 	}
@@ -107,11 +98,16 @@ public class ArrivalTimePredictor {
 		ArrayList<Prediction> predictions = new ArrayList<Prediction>();
 
 		for (Trip historicalTrip : historicalTrips) {
+			/*
+			 * TODO(ml693): unfortunatelly at real time no historicalTrip will
+			 * be considered as recent. Find a way to fix this.
+			 */
 			boolean recent = historicalTripIsRecent(trip, historicalTrip);
 			boolean equallyCongested = equallyCongested(trip, historicalTrip);
 			long predictedTimestamp = generateFuturePrediction(trip,
 					historicalTrip, busStop);
 			Prediction prediction = new Prediction(predictedTimestamp);
+			prediction.name = historicalTrip.name;
 			prediction.equallyCongested = equallyCongested;
 			prediction.recent = recent;
 			predictions.add(prediction);
@@ -120,43 +116,43 @@ public class ArrivalTimePredictor {
 		return predictions;
 	}
 
-	private static long averageArrivalTimestamp(
-			ArrayList<Long> arrivalTimestamps) {
-		Collections.sort(arrivalTimestamps);
-		return arrivalTimestamps.get(arrivalTimestamps.size() / 2);
+	private static Prediction median(ArrayList<Prediction> predictions) {
+		Collections.sort(predictions, (p1,
+				p2) -> p1.predictedTimestamp < p2.predictedTimestamp ? -1 : 1);
+		return predictions.get(predictions.size() / 2);
 	}
 
-	private static long calculateAverageArrivalTime(
+	private static Prediction medianPrediction(
 			ArrayList<Prediction> predictions) throws ProjectSpecificException {
-		ArrayList<Long> oldDifferentlyCongested = new ArrayList<Long>();
-		ArrayList<Long> oldEquallyCongested = new ArrayList<Long>();
-		ArrayList<Long> newDifferentlyCongested = new ArrayList<Long>();
-		ArrayList<Long> newEquallyCongested = new ArrayList<Long>();
+		ArrayList<Prediction> oldDifferentlyCongested = new ArrayList<Prediction>();
+		ArrayList<Prediction> oldEquallyCongested = new ArrayList<Prediction>();
+		ArrayList<Prediction> newDifferentlyCongested = new ArrayList<Prediction>();
+		ArrayList<Prediction> newEquallyCongested = new ArrayList<Prediction>();
 
 		for (Prediction prediction : predictions) {
 			if (!prediction.recent && !prediction.equallyCongested) {
-				oldDifferentlyCongested.add(prediction.predictedTimestamp);
+				oldDifferentlyCongested.add(prediction);
 			}
 			if (!prediction.recent && prediction.equallyCongested) {
-				oldEquallyCongested.add(prediction.predictedTimestamp);
+				oldEquallyCongested.add(prediction);
 			}
 			if (prediction.recent && !prediction.equallyCongested) {
-				newDifferentlyCongested.add(prediction.predictedTimestamp);
+				newDifferentlyCongested.add(prediction);
 			}
 			if (prediction.recent && prediction.equallyCongested) {
-				newEquallyCongested.add(prediction.predictedTimestamp);
+				newEquallyCongested.add(prediction);
 			}
 		}
 
 		if (newEquallyCongested.size() > 0) {
-			return averageArrivalTimestamp(newEquallyCongested);
+			return median(newEquallyCongested);
 		}
 		if (oldEquallyCongested.size() > 0) {
-			return averageArrivalTimestamp(oldEquallyCongested);
+			return median(oldEquallyCongested);
 		}
 		if (newDifferentlyCongested.size() > 0) {
-			return averageArrivalTimestamp(newDifferentlyCongested);
+			return median(newDifferentlyCongested);
 		}
-		return averageArrivalTimestamp(oldDifferentlyCongested);
+		return median(oldDifferentlyCongested);
 	}
 }

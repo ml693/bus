@@ -43,6 +43,7 @@ public class HistoricalDataBuilder {
 				extractTripsFromDay(lastDay);
 				buildHistoricalData(args);
 				lastDayProcessed = lastDay.getDayOfMonth();
+				System.out.println("Finished with " + lastDayProcessed);
 			} else {
 				try {
 					Thread.sleep(3600000);

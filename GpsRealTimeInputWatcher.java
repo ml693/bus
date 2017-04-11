@@ -323,7 +323,6 @@ class GpsRealTimeInputWatcher {
 
 				Prediction prediction = ArrivalTimePredictor.makePrediction(
 						route.lastStop(), trip, historicalTrips);
-				prediction.name = trip.name;
 				prediction.predictionTimestamp = trip.lastPoint().timestamp;
 				prediction.route = route;
 				prediction.fromStopIndex = recentStopIndex;
