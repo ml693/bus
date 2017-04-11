@@ -12,7 +12,7 @@ public class HistoricalDataBuilder {
 
 	public static void processDay(LocalDateTime day) {
 		String jsonFolderPath = INCOMMING_JSON_FOLDER_PATH + day.getYear() + "/"
-				+ day.getMonth() + "/" + day.getDayOfMonth();
+				+ day.getMonthValue() + "/" + day.getDayOfMonth();
 		System.out.println(jsonFolderPath);
 	}
 
