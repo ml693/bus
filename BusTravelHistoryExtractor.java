@@ -37,13 +37,17 @@ public class BusTravelHistoryExtractor {
 	 * 2016-10-11 16:06:28,51.8944,0.4532
 	 * ... // file will contain more entries generated from other files
 	 * 
-	 * TODO(ml693): eliminate constrain for whole input to be in one line.
-	 * TODO(ml693): add extra fields to the example to show it can contain more.
+	 * TODO(ml693): eliminate the constrain for the input to be in one line.
 	 */
 	public static void main(String args[]) throws Exception {
 		Utils.checkCommandLineArguments(args, "folder", "folder");
+		extractHistory(new File(args[0]), new File(args[1]));
+	}
+
+	public static void extractHistory(File jsonHistoryFolder,
+			File outputFolder) {
 		/* We first extract all JSON files from the args[0] folder. */
-		File[] jsonFiles = new File(args[0]).listFiles();
+		File[] jsonFiles = jsonHistoryFolder.listFiles();
 		/*
 		 * TODO(ml693): check whether the expectation below is correct.
 		 * 
@@ -63,7 +67,6 @@ public class BusTravelHistoryExtractor {
 			updateBusesTravelHistoryWithFile(jsonFile);
 		}
 		/* At the end we output the processed data into args[1] folder */
-		File outputFolder = new File(args[1]);
 		for (String key : allHistories.keySet()) {
 			try {
 				new Trip(key, allHistories.get(key))
@@ -72,7 +75,7 @@ public class BusTravelHistoryExtractor {
 				System.out.println(key + " has too little GPS entries!");
 			}
 		}
-		System.out.println("Done with " + args[0]);
+		System.out.println("Done with " + jsonHistoryFolder.getName());
 	}
 
 	static int extractVehicleId(String snapshot) {

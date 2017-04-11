@@ -15,12 +15,13 @@ public class HistoricalDataBuilder {
 		String month = String.format("%02d", date.getMonthValue()) + "/";
 		String day = String.format("%02d", date.getDayOfMonth()) + "/";
 		String jsonFolderPath = INCOMMING_JSON_FOLDER_PATH + year + month + day;
-		System.out.println(jsonFolderPath);
 		return new File(jsonFolderPath);
 	}
 
 	public static void processDay(LocalDateTime date) {
-		jsonFolder(date);
+		File jsonFolder = jsonFolder(date);
+		File outputFolder = new File("histories");
+		BusTravelHistoryExtractor.extractHistory(jsonFolder, outputFolder);
 	}
 
 	public static void main(String[] args) {
