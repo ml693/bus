@@ -20,8 +20,11 @@ public class HistoricalDataBuilder {
 
 	public static void processDay(LocalDateTime date) {
 		File jsonFolder = jsonFolder(date);
-		File outputFolder = new File("histories");
-		BusTravelHistoryExtractor.extractHistory(jsonFolder, outputFolder);
+		File historiesFolder = new File("histories");
+		BusTravelHistoryExtractor.extractHistory(jsonFolder, historiesFolder);
+		File tripsFolder = new File("trips");
+		HistoryIntoTripsSplitter.splitHistoryIntoTrips(historiesFolder,
+				tripsFolder);
 	}
 
 	public static void main(String[] args) {

@@ -1,8 +1,6 @@
 package bus;
 
 import java.io.File;
-import java.io.IOException;
-import java.text.ParseException;
 import java.util.ArrayList;
 import java.util.Scanner;
 
@@ -27,8 +25,13 @@ class HistoryIntoTripsSplitter {
 	 * java bus.HistoryIntoTripsSplitter trips_folder output_folder
 	 */
 	public static void main(String args[]) throws Exception {
-		File[] travelHistoryFiles = new File(args[0]).listFiles();
-		File outputFolder = new File(args[1]);
+		Utils.checkCommandLineArguments(args, "folder", "folder");
+		splitHistoryIntoTrips(new File(args[0]), new File(args[1]));
+	}
+
+	public static void splitHistoryIntoTrips(File historyFolder,
+			File outputFolder) {
+		File[] travelHistoryFiles = historyFolder.listFiles();
 		for (File travelHistoryFile : travelHistoryFiles) {
 			extractTripsFromTravelHistoryFile(travelHistoryFile, outputFolder);
 		}
@@ -84,8 +87,8 @@ class HistoryIntoTripsSplitter {
 	 * writes it to a file. Does nothing otherwise.
 	 */
 	private static boolean flushGpsPoints(ArrayList<GpsPoint> currentGpsPoints,
-			File travelHistoryFile, int extractedTripsCount, File outputFolder)
-					throws IOException, ParseException {
+			File travelHistoryFile, int extractedTripsCount,
+			File outputFolder) {
 		try {
 			String newName = generateName(travelHistoryFile,
 					extractedTripsCount);
@@ -196,7 +199,7 @@ class HistoryIntoTripsSplitter {
 	 * // End of file outputFolder/travelHistoryFile_subtrip2
 	 */
 	public static void extractTripsFromTravelHistoryFile(File travelHistoryFile,
-			File outputFolder) throws IOException, ParseException {
+			File outputFolder) {
 		System.out.println("Scanning file " + travelHistoryFile.getName());
 		Scanner gpsInput = Utils.csvScanner(travelHistoryFile);
 		/* To skip "time,latitude,longitude" line */

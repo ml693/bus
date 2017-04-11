@@ -46,7 +46,6 @@ public class BusTravelHistoryExtractor {
 
 	public static void extractHistory(File jsonHistoryFolder,
 			File outputFolder) {
-		System.out.println("I am here");
 		/* We first extract all JSON files from the args[0] folder. */
 		File[] jsonFiles = jsonHistoryFolder.listFiles();
 		/*
@@ -76,7 +75,7 @@ public class BusTravelHistoryExtractor {
 				System.out.println(key + " has too little GPS entries!");
 			}
 		}
-		System.out.println("Done with " + jsonHistoryFolder.getName());
+		System.out.println("Done with " + jsonHistoryFolder.getAbsolutePath());
 	}
 
 	static int extractVehicleId(String snapshot) {
