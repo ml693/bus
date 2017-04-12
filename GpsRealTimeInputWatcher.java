@@ -224,7 +224,7 @@ class GpsRealTimeInputWatcher {
 										+ " was equallyCongested="
 										+ prediction.equallyCongested
 										+ " and mispredicted because of the historical trip "
-										+ trip.name);
+										+ prediction.name);
 						trip.writeToFolder(new File("logging/mispredicted"));
 					}
 				}
