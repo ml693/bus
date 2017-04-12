@@ -24,7 +24,9 @@ class GpsRealTimeInputWatcher {
 	private final File tripsFolder;
 	private final File routesFolder;
 	/* All predictions are recorded to this file */
-	private final File loggingFile;
+	private final File predictionsFile;
+
+	private final File debugFile;
 
 	private final HashMap<String /* vehicleId */, Route> vehicleFollowsRoute = new HashMap<String, Route>();
 	private final HashMap<String /* vehicleId */, Trip /* path */> vehicleFollowsPath = new HashMap<String, Trip>();
@@ -48,12 +50,12 @@ class GpsRealTimeInputWatcher {
 
 		GpsRealTimeInputWatcher watcher = new GpsRealTimeInputWatcher(
 				new File(args[0]), new File(args[1]), new File(args[2]),
-				new File(args[3]));
+				args[3]);
 		watcher.waitForNewJsonInput();
 	}
 
 	GpsRealTimeInputWatcher(File tripsFolder, File routesFolder,
-			File pathsFolder, File loggingFile) {
+			File pathsFolder, String loggingFolderPath) {
 		this.tripsFolder = tripsFolder;
 		this.routesFolder = routesFolder;
 
@@ -63,7 +65,9 @@ class GpsRealTimeInputWatcher {
 				- Utils.filesInFolder(tripsFolder.getName() + "/" + p1.name)
 						.size());
 
-		this.loggingFile = loggingFile;
+		this.predictionsFile = new File(loggingFolderPath + "/predictions.txt");
+		this.debugFile = new File(loggingFolderPath + "/debug.txt");
+
 	}
 
 	WatchService realTimeJsonFolderWatcher() {
@@ -200,50 +204,6 @@ class GpsRealTimeInputWatcher {
 				"I do not have " + route.name + " in my path set");
 	}
 
-	// Most likely will be deleted
-	boolean tripDeviatedFromRouteOld(Trip trip, Route route) {
-		Prediction currentPrediction = nextStopPrediction.get(trip.name);
-
-		/* If there is no prediction, I first make one. */
-		if (currentPrediction == null) {
-			int nextStopIndex = nextStopIndex(trip);
-			if (nextStopIndex == route.busStops.size()) {
-				return true;
-			}
-
-			ArrayList<Trip> historicalTrips = Trip.extractTripsFromFolder(
-					new File(tripsFolder.getName() + "/" + route.name));
-			try {
-				Prediction newPrediction = ArrivalTimePredictor.makePrediction(
-						route.busStops.get(nextStopIndex), trip,
-						historicalTrips);
-				newPrediction.name = trip.name;
-				newPrediction.route = route;
-				newPrediction.fromStopIndex = -1;
-				newPrediction.toStopIndex = nextStopIndex;
-				newPrediction.predictionTimestamp = trip.lastPoint().timestamp;
-				nextStopPrediction.put(trip.name, newPrediction);
-			} catch (ProjectSpecificException exception) {
-				throw new RuntimeException(exception);
-			}
-
-			return false;
-		}
-
-		if (currentPrediction.route.busStops.get(currentPrediction.toStopIndex)
-				.atStop(trip.lastPoint())) {
-			currentPrediction.appendToFile(loggingFile,
-					trip.lastPoint().timestamp);
-			nextStopPrediction.remove(trip.name);
-			return false;
-		}
-
-		return Math.abs(trip.lastPoint().timestamp
-				- currentPrediction.predictionTimestamp) < 4
-						* Math.abs(currentPrediction.predictedTimestamp
-								- currentPrediction.predictionTimestamp);
-	}
-
 	private boolean endOfRouteReached(Trip trip, Route route) {
 		return route.lastStop().atStop(trip.lastPoint());
 	}
@@ -253,8 +213,16 @@ class GpsRealTimeInputWatcher {
 		if (predictions != null) {
 			for (Prediction prediction : predictions) {
 				if (prediction != null) {
-					prediction.appendToFile(loggingFile,
+					prediction.appendToFile(predictionsFile,
 							trip.lastPoint().timestamp);
+					if (Math.abs(trip.lastPoint().timestamp
+							- prediction.predictedTimestamp) > 500) {
+						System.out.println(prediction.name
+								+ " mispredicted for " + trip.name);
+						Utils.appendLineToFile(debugFile, prediction.name
+								+ " mispredicted for " + trip.name);
+						trip.writeToFolder(new File("debug"));
+					}
 				}
 			}
 		}
@@ -306,6 +274,8 @@ class GpsRealTimeInputWatcher {
 
 			if (tripDeviatedFromRoute(trip, route)) {
 				System.out.println(trip.name + " deviated from " + route.name);
+				Utils.appendLineToFile(debugFile,
+						trip.name + " deviated from " + route.name);
 				trip.writeToFolder(new File("debug"));
 				route.writeToFolder(new File("debug"));
 				removeVehicle(vehicleId);
