@@ -67,7 +67,6 @@ class GpsRealTimeInputWatcher {
 
 		this.predictionsFile = new File(loggingFolderPath + "/predictions.txt");
 		this.debugFile = new File(loggingFolderPath + "/debug.txt");
-
 	}
 
 	WatchService realTimeJsonFolderWatcher() {
@@ -220,9 +219,12 @@ class GpsRealTimeInputWatcher {
 						System.out.println(prediction.name
 								+ " mispredicted for " + trip.name);
 						Utils.appendLineToFile(debugFile,
-								prediction.name + " was equallyCongested="
+								trip.name + " following a route "
+										+ prediction.route.name
+										+ " was equallyCongested="
 										+ prediction.equallyCongested
-										+ " and mispredicted for " + trip.name);
+										+ " and mispredicted because of the historical trip "
+										+ trip.name);
 						trip.writeToFolder(new File("debug"));
 					}
 				}
