@@ -128,17 +128,21 @@ class GpsRealTimeInputWatcher {
 		}
 	}
 
-	Trip getTrip(String vehicleId) throws ProjectSpecificException {
+	Trip getTrip(String vehicleId, int numberOfPoints) {
 		ArrayList<GpsPoint> points = BusTravelHistoryExtractor.allHistories
 				.get(vehicleId);
 		if (points.size() < Trip.MINIMUM_NUMBER_OF_GPS_POINTS) {
 			return null;
 		}
 
-		return new Trip(vehicleId,
-				new ArrayList<GpsPoint>(points.subList(
-						points.size() - Trip.MINIMUM_NUMBER_OF_GPS_POINTS,
-						points.size())));
+		try {
+			return new Trip(vehicleId,
+					new ArrayList<GpsPoint>(points.subList(
+							Math.max(0, points.size() - numberOfPoints),
+							points.size())));
+		} catch (ProjectSpecificException exception) {
+			throw new RuntimeException(exception);
+		}
 	}
 
 	private int nextStopIndex(Trip recentTrip) {
@@ -225,7 +229,8 @@ class GpsRealTimeInputWatcher {
 										+ prediction.equallyCongested
 										+ " and mispredicted because of the historical trip "
 										+ prediction.name);
-						trip.writeToFolder(new File("logging/mispredicted"));
+						getTrip(trip.name, 16).writeToFolder(
+								new File("logging/mispredicted"));
 					}
 				}
 			}
@@ -259,7 +264,7 @@ class GpsRealTimeInputWatcher {
 		// For each bus we want to make a prediction
 		for (String vehicleId : BusTravelHistoryExtractor.allHistories
 				.keySet()) {
-			Trip trip = getTrip(vehicleId);
+			Trip trip = getTrip(vehicleId, Trip.MINIMUM_NUMBER_OF_GPS_POINTS);
 			if (trip == null) {
 				continue;
 			}
