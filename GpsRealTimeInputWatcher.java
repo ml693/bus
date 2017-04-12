@@ -46,7 +46,7 @@ class GpsRealTimeInputWatcher {
 	 */
 	public static void main(String[] args) throws ProjectSpecificException {
 		Utils.checkCommandLineArguments(args, "folder", "folder", "folder",
-				"file");
+				"folder");
 
 		GpsRealTimeInputWatcher watcher = new GpsRealTimeInputWatcher(
 				new File(args[0]), new File(args[1]), new File(args[2]),
