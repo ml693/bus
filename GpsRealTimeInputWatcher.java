@@ -225,7 +225,7 @@ class GpsRealTimeInputWatcher {
 										+ prediction.equallyCongested
 										+ " and mispredicted because of the historical trip "
 										+ trip.name);
-						trip.writeToFolder(new File("debug"));
+						trip.writeToFolder(new File("logging/mispredicted"));
 					}
 				}
 			}
@@ -280,6 +280,8 @@ class GpsRealTimeInputWatcher {
 				System.out.println(trip.name + " deviated from " + route.name);
 				Utils.appendLineToFile(debugFile,
 						trip.name + " deviated from " + route.name);
+				trip.writeToFolder(new File("logging/deviated"));
+				route.writeToFolder(new File("logging/deviated"));
 				removeVehicle(vehicleId);
 				demoteRoute(route.name);
 				continue;
