@@ -118,7 +118,7 @@ public class ArrivalTimePredictor {
 
 	private static Prediction median(ArrayList<Prediction> predictions) {
 		Collections.sort(predictions, (p1,
-				p2) -> p1.predictedTimestamp < p2.predictedTimestamp ? -1 : 1);
+				p2) -> (int) (p1.predictedTimestamp - p2.predictedTimestamp));
 		return predictions.get(predictions.size() / 2);
 	}
 
