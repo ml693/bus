@@ -280,8 +280,6 @@ class GpsRealTimeInputWatcher {
 				System.out.println(trip.name + " deviated from " + route.name);
 				Utils.appendLineToFile(debugFile,
 						trip.name + " deviated from " + route.name);
-				trip.writeToFolder(new File("debug"));
-				route.writeToFolder(new File("debug"));
 				removeVehicle(vehicleId);
 				demoteRoute(route.name);
 				continue;
