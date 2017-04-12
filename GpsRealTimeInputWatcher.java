@@ -219,8 +219,10 @@ class GpsRealTimeInputWatcher {
 							- prediction.predictedTimestamp) > 500) {
 						System.out.println(prediction.name
 								+ " mispredicted for " + trip.name);
-						Utils.appendLineToFile(debugFile, prediction.name
-								+ " mispredicted for " + trip.name);
+						Utils.appendLineToFile(debugFile,
+								prediction.name + " was equallyCongested="
+										+ prediction.equallyCongested
+										+ " and mispredicted for " + trip.name);
 						trip.writeToFolder(new File("debug"));
 					}
 				}
