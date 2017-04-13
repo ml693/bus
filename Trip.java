@@ -16,6 +16,7 @@ import java.util.Scanner;
  */
 public class Trip {
 	static final int MINIMUM_NUMBER_OF_GPS_POINTS = 8;
+	static final long FIVE_MINUTES = 300;
 
 	final String name;
 	final ArrayList<GpsPoint> gpsPoints;
@@ -48,11 +49,11 @@ public class Trip {
 
 	Trip(String name, ArrayList<GpsPoint> gpsPoints)
 			throws ProjectSpecificException {
-		if (gpsPoints.size() < MINIMUM_NUMBER_OF_GPS_POINTS) {
-			throw ProjectSpecificException.tripDoesNotHaveEnoughPoints(name);
-		}
 		this.name = name;
 		this.gpsPoints = gpsPoints;
+		if (this.gpsPoints.size() < MINIMUM_NUMBER_OF_GPS_POINTS) {
+			throw ProjectSpecificException.tripDoesNotHaveEnoughPoints(name);
+		}
 	}
 
 	static Trip readFromFile(File file) {
@@ -79,6 +80,18 @@ public class Trip {
 	Trip subTrip(int fromIndex, int toIndex) throws ProjectSpecificException {
 		return new Trip(name,
 				new ArrayList<GpsPoint>(gpsPoints.subList(fromIndex, toIndex)));
+	}
+
+	ArrayList<GpsPoint> timeInterval(long fromTimestamp, long toTimestamp)
+			throws ProjectSpecificException {
+		ArrayList<GpsPoint> points = new ArrayList<GpsPoint>();
+		for (GpsPoint point : gpsPoints) {
+			if (point.timestamp >= fromTimestamp
+					&& point.timestamp <= toTimestamp) {
+				points.add(point);
+			}
+		}
+		return points;
 	}
 
 	static ArrayList<Trip> extractTripsFromFolder(File folder) {
@@ -127,6 +140,10 @@ public class Trip {
 
 	GpsPoint firstPoint() {
 		return gpsPoints.get(0);
+	}
+	
+	GpsPoint secondPoint() {
+		return gpsPoints.get(1);
 	}
 
 	GpsPoint lastPoint() {

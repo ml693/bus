@@ -4,7 +4,7 @@ import java.util.ArrayList;
 import java.util.Collections;
 
 public class ArrivalTimePredictor {
-	private static final long DURATION_DIFFERENCE_LIMIT = 80L;
+	private static final long MAX_DURATION_DIFFERENCE = 45L;
 	private static final long RECENT_INTERVAL = 3000L;
 
 	/* Main method which predicts arrival time to the busStop */
@@ -20,34 +20,43 @@ public class ArrivalTimePredictor {
 	 * travelled in roughly equal amount of time.
 	 */
 	private static boolean equallyCongested(Trip trip, Trip historicalTrip) {
-		int closestPointIndex = closestPointIndex(trip.lastPoint(),
-				historicalTrip);
-		long timestamp = historicalTrip.gpsPoints
-				.get(closestPointIndex).timestamp;
-
-		Trip recentSubtrip = null;
 		try {
-			recentSubtrip = trip.subTrip(
-					trip.gpsPoints.size() - Trip.MINIMUM_NUMBER_OF_GPS_POINTS,
-					trip.gpsPoints.size());
+			ArrayList<GpsPoint> tenMinutes = trip.timeInterval(
+					trip.lastPoint().timestamp - Trip.FIVE_MINUTES,
+					trip.lastPoint().timestamp);
+			if (tenMinutes.size() <= 1) {
+				return false;
+			}
+			long duration = tenMinutes.get(tenMinutes.size() - 1).timestamp
+					- tenMinutes.get(0).timestamp;
+
+			int closestPointIndex = closestPointIndex(trip.lastPoint(),
+					historicalTrip);
+			long historicalTimestamp = historicalTrip.gpsPoints
+					.get(closestPointIndex).timestamp;
+			ArrayList<GpsPoint> historicalTenMinutes = historicalTrip
+					.timeInterval(historicalTimestamp - Trip.FIVE_MINUTES,
+							historicalTimestamp);
+			if (historicalTenMinutes.size() <= 1) {
+				return false;
+			}
+			long historicalDuration = historicalTenMinutes
+					.get(historicalTenMinutes.size() - 1).timestamp
+					- historicalTenMinutes.get(0).timestamp;
+
+			if (Math.abs(
+					duration - historicalDuration) > MAX_DURATION_DIFFERENCE) {
+				return false;
+			}
+
+			return (tenMinutes.get(0).ratioToSegmentCorners(
+					historicalTenMinutes.get(0),
+					historicalTenMinutes.get(1)) == 1.0
+					|| historicalTenMinutes.get(0).ratioToSegmentCorners(
+							tenMinutes.get(0), tenMinutes.get(1)) == 1.0);
 		} catch (ProjectSpecificException exception) {
 			throw new RuntimeException(exception);
 		}
-
-		int index = closestPointIndex;
-		while (index > 0 && timestamp
-				- historicalTrip.gpsPoints.get(index).timestamp < recentSubtrip
-						.duration()) {
-			index--;
-		}
-
-		long durationDifference = recentSubtrip.duration()
-				- (timestamp - historicalTrip.gpsPoints.get(index).timestamp);
-		return (durationDifference < DURATION_DIFFERENCE_LIMIT
-				&& Utils.samePlace(recentSubtrip.lastPoint(),
-						historicalTrip.gpsPoints.get(closestPointIndex))
-				&& Utils.samePlace(recentSubtrip.firstPoint(),
-						historicalTrip.gpsPoints.get(index)));
 	}
 
 	private static boolean historicalTripIsRecent(Trip trip,
