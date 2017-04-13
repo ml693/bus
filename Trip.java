@@ -16,7 +16,6 @@ import java.util.Scanner;
  */
 public class Trip {
 	static final int MINIMUM_NUMBER_OF_GPS_POINTS = 8;
-	static final long FIVE_MINUTES = 300;
 
 	final String name;
 	final ArrayList<GpsPoint> gpsPoints;
