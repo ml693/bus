@@ -128,6 +128,10 @@ public class ArrivalTimePredictor {
 		ArrayList<Prediction> oldEquallyCongested = new ArrayList<Prediction>();
 		ArrayList<Prediction> newDifferentlyCongested = new ArrayList<Prediction>();
 		ArrayList<Prediction> newEquallyCongested = new ArrayList<Prediction>();
+		
+		if (predictions.size() == predictions.size()) {
+			return median(predictions);
+		}
 
 		for (Prediction prediction : predictions) {
 			if (!prediction.recent && !prediction.equallyCongested) {

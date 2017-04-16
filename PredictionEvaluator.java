@@ -27,29 +27,29 @@ class PredictionEvaluator {
 
 			BufferedWriter writer = Utils.writer(args[2] + "/" + route.name);
 
-			Utils.writeLine(writer, "All times");
+			Utils.writeLine(writer, "Whole day");
 			evaluateRouteForCertainTime(t -> true, route, tripsFolder, writer);
 			Utils.writeLine(writer, "");
-			/*
-			 * Utils.writeLine(writer, "The morning rush hour");
-			 * evaluateRouteForCertainTime(t -> correctMorningTime(t), route,
-			 * tripsFolder, writer);
-			 * Utils.writeLine(writer, "");
-			 * 
-			 * Utils.writeLine(writer, "The working hours");
-			 * evaluateRouteForCertainTime(t -> correctDayTime(t), route,
-			 * tripsFolder, writer);
-			 * Utils.writeLine(writer, "");
-			 * 
-			 * Utils.writeLine(writer, "The evening rush hour");
-			 * evaluateRouteForCertainTime(t -> correctEveningTime(t), route,
-			 * tripsFolder, writer);
-			 * Utils.writeLine(writer, "");
-			 * 
-			 * Utils.writeLine(writer, "The night time");
-			 * evaluateRouteForCertainTime(t -> correctNightTime(t), route,
-			 * tripsFolder, writer);
-			 */
+
+			Utils.writeLine(writer, "The morning rush hour");
+			evaluateRouteForCertainTime(t -> correctMorningTime(t), route,
+					tripsFolder, writer);
+			Utils.writeLine(writer, "");
+
+			Utils.writeLine(writer, "The working hours");
+			evaluateRouteForCertainTime(t -> correctDayTime(t), route,
+					tripsFolder, writer);
+			Utils.writeLine(writer, "");
+
+			Utils.writeLine(writer, "The evening rush hour");
+			evaluateRouteForCertainTime(t -> correctEveningTime(t), route,
+					tripsFolder, writer);
+			Utils.writeLine(writer, "");
+
+			Utils.writeLine(writer, "The night time");
+			evaluateRouteForCertainTime(t -> correctNightTime(t), route,
+					tripsFolder, writer);
+
 			writer.close();
 		}
 

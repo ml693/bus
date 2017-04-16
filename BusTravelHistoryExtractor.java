@@ -121,6 +121,10 @@ public class BusTravelHistoryExtractor {
 						if (!Utils.samePlace(lastPoint, gpsPoint)) {
 							points.add(gpsPoint);
 						}
+						if (points.size() > 2
+								* Trip.MINIMUM_NUMBER_OF_GPS_POINTS) {
+							points.remove(0);
+						}
 					}
 				}
 			}

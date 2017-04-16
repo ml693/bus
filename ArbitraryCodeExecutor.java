@@ -2,6 +2,7 @@ package bus;
 
 import java.io.File;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.Scanner;
 import java.util.function.Function;
 
@@ -13,6 +14,54 @@ import java.util.function.Function;
 class ArbitraryCodeExecutor {
 
 	public static void main(String args[]) throws ProjectSpecificException {
+		int[] att = new int[12];
+		int[] mae = new int[12];
+		int[] count = new int[12];
+
+		Scanner scanner = Utils.csvScanner(new File(args[0]));
+		scanner.nextLine();
+
+		HashMap<String, Integer> routeCounts = new HashMap<String, Integer>();
+
+		while (scanner.hasNext()) {
+			/* Skipping trip name */
+			scanner.next();
+
+			String routeName = scanner.next();
+			if (!routeCounts.containsKey(routeName)) {
+				routeCounts.put(routeName, 1);
+			} else {
+				routeCounts.put(routeName, routeCounts.get(routeName) + 1);
+			}
+
+			int fromStop = scanner.nextInt();
+			scanner.nextInt();
+
+			long predictionTime = Utils.convertDateToTimestamp(scanner.next());
+			long predictedTime = Utils.convertDateToTimestamp(scanner.next());
+			long actualTime = Utils.convertDateToTimestamp(scanner.next());
+			scanner.nextInt();
+
+			if (routeName.equals("1051308-20150531-20150830")) {
+				att[fromStop] += (actualTime - predictionTime);
+				mae[fromStop] += Math.abs(actualTime - predictedTime);
+				count[fromStop]++;
+			}
+		}
+
+		for (String key : routeCounts.keySet()) {
+			Route route = new Route(new File("uk/routes/" + key));
+			System.out.println(key + " " + routeCounts.get(key) + " "
+					+ route.busStops.size());
+		}
+
+		for (int i = 1; i < 7; i++) {
+			System.out.println(i);
+			System.out.println("ATT = " + att[i] / count[i]);
+			System.out.println("MAE = " + mae[i] / count[i]);
+			System.out.println();
+		}
+
 	}
 
 	public static void produceCsvForPlotting(String args[])
