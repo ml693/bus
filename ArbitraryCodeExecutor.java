@@ -14,9 +14,9 @@ import java.util.function.Function;
 class ArbitraryCodeExecutor {
 
 	public static void main(String args[]) throws ProjectSpecificException {
-		int[] att = new int[12];
-		int[] mae = new int[12];
-		int[] count = new int[12];
+		int[] att = new int[20];
+		int[] mae = new int[20];
+		int[] count = new int[20];
 
 		Scanner scanner = Utils.csvScanner(new File(args[0]));
 		scanner.nextLine();
@@ -55,10 +55,11 @@ class ArbitraryCodeExecutor {
 					+ route.busStops.size());
 		}
 
-		for (int i = 1; i < 7; i++) {
+		for (int i = 1; i < 9; i++) {
 			System.out.println(i);
 			System.out.println("ATT = " + att[i] / count[i]);
 			System.out.println("MAE = " + mae[i] / count[i]);
+			System.out.println("Count = "+ count[i]);
 			System.out.println();
 		}
 

@@ -21,7 +21,8 @@ public class Utils {
 
 	// If two GPS points are within this distance, then I conclude
 	// that they are at the same place.
-	private static final double SAME_PLACE_DISTANCE_RANGE = 0.000007;
+	// TODO(ml693): change back to 0.000007;
+	private static final double SAME_PLACE_DISTANCE_RANGE = 0.000010;
 
 	static boolean samePlace(GpsPoint p1, GpsPoint p2) {
 		return Utils.distance(p1, p2) < SAME_PLACE_DISTANCE_RANGE;
