@@ -19,7 +19,7 @@ public class ArrivalTimePredictor {
 	 * Heuristic which checks whether roughly equal amount of distance was
 	 * travelled in roughly equal amount of time.
 	 */
-	private static boolean equallyCongested(Trip trip, Trip historicalTrip) {
+	public static boolean equallyCongested(Trip trip, Trip historicalTrip) {
 		try {
 			int closestPointIndex = closestPointIndex(trip.lastPoint(),
 					historicalTrip);

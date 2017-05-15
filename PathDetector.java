@@ -9,7 +9,7 @@ class PathDetector {
 
 	private static boolean similarNumberOfPointsUsedToAlign(Trip trip,
 			int pointsUsedToAlign) {
-		return (double) pointsUsedToAlign / (double) trip.gpsPoints.size() <= 2
+		return (double) pointsUsedToAlign / (double) trip.gpsPoints.size() <= 3
 				* SIMILARITY_THRESHOLD;
 	}
 

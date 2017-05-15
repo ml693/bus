@@ -84,7 +84,7 @@ class PredictionEvaluator {
 
 	public static ArrayList<Trip> getTripsOfCertainTime(
 			Function<Long, Boolean> correctTime, File tripsFolder) {
-		ArrayList<Trip> trips = Trip.extractTripsFromFolder(tripsFolder);
+		ArrayList<Trip> trips = Trip.readFromFolder(tripsFolder);
 		ArrayList<Trip> tripsOfCertainTime = new ArrayList<Trip>();
 
 		for (Trip trip : trips) {
@@ -154,7 +154,7 @@ class PredictionEvaluator {
 			System.out.println("Evaluating for stop nr. " + stop);
 			Utils.writeLine(writer, "From stop nr. " + stop);
 			Utils.writeLine(writer, route.busStops.get(stop).name);
-			if (trips.size() < 5) {
+			if (trips.size() < 2) {
 				Utils.writeLine(writer,
 						"not enough trips, have only " + trips.size());
 				Utils.writeLine(writer, "");
@@ -162,6 +162,9 @@ class PredictionEvaluator {
 				evaluateRoute(route, trips, stop, writer);
 			}
 		}
+
+		Utils.writeLine(writer, "Last stop: " + route.lastStop().name);
+		Utils.writeLine(writer, "");
 	}
 
 	/* Computes various statistics for the arrival time to the last stop */
@@ -194,14 +197,13 @@ class PredictionEvaluator {
 
 		Utils.writeLine(writer, "MAE = " + difference / trips.size());
 		Utils.writeLine(writer, "ATT = " + delaysSum / trips.size());
-		Utils.writeLine(writer, "");
 	}
 
 	public static void produceCsvForPlotting() throws ProjectSpecificException {
 		Scanner scanner = Utils.csvScanner(new File("uk/counts.csv"));
 		scanner.nextLine();
 
-		int[][] errorCount = new int[7][2000];
+		int[][] errorCount = new int[8][2000];
 		while (scanner.hasNext()) {
 			errorCount[scanner.nextInt()][scanner.nextInt()]++;
 		}

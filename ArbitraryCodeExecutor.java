@@ -1,6 +1,8 @@
 package bus;
 
+import java.io.BufferedWriter;
 import java.io.File;
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Scanner;
@@ -13,56 +15,167 @@ import java.util.function.Function;
  */
 class ArbitraryCodeExecutor {
 
-	public static void main(String args[]) throws ProjectSpecificException {
-		int[] att = new int[20];
-		int[] mae = new int[20];
-		int[] count = new int[20];
+	static public void evaluateRoutes() {
+		ArrayList<File> folders = Utils.filesInFolder("uk/good_data");
 
+		for (File folder : folders) {
+			int failures = 0;
+			Trip path = Trip
+					.readFromFile(new File("uk/paths/" + folder.getName()));
+			ArrayList<Trip> trips = Trip.readFromFolder(folder);
+
+			for (Trip trip : trips) {
+				try {
+					Trip subtrip = trip.subTrip(2,
+							Trip.MINIMUM_NUMBER_OF_GPS_POINTS + 2);
+					if (!PathDetector.tripFollowsPath(subtrip, path)) {
+						failures++;
+						System.out.println(
+								subtrip.name + " does not follow " + path.name);
+					}
+				} catch (ProjectSpecificException exception) {
+
+				}
+			}
+
+			if (failures > 0) {
+				System.out.println((double) (trips.size() - failures)
+						/ (double) trips.size());
+			}
+		}
+	}
+
+	static void debugTrip() throws ProjectSpecificException {
+		Trip path = Trip
+				.readFromFile(new File("uk/paths/711130-20140127-22000909"));
+		Trip trip = Trip.readFromFile(new File(
+				"uk/good_data/711130-20140127-22000909/day21_bus14300_subtrip1"));
+
+		Trip subTrip = trip.subTrip(2, 10);
+		System.out.println(PathDetector.tripFollowsPath(subTrip, path));
+
+		trip.writeToFolder(new File("uk/debug"));
+		path.writeToFolder(new File("uk/debug"));
+	}
+
+	public static void main(String args[]) throws ProjectSpecificException {
+		evaluateRealTime();
+	}
+
+	static ArrayList<Prediction> predictionsForStop(
+			ArrayList<Prediction> predictions, int stop) {
+		ArrayList<Prediction> predictionsForStop = new ArrayList<Prediction>();
+		for (Prediction prediction : predictions) {
+			if (prediction.fromStopIndex == stop) {
+				predictionsForStop.add(prediction);
+			}
+		}
+		return predictionsForStop;
+	}
+
+	static void evaluateRealTime() {
+		ArrayList<File> files = Utils.filesInFolder("uk/real_time_results");
+		for (File file : files) {
+			Route route = new Route(new File("uk/routes/" + file.getName()));
+			ArrayList<Prediction> predictions = new ArrayList<Prediction>();
+			Scanner scanner = Utils.csvScanner(file);
+			scanner.nextLine();
+			while (scanner.hasNext()) {
+				int stopIndex = scanner.nextInt();
+				long error = scanner.nextLong();
+				long travelTime = scanner.nextLong();
+
+				// prediction.predictedTimestamp = error
+				Prediction prediction = new Prediction(error);
+				prediction.predictionTimestamp = travelTime;
+				prediction.fromStopIndex = stopIndex;
+				predictions.add(prediction);
+			}
+
+			BufferedWriter writer = Utils
+					.writer("uk/real_time_evaluation/" + route.name);
+
+			Utils.writeLine(writer, "Will evaluate for route " + route.name
+					+ " using " + predictions.size() + " predictions.");
+			Utils.writeLine(writer, "");
+
+			for (int stop = 0; stop < route.busStops.size() - 1; stop++) {
+				Utils.writeLine(writer, "Evaluating for stop nr. " + stop);
+				Utils.writeLine(writer, route.busStops.get(stop).name);
+
+				ArrayList<Prediction> predictionsForStop = predictionsForStop(
+						predictions, stop);
+				if (predictionsForStop.isEmpty()) {
+					Utils.writeLine(writer, "0 predictions.");
+					Utils.writeLine(writer, "");
+					continue;
+				}
+
+				int errorsSum = 0;
+				int travelTimeSum = 0;
+				for (Prediction prediction : predictionsForStop) {
+					errorsSum += Math.abs(prediction.predictedTimestamp);
+					travelTimeSum += prediction.predictionTimestamp;
+				}
+				Utils.writeLine(writer,
+						predictionsForStop.size() + " predictions.");
+				Utils.writeLine(writer,
+						"MAE = " + errorsSum / predictionsForStop.size());
+				Utils.writeLine(writer,
+						"ATT = " + travelTimeSum / predictionsForStop.size());
+				Utils.writeLine(writer, "");
+
+			}
+			Utils.writeLine(writer, "Last stop: " + route.lastStop().name);
+			Utils.writeLine(writer, "");
+			Utils.writeLine(writer, "");
+			try {
+				writer.close();
+			} catch (IOException exception) {
+				throw new RuntimeException(exception);
+			}
+		}
+
+	}
+
+	static void processRealTime(String args[]) {
 		Scanner scanner = Utils.csvScanner(new File(args[0]));
 		scanner.nextLine();
 
-		HashMap<String, Integer> routeCounts = new HashMap<String, Integer>();
+		HashMap<String, BufferedWriter> routeFiles = new HashMap<String, BufferedWriter>();
 
 		while (scanner.hasNext()) {
 			/* Skipping trip name */
 			scanner.next();
 
 			String routeName = scanner.next();
-			if (!routeCounts.containsKey(routeName)) {
-				routeCounts.put(routeName, 1);
-			} else {
-				routeCounts.put(routeName, routeCounts.get(routeName) + 1);
+			if (!routeFiles.containsKey(routeName)) {
+				routeFiles.put(routeName,
+						Utils.writer("uk/real_time/" + routeName));
+				Utils.writeLine(routeFiles.get(routeName),
+						"from_stop,error,travel_time");
 			}
+			BufferedWriter routeWriter = routeFiles.get(routeName);
 
 			int fromStop = scanner.nextInt();
 			scanner.nextInt();
-
 			long predictionTime = Utils.convertDateToTimestamp(scanner.next());
 			long predictedTime = Utils.convertDateToTimestamp(scanner.next());
 			long actualTime = Utils.convertDateToTimestamp(scanner.next());
 			scanner.nextInt();
 
-			if (routeName.equals("1051308-20150531-20150830")) {
-				att[fromStop] += (actualTime - predictionTime);
-				mae[fromStop] += Math.abs(actualTime - predictedTime);
-				count[fromStop]++;
+			Utils.writeLine(routeWriter,
+					fromStop + "," + (actualTime - predictedTime) + ","
+							+ (actualTime - predictionTime));
+		}
+
+		for (String route : routeFiles.keySet()) {
+			try {
+				routeFiles.get(route).close();
+			} catch (IOException exception) {
+				throw new RuntimeException(exception);
 			}
 		}
-
-		for (String key : routeCounts.keySet()) {
-			Route route = new Route(new File("uk/routes/" + key));
-			System.out.println(key + " " + routeCounts.get(key) + " "
-					+ route.busStops.size());
-		}
-
-		for (int i = 1; i < 9; i++) {
-			System.out.println(i);
-			System.out.println("ATT = " + att[i] / count[i]);
-			System.out.println("MAE = " + mae[i] / count[i]);
-			System.out.println("Count = "+ count[i]);
-			System.out.println();
-		}
-
 	}
 
 	public static void produceCsvForPlotting(String args[])
@@ -130,7 +243,7 @@ class ArbitraryCodeExecutor {
 						+ route.busStops.get(fromStopNumber).name + " (nr. "
 						+ fromStopNumber + ")");
 
-		ArrayList<Trip> trips = Trip.extractTripsFromFolder(tripsFolder);
+		ArrayList<Trip> trips = Trip.readFromFolder(tripsFolder);
 		ArrayList<Trip> shortTrips = new ArrayList<Trip>();
 		for (Trip trip : trips) {
 			shortTrips.add(upToStop(fromStopNumber, trip, route));
@@ -305,7 +418,7 @@ class ArbitraryCodeExecutor {
 
 	static void delimitTrips(String[] args) throws Exception {
 		Utils.checkCommandLineArguments(args, "folder", "folder", "folder");
-		ArrayList<Trip> trips = Trip.extractTripsFromFolder(new File(args[0]));
+		ArrayList<Trip> trips = Trip.readFromFolder(new File(args[0]));
 		File recentPartsFolder = new File(args[1]);
 		File futurePartsFolder = new File(args[2]);
 
@@ -330,7 +443,7 @@ class ArbitraryCodeExecutor {
 
 	static void extractTripsFollowingPath(Trip path, File tripsFolder)
 			throws Exception {
-		ArrayList<Trip> trips = Trip.extractTripsFromFolder(tripsFolder);
+		ArrayList<Trip> trips = Trip.readFromFolder(tripsFolder);
 		for (Trip trip : trips) {
 			if (PathDetector.tripFollowsPath(trip, path)) {
 				System.out.println(trip.name + " follows");

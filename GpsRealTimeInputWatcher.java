@@ -59,7 +59,7 @@ class GpsRealTimeInputWatcher {
 		this.tripsFolder = tripsFolder;
 		this.routesFolder = routesFolder;
 
-		this.paths = Trip.extractTripsFromFolder(pathsFolder);
+		this.paths = Trip.readFromFolder(pathsFolder);
 		Collections.sort(paths, (p1, p2) -> Utils
 				.filesInFolder(tripsFolder.getName() + "/" + p2.name).size()
 				- Utils.filesInFolder(tripsFolder.getName() + "/" + p1.name)
@@ -293,7 +293,7 @@ class GpsRealTimeInputWatcher {
 			int recentStopIndex = nextStopIndex(trip) - 1;
 			if (route.busStops.get(recentStopIndex).atStop(trip.lastPoint())) {
 				System.out.println("Predicting for " + trip.name);
-				ArrayList<Trip> historicalTrips = Trip.extractTripsFromFolder(
+				ArrayList<Trip> historicalTrips = Trip.readFromFolder(
 						new File(tripsFolder.getName() + "/" + route.name));
 
 				Prediction prediction = ArrivalTimePredictor.makePrediction(

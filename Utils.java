@@ -40,8 +40,16 @@ public class Utils {
 		double cosLatitude2 = Math.cos(p2.latitude * scaleToRadians);
 		double cosLongitude = Math
 				.cos((p1.longitude - p2.longitude) * scaleToRadians);
-		return Math.acos(sinLatitude1 * sinLatitude2
-				+ cosLatitude1 * cosLatitude2 * cosLongitude);
+
+		double cos = sinLatitude1 * sinLatitude2
+				+ cosLatitude1 * cosLatitude2 * cosLongitude;
+		if (cos < -1.0) {
+			cos = -1.0;
+		}
+		if (cos > 1.0) {
+			cos = 1.0;
+		}
+		return Math.acos(cos);
 	}
 
 	static long convertDateToTimestamp(String date) {

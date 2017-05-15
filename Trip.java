@@ -77,8 +77,12 @@ public class Trip {
 	}
 
 	Trip subTrip(int fromIndex, int toIndex) throws ProjectSpecificException {
-		return new Trip(name,
-				new ArrayList<GpsPoint>(gpsPoints.subList(fromIndex, toIndex)));
+		try {
+			return new Trip(name, new ArrayList<GpsPoint>(
+					gpsPoints.subList(fromIndex, toIndex)));
+		} catch (IndexOutOfBoundsException exception) {
+			throw new ProjectSpecificException(exception.getMessage());
+		}
 	}
 
 	ArrayList<GpsPoint> timeInterval(long fromTimestamp, long toTimestamp)
@@ -93,7 +97,7 @@ public class Trip {
 		return points;
 	}
 
-	static ArrayList<Trip> extractTripsFromFolder(File folder) {
+	static ArrayList<Trip> readFromFolder(File folder) {
 		return extractTripsFromFolder(folder, Long.MAX_VALUE);
 	}
 
@@ -140,7 +144,7 @@ public class Trip {
 	GpsPoint firstPoint() {
 		return gpsPoints.get(0);
 	}
-	
+
 	GpsPoint secondPoint() {
 		return gpsPoints.get(1);
 	}

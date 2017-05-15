@@ -42,6 +42,7 @@ class Prediction {
 				+ Utils.convertTimestampToDate(predictionTimestamp) + ","
 				+ Utils.convertTimestampToDate(predictedTimestamp) + ","
 				+ Utils.convertTimestampToDate(actualArrivalTimestamp) + ","
+				+ (actualArrivalTimestamp - predictionTimestamp) + ","
 				+ (predictedTimestamp - actualArrivalTimestamp);
 		Utils.appendLineToFile(file, predictionLine);
 	}
