@@ -41,9 +41,10 @@ public class HistoricalDataBuilder {
 			if (lastDayProcessed != lastDay.getDayOfMonth()) {
 				System.out.println("The new day: " + lastDay.getDayOfMonth());
 				extractTripsFromDay(lastDay);
-				buildHistoricalData(args);
+				int tripsConstructed = buildHistoricalData(args);
 				lastDayProcessed = lastDay.getDayOfMonth();
-				System.out.println("Finished with " + lastDayProcessed);
+				System.out.println("Finished with day " + lastDayProcessed
+						+ ". Construced " + tripsConstructed + " from it.");
 			} else {
 				try {
 					Thread.sleep(3600000);
@@ -54,7 +55,7 @@ public class HistoricalDataBuilder {
 		}
 	}
 
-	public static void buildHistoricalData(String[] args) {
+	public static int buildHistoricalData(String[] args) {
 		try {
 			Utils.checkCommandLineArguments(args, "folder", "folder", "folder");
 		} catch (ProjectSpecificException exception) {
@@ -65,6 +66,8 @@ public class HistoricalDataBuilder {
 		ArrayList<Route> routes = Route
 				.extractRoutesFromFolder(new File(args[1]));
 		String historicalDataFolder = args[2];
+
+		int tripsConstructed = 0;
 
 		for (int t = tripFiles.size() - 1; t >= 0; t--) {
 			Trip trip = Trip.readFromFile(tripFiles.get(t));
@@ -79,6 +82,7 @@ public class HistoricalDataBuilder {
 							historicalDataFolder + "/" + route.name);
 					pathFolder.mkdir();
 					historicalTrip.writeToFolder(pathFolder);
+					tripsConstructed++;
 				} catch (ProjectSpecificException exception) {
 				}
 			}
@@ -87,6 +91,8 @@ public class HistoricalDataBuilder {
 			tripFiles.remove(t);
 			System.out.println(tripFiles.size() + " trips left");
 		}
+
+		return tripsConstructed;
 	}
 
 	public static Trip buildHistoricalTrip(Route route, Trip trip)
